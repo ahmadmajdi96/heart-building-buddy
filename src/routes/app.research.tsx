@@ -1,18 +1,37 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useI18n } from "@/lib/i18n";
 import { PageHeader } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { researchSources } from "@/lib/mock-data";
-import { Sparkles, Search, BookOpen, ScrollText, Globe2 } from "lucide-react";
+import { legalResearch } from "@/lib/ai-tasks.functions";
+import { Sparkles, Search, BookOpen, ScrollText, Globe2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/research")({ component: ResearchPage });
 
 function ResearchPage() {
   const { locale } = useI18n();
   const [q, setQ] = useState("");
-  const [answered, setAnswered] = useState(false);
+  const [answer, setAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
+  const research = useServerFn(legalResearch);
+
+  async function run(query: string) {
+    if (!query.trim()) return;
+    setLoading(true);
+    setAnswer("");
+    try {
+      const res = await research({ data: { query, locale } });
+      setAnswer(res.answer);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to fetch answer");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -31,12 +50,13 @@ function ResearchPage() {
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && run(q)}
               placeholder={locale === "ar" ? "اطرح سؤالاً قانونياً، أو ابحث عن مادة أو حكم…" : "Ask a legal question, or search for a statute or ruling…"}
               className="h-14 ps-12 text-base"
             />
           </div>
-          <Button size="lg" variant="gold" className="h-14 px-6" onClick={() => setAnswered(true)}>
-            {locale === "ar" ? "ابحث" : "Search"}
+          <Button size="lg" variant="gold" className="h-14 px-6" onClick={() => run(q)} disabled={loading}>
+            {loading ? <Loader2 className="size-4 animate-spin" /> : (locale === "ar" ? "ابحث" : "Search")}
           </Button>
         </div>
         <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
@@ -44,28 +64,25 @@ function ResearchPage() {
             ? ["تعويض الفسخ التعسفي", "شروط التحكيم الإلزامي", "حماية البيانات الشخصية", "علامة تجارية مشهورة"]
             : ["Wrongful termination damages", "Mandatory arbitration clauses", "Personal data protection", "Well-known trademark"]
           ).map((s) => (
-            <button key={s} onClick={() => { setQ(s); setAnswered(true); }} className="rounded-full border bg-background px-3 py-1.5 transition hover:border-gold hover:text-foreground">
+            <button key={s} onClick={() => { setQ(s); run(s); }} className="rounded-full border bg-background px-3 py-1.5 transition hover:border-gold hover:text-foreground">
               {s}
             </button>
           ))}
         </div>
       </div>
 
-      {answered && (
+      {(answer || loading) && (
         <div className="card-elev rounded-xl border bg-card p-6">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gold">
-            <Sparkles className="size-4" /> {locale === "ar" ? "إجابة موجزة" : "AI summary"}
+            <Sparkles className="size-4" /> {locale === "ar" ? "إجابة الذكاء الاصطناعي" : "AI answer"}
           </div>
-          <p className="leading-relaxed text-foreground/90">
-            {locale === "ar"
-              ? "وفقاً للمادة 77 من نظام العمل السعودي، يحق للعامل الذي يُفصل تعسفياً المطالبة بتعويض يعادل أجر 15 يوماً عن كل سنة من سنوات الخدمة، مع حد أدنى يعادل أجر شهرين. تؤكد محكمة التمييز الإماراتية في حكمها رقم 2023/118 على ذات المبدأ مع اختلافات إجرائية."
-              : "Under Article 77 of the Saudi Labor Law, a wrongfully terminated employee is entitled to compensation equivalent to 15 days' wages for each year of service, with a minimum of two months. The UAE Court of Cassation (2023/118) affirms the same principle with procedural variations."}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2 text-xs">
-            {["KSA Labor Law Art. 77", "UAE Cass. 2023/118", "GCC Comparative Memo"].map((c) => (
-              <span key={c} className="rounded-md border bg-secondary/60 px-2.5 py-1 font-mono">{c}</span>
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" /> {locale === "ar" ? "جاري البحث…" : "Researching…"}
+            </div>
+          ) : (
+            <p className="whitespace-pre-wrap leading-relaxed text-foreground/90">{answer}</p>
+          )}
         </div>
       )}
 

@@ -1,58 +1,48 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useI18n } from "@/lib/i18n";
 import { PageHeader } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Sparkles, FileText, Wand2, RefreshCw, Download } from "lucide-react";
+import { draftDocument } from "@/lib/ai-tasks.functions";
+import { Sparkles, FileText, Wand2, RefreshCw, Download, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/drafting")({ component: DraftingPage });
 
-const templatesAr = [
-  { id: "t1", title: "عقد عمل محدد المدة", desc: "متوافق مع نظام العمل السعودي" },
-  { id: "t2", title: "اتفاقية عدم إفصاح (NDA)", desc: "ثنائية اللغة — قابلة للتفاوض" },
-  { id: "t3", title: "اتفاقية امتياز تجاري", desc: "متوافق مع لوائح GCC" },
-  { id: "t4", title: "مذكرة دفاع في قضية تجارية", desc: "نموذج المحاكم التجارية" },
-  { id: "t5", title: "وكالة قانونية خاصة", desc: "للتمثيل أمام المحاكم" },
-  { id: "t6", title: "عقد توريد بضائع", desc: "بنود التسليم والضمان" },
+const templates = [
+  { id: "t1", titleAr: "عقد عمل محدد المدة", titleEn: "Fixed-term employment contract", descAr: "متوافق مع نظام العمل السعودي", descEn: "Compliant with Saudi Labor Law" },
+  { id: "t2", titleAr: "اتفاقية عدم إفصاح (NDA)", titleEn: "Non-Disclosure Agreement (NDA)", descAr: "ثنائية اللغة — قابلة للتفاوض", descEn: "Bilingual — negotiable" },
+  { id: "t3", titleAr: "اتفاقية امتياز تجاري", titleEn: "Franchise agreement", descAr: "متوافق مع لوائح GCC", descEn: "GCC-compliant" },
+  { id: "t4", titleAr: "مذكرة دفاع في قضية تجارية", titleEn: "Defense memorandum (commercial)", descAr: "نموذج المحاكم التجارية", descEn: "Commercial court template" },
+  { id: "t5", titleAr: "وكالة قانونية خاصة", titleEn: "Special power of attorney", descAr: "للتمثيل أمام المحاكم", descEn: "For court representation" },
+  { id: "t6", titleAr: "عقد توريد بضائع", titleEn: "Goods supply contract", descAr: "بنود التسليم والضمان", descEn: "Delivery & warranty terms" },
 ];
-
-const sampleAr = `بسم الله الرحمن الرحيم
-
-اتفاقية عدم إفصاح (NDA)
-المبرمة في يوم [التاريخ] الموافق هـ في [المدينة].
-
-بين:
-الطرف الأول: [الاسم القانوني للشركة]، شركة مسجلة بموجب أنظمة المملكة العربية السعودية، يمثلها [الاسم] بصفته [المنصب].
-الطرف الثاني: [الاسم القانوني للجهة الثانية]، ويمثلها [الاسم] بصفته [المنصب].
-
-تمهيد:
-حيث إن الطرفين يرغبان في تبادل معلومات سرية لغرض [وصف الغرض]، ورغبة منهما في حماية تلك المعلومات، فقد اتفقا على ما يلي:
-
-البند الأول — تعريف المعلومات السرية
-تشمل المعلومات السرية كل المعلومات التجارية والفنية والمالية والتشغيلية التي يفصح عنها أحد الطرفين للآخر، سواء كانت مكتوبة أو شفوية أو إلكترونية…
-
-البند الثاني — الالتزامات
-يلتزم الطرف المتلقي بعدم الإفصاح عن المعلومات السرية لأي طرف ثالث دون موافقة كتابية مسبقة من الطرف المُفصح، وباتخاذ التدابير المعقولة لحمايتها…
-
-البند الثالث — مدة الاتفاقية
-تسري هذه الاتفاقية لمدة [٣] سنوات من تاريخ توقيعها، وتستمر التزامات السرية لمدة [٥] سنوات بعد انتهائها.
-
-البند الرابع — القانون الواجب التطبيق
-تخضع هذه الاتفاقية لأنظمة المملكة العربية السعودية، وتختص المحاكم المختصة في الرياض بالفصل في أي نزاع.`;
 
 function DraftingPage() {
   const { locale } = useI18n();
   const [prompt, setPrompt] = useState("");
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
+  const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
+  const drafter = useServerFn(draftDocument);
 
-  function generate() {
+  async function generate(templateTitle?: string) {
+    const userPrompt = prompt.trim() || (templateTitle ? `Draft a ${templateTitle}` : "");
+    if (!userPrompt) {
+      toast.error(locale === "ar" ? "اكتب وصفاً أولاً" : "Describe what you need first");
+      return;
+    }
     setLoading(true);
-    setTimeout(() => {
-      setDraft(sampleAr);
+    try {
+      const res = await drafter({ data: { prompt: userPrompt, locale, template: templateTitle } });
+      setDraft(res.draft);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to generate draft");
+    } finally {
       setLoading(false);
-    }, 700);
+    }
   }
 
   return (
@@ -67,17 +57,24 @@ function DraftingPage() {
           <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {locale === "ar" ? "القوالب الجاهزة" : "Templates"}
           </div>
-          {templatesAr.map((t) => (
-            <button key={t.id} className="group w-full rounded-xl border bg-card p-4 text-start transition card-elev hover:border-gold/40">
-              <div className="flex items-start gap-3">
-                <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-gold/15 text-gold"><FileText className="size-4" /></div>
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold">{t.title}</div>
-                  <div className="mt-0.5 text-xs text-muted-foreground">{t.desc}</div>
+          {templates.map((t) => {
+            const title = locale === "ar" ? t.titleAr : t.titleEn;
+            return (
+              <button
+                key={t.id}
+                onClick={() => { setActiveTemplate(t.id); generate(title); }}
+                className={`group w-full rounded-xl border bg-card p-4 text-start transition card-elev hover:border-gold/40 ${activeTemplate === t.id ? "border-gold/60" : ""}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-gold/15 text-gold"><FileText className="size-4" /></div>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold">{title}</div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">{locale === "ar" ? t.descAr : t.descEn}</div>
+                  </div>
                 </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </aside>
 
         <div className="space-y-4">
@@ -93,12 +90,16 @@ function DraftingPage() {
               className="resize-none"
             />
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button onClick={generate} variant="gold" className="gap-1.5" disabled={loading}>
+              <Button onClick={() => generate()} variant="gold" className="gap-1.5" disabled={loading}>
                 {loading ? <RefreshCw className="size-4 animate-spin" /> : <Wand2 className="size-4" />}
                 {locale === "ar" ? "اصِغ المستند" : "Generate draft"}
               </Button>
-              <Button variant="outline">{locale === "ar" ? "تحسين النص" : "Improve"}</Button>
-              <Button variant="outline">{locale === "ar" ? "ترجم إلى الإنجليزية" : "Translate"}</Button>
+              <Button variant="outline" disabled={!draft || loading} onClick={() => { setPrompt((locale === "ar" ? "حسّن المسودة التالية مع الحفاظ على معناها:\n\n" : "Improve the following draft while preserving meaning:\n\n") + draft); }}>
+                {locale === "ar" ? "تحسين النص" : "Improve"}
+              </Button>
+              <Button variant="outline" disabled={!draft || loading} onClick={() => setPrompt((locale === "ar" ? "ترجم المسودة التالية إلى الإنجليزية:\n\n" : "Translate the following draft to Arabic:\n\n") + draft)}>
+                {locale === "ar" ? "ترجم إلى الإنجليزية" : "Translate"}
+              </Button>
             </div>
           </div>
 
@@ -106,12 +107,16 @@ function DraftingPage() {
             <div className="flex items-center justify-between border-b p-4">
               <div className="text-sm font-semibold">{locale === "ar" ? "المسودة" : "Draft"}</div>
               <div className="flex gap-1.5">
-                <Button variant="ghost" size="sm" className="gap-1"><Download className="size-3.5" />DOCX</Button>
-                <Button variant="ghost" size="sm" className="gap-1"><Download className="size-3.5" />PDF</Button>
+                <Button variant="ghost" size="sm" className="gap-1" disabled={!draft} onClick={() => downloadText(draft, "draft.txt")}><Download className="size-3.5" />TXT</Button>
               </div>
             </div>
             <div className="p-6">
-              {draft ? (
+              {loading ? (
+                <div className="grid place-items-center py-20 text-sm text-muted-foreground">
+                  <Loader2 className="mb-3 size-6 animate-spin text-gold" />
+                  {locale === "ar" ? "جاري الصياغة…" : "Drafting…"}
+                </div>
+              ) : draft ? (
                 <pre className="whitespace-pre-wrap font-serif text-[15px] leading-relaxed text-foreground/90">{draft}</pre>
               ) : (
                 <div className="grid place-items-center py-20 text-center text-sm text-muted-foreground">
@@ -125,4 +130,12 @@ function DraftingPage() {
       </div>
     </div>
   );
+}
+
+function downloadText(text: string, filename: string) {
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
 }
