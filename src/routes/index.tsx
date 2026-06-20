@@ -53,36 +53,37 @@ function LandingPage() {
         <div className="container relative mx-auto max-w-7xl px-6 pb-24 pt-20 lg:pb-32 lg:pt-28">
           <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-xs font-medium tracking-wide text-gold">
-                <Sparkles className="size-3.5" /> {t("hero_eyebrow")}
+              <span className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-3.5 py-1 text-[11px] font-medium uppercase tracking-[0.28em] text-gold">
+                <Sparkles className="size-3" /> {t("hero_eyebrow")}
               </span>
-              <h1 className="mt-6 font-serif text-5xl leading-[1.05] tracking-tight md:text-6xl lg:text-7xl">
-                <span className="block">{t("hero_title_1")}</span>
-                <span className="block bg-gradient-to-r from-gold via-amber-300 to-gold bg-clip-text text-transparent">
+              <h1 className="mt-7 font-serif text-[3.25rem] leading-[1.02] tracking-[-0.02em] md:text-6xl lg:text-[5.25rem]">
+                <span className="block text-pearl">{t("hero_title_1")}</span>
+                <span className="block italic text-gilded">
                   {t("hero_title_2")}
                 </span>
               </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-relaxed text-sidebar-foreground/75">
+              <div className="mt-7 h-px w-24 bg-gradient-to-r from-gold to-transparent" />
+              <p className="mt-7 max-w-xl text-[1.05rem] leading-[1.7] text-pearl/70">
                 {t("hero_sub")}
               </p>
-              <div className="mt-9 flex flex-wrap items-center gap-3">
-                <Button asChild size="lg" variant="gold" className="h-12 px-6 text-base">
+              <div className="mt-10 flex flex-wrap items-center gap-3">
+                <Button asChild size="lg" variant="gold" className="h-12 px-7 text-sm uppercase tracking-[0.18em]">
                   <Link to="/app/dashboard">
                     {t("hero_cta_primary")} <Arrow className="size-4" />
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="ghostLight" className="h-12 px-6 text-base">
+                <Button asChild size="lg" variant="ghostLight" className="h-12 px-7 text-sm uppercase tracking-[0.18em]">
                   <a href="#modules">{t("hero_cta_secondary")}</a>
                 </Button>
               </div>
 
-              <div className="mt-12">
-                <div className="text-xs uppercase tracking-[0.25em] text-sidebar-foreground/50">
+              <div className="mt-14">
+                <div className="text-[10px] uppercase tracking-[0.4em] text-pearl/40">
                   {t("hero_trust")}
                 </div>
-                <div className="mt-4 flex flex-wrap items-center gap-x-8 gap-y-3 text-sidebar-foreground/70">
+                <div className="mt-5 flex flex-wrap items-center gap-x-10 gap-y-3 text-pearl/55">
                   {["AlBayan & Partners", "Gulf Legal Group", "Cairo Bar Association", "Riyadh Law School", "Dubai Arbitration Centre"].map((n) => (
-                    <span key={n} className="font-serif text-base italic opacity-80">{n}</span>
+                    <span key={n} className="text-[11px] font-medium uppercase tracking-[0.22em]">{n}</span>
                   ))}
                 </div>
               </div>
@@ -99,7 +100,7 @@ function LandingPage() {
         <SectionHeading eyebrow="modules_eyebrow" title="modules_title" sub="modules_sub" />
         <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {modules.map((m) => (
-            <ModuleCard key={m.key} icon={m.icon} titleKey={m.key} descKey={m.descKey} accent={m.accent} />
+            <ModuleCard key={m.key} icon={m.icon} titleKey={m.key} descKey={m.descKey} num={m.num} />
           ))}
         </div>
       </section>
@@ -313,31 +314,33 @@ function SectionHeading({ eyebrow, title, sub }: { eyebrow?: TKey; title: TKey; 
   );
 }
 
-type ModuleDef = { key: TKey; descKey: TKey; icon: ComponentType<{ className?: string }>; accent: string };
+type ModuleDef = { key: TKey; descKey: TKey; icon: ComponentType<{ className?: string }>; num: string };
 
 const modules: ModuleDef[] = [
-  { key: "m_cases", descKey: "m_cases_desc", icon: Briefcase, accent: "from-blue-500/10 to-indigo-500/10" },
-  { key: "m_documents", descKey: "m_documents_desc", icon: FileText, accent: "from-amber-500/10 to-orange-500/10" },
-  { key: "m_research", descKey: "m_research_desc", icon: Search, accent: "from-emerald-500/10 to-teal-500/10" },
-  { key: "m_drafting", descKey: "m_drafting_desc", icon: Sparkles, accent: "from-violet-500/10 to-fuchsia-500/10" },
-  { key: "m_calendar", descKey: "m_calendar_desc", icon: CalendarDays, accent: "from-sky-500/10 to-cyan-500/10" },
-  { key: "m_billing", descKey: "m_billing_desc", icon: Receipt, accent: "from-rose-500/10 to-pink-500/10" },
-  { key: "m_education", descKey: "m_education_desc", icon: GraduationCap, accent: "from-yellow-500/10 to-amber-500/10" },
-  { key: "m_analytics", descKey: "m_analytics_desc", icon: BarChart3, accent: "from-purple-500/10 to-violet-500/10" },
-  { key: "m_clients", descKey: "m_clients_desc", icon: Building2, accent: "from-slate-500/10 to-zinc-500/10" },
+  { key: "m_cases", descKey: "m_cases_desc", icon: Briefcase, num: "01" },
+  { key: "m_documents", descKey: "m_documents_desc", icon: FileText, num: "02" },
+  { key: "m_research", descKey: "m_research_desc", icon: Search, num: "03" },
+  { key: "m_drafting", descKey: "m_drafting_desc", icon: Sparkles, num: "04" },
+  { key: "m_calendar", descKey: "m_calendar_desc", icon: CalendarDays, num: "05" },
+  { key: "m_billing", descKey: "m_billing_desc", icon: Receipt, num: "06" },
+  { key: "m_education", descKey: "m_education_desc", icon: GraduationCap, num: "07" },
+  { key: "m_analytics", descKey: "m_analytics_desc", icon: BarChart3, num: "08" },
+  { key: "m_clients", descKey: "m_clients_desc", icon: Building2, num: "09" },
 ];
 
 function ModuleCard({
-  icon: Icon, titleKey, descKey, accent,
-}: { icon: ComponentType<{ className?: string }>; titleKey: TKey; descKey: TKey; accent: string }) {
+  icon: Icon, titleKey, descKey, num,
+}: { icon: ComponentType<{ className?: string }>; titleKey: TKey; descKey: TKey; num: string }) {
   const { t } = useI18n();
   return (
-    <div className={`card-elev group relative overflow-hidden rounded-xl border bg-gradient-to-br ${accent} bg-card p-6`}>
-      <div className="mb-5 inline-grid size-11 place-items-center rounded-lg bg-card text-primary ring-1 ring-border">
+    <div className="card-elev group relative overflow-hidden rounded-xl border border-border bg-card p-7 transition-colors hover:border-gold/40">
+      <div className="absolute end-5 top-5 font-serif text-xs italic text-gold/60">{num}</div>
+      <div className="mb-6 inline-grid size-12 place-items-center rounded-full bg-gradient-to-br from-champagne to-pearl text-onyx ring-1 ring-gold/30 transition-all group-hover:from-gold/30 group-hover:to-champagne">
         <Icon className="size-5" />
       </div>
-      <div className="text-lg font-semibold">{t(titleKey)}</div>
-      <p className="mt-2 text-sm text-muted-foreground">{t(descKey)}</p>
+      <div className="font-serif text-2xl tracking-tight text-foreground">{t(titleKey)}</div>
+      <div className="mt-3 h-px w-10 bg-gold/40 transition-all group-hover:w-20" />
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t(descKey)}</p>
     </div>
   );
 }
