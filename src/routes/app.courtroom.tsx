@@ -170,9 +170,11 @@ function CourtroomPage() {
       const res = await courtroomTurn({
         data: { locale, userRole: role, caseBrief: brief, history: [], start: true },
       });
-      setHistory(res.turns.map((x) => ({ speaker: x.speaker as Speaker, text: x.text })));
+      const turns = res.turns.map((x) => ({ speaker: x.speaker as Speaker, text: x.text }));
+      setHistory(turns);
       setVerdict(res.verdictReached);
       setStarted(true);
+      persist({ transcript: turns, verdict: res.verdictReached });
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(null); }
   }
