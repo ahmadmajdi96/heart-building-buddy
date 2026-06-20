@@ -20,6 +20,7 @@ import {
   Bell,
   Plus,
   ArrowLeft,
+  Gavel,
 } from "lucide-react";
 import type { ComponentType } from "react";
 
@@ -36,6 +37,7 @@ const navItems: NavItem[] = [
   { to: "/app/research", key: "m_research", icon: Search },
   { to: "/app/drafting", key: "m_drafting", icon: Sparkles },
   { to: "/app/calendar", key: "m_calendar", icon: CalendarDays },
+  { to: "/app/courtroom", key: "m_courtroom", icon: Gavel },
   { to: "/app/billing", key: "m_billing", icon: Receipt },
   { to: "/app/clients", key: "m_clients", icon: Building2 },
   { to: "/app/education", key: "m_education", icon: GraduationCap },

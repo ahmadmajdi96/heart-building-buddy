@@ -18,6 +18,7 @@ import { Route as AppEducationRouteImport } from './routes/app.education'
 import { Route as AppDraftingRouteImport } from './routes/app.drafting'
 import { Route as AppDocumentsRouteImport } from './routes/app.documents'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
+import { Route as AppCourtroomRouteImport } from './routes/app.courtroom'
 import { Route as AppClientsRouteImport } from './routes/app.clients'
 import { Route as AppCasesRouteImport } from './routes/app.cases'
 import { Route as AppCalendarRouteImport } from './routes/app.calendar'
@@ -69,6 +70,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCourtroomRoute = AppCourtroomRouteImport.update({
+  id: '/courtroom',
+  path: '/courtroom',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppClientsRoute = AppClientsRouteImport.update({
   id: '/clients',
   path: '/clients',
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/app/calendar': typeof AppCalendarRoute
   '/app/cases': typeof AppCasesRoute
   '/app/clients': typeof AppClientsRoute
+  '/app/courtroom': typeof AppCourtroomRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/drafting': typeof AppDraftingRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/app/calendar': typeof AppCalendarRoute
   '/app/cases': typeof AppCasesRoute
   '/app/clients': typeof AppClientsRoute
+  '/app/courtroom': typeof AppCourtroomRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/drafting': typeof AppDraftingRoute
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/app/calendar': typeof AppCalendarRoute
   '/app/cases': typeof AppCasesRoute
   '/app/clients': typeof AppClientsRoute
+  '/app/courtroom': typeof AppCourtroomRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/drafting': typeof AppDraftingRoute
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | '/app/calendar'
     | '/app/cases'
     | '/app/clients'
+    | '/app/courtroom'
     | '/app/dashboard'
     | '/app/documents'
     | '/app/drafting'
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | '/app/calendar'
     | '/app/cases'
     | '/app/clients'
+    | '/app/courtroom'
     | '/app/dashboard'
     | '/app/documents'
     | '/app/drafting'
@@ -184,6 +195,7 @@ export interface FileRouteTypes {
     | '/app/calendar'
     | '/app/cases'
     | '/app/clients'
+    | '/app/courtroom'
     | '/app/dashboard'
     | '/app/documents'
     | '/app/drafting'
@@ -263,6 +275,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/courtroom': {
+      id: '/app/courtroom'
+      path: '/courtroom'
+      fullPath: '/app/courtroom'
+      preLoaderRoute: typeof AppCourtroomRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/clients': {
       id: '/app/clients'
       path: '/clients'
@@ -307,6 +326,7 @@ interface AppRouteChildren {
   AppCalendarRoute: typeof AppCalendarRoute
   AppCasesRoute: typeof AppCasesRoute
   AppClientsRoute: typeof AppClientsRoute
+  AppCourtroomRoute: typeof AppCourtroomRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppDocumentsRoute: typeof AppDocumentsRoute
   AppDraftingRoute: typeof AppDraftingRoute
@@ -322,6 +342,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCalendarRoute: AppCalendarRoute,
   AppCasesRoute: AppCasesRoute,
   AppClientsRoute: AppClientsRoute,
+  AppCourtroomRoute: AppCourtroomRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppDocumentsRoute: AppDocumentsRoute,
   AppDraftingRoute: AppDraftingRoute,
