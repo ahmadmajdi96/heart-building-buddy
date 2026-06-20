@@ -1,10 +1,12 @@
-import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState, type ComponentType } from "react";
 import { useI18n, type TKey } from "@/lib/i18n";
 import { BrandMark } from "@/components/brand-mark";
 import { LangToggle } from "@/components/lang-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard,
   Briefcase,
@@ -18,11 +20,11 @@ import {
   Building2,
   Settings,
   Bell,
-  Plus,
   ArrowLeft,
   Gavel,
+  LogOut,
+  Loader2,
 } from "lucide-react";
-import type { ComponentType } from "react";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
