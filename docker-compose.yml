@@ -18,6 +18,7 @@ services:
       VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
       # AI gateway (configure your own endpoint or use the default)
       AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:-}
+      LOVABLE_API_KEY: ${LOVABLE_API_KEY:-}
       AI_GATEWAY_BASE_URL: ${AI_GATEWAY_BASE_URL:-}
       AI_GATEWAY_HEADER: ${AI_GATEWAY_HEADER:-}
     volumes:
