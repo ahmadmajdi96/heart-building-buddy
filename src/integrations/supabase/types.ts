@@ -14,7 +14,427 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          all_day: boolean
+          case_id: string | null
+          client_id: string | null
+          color: string | null
+          created_at: string
+          description: string | null
+          ends_at: string
+          id: string
+          kind: string
+          location: string | null
+          owner_id: string
+          starts_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          all_day?: boolean
+          case_id?: string | null
+          client_id?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at: string
+          id?: string
+          kind?: string
+          location?: string | null
+          owner_id: string
+          starts_at: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          all_day?: boolean
+          case_id?: string | null
+          client_id?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at?: string
+          id?: string
+          kind?: string
+          location?: string | null
+          owner_id?: string
+          starts_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      case_events: {
+        Row: {
+          body: string | null
+          case_id: string
+          completed: boolean
+          created_at: string
+          id: string
+          kind: string
+          owner_id: string
+          scheduled_at: string | null
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          case_id: string
+          completed?: boolean
+          created_at?: string
+          id?: string
+          kind?: string
+          owner_id: string
+          scheduled_at?: string | null
+          title: string
+        }
+        Update: {
+          body?: string | null
+          case_id?: string
+          completed?: boolean
+          created_at?: string
+          id?: string
+          kind?: string
+          owner_id?: string
+          scheduled_at?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_events_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cases: {
+        Row: {
+          case_number: string | null
+          client_id: string | null
+          court: string | null
+          created_at: string
+          description: string | null
+          id: string
+          jurisdiction: string | null
+          opened_at: string
+          owner_id: string
+          priority: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          case_number?: string | null
+          client_id?: string | null
+          court?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          jurisdiction?: string | null
+          opened_at?: string
+          owner_id: string
+          priority?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          case_number?: string | null
+          client_id?: string | null
+          court?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          jurisdiction?: string | null
+          opened_at?: string
+          owner_id?: string
+          priority?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cases_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_interactions: {
+        Row: {
+          body: string | null
+          client_id: string
+          created_at: string
+          id: string
+          kind: string
+          occurred_at: string
+          owner_id: string
+          title: string | null
+        }
+        Insert: {
+          body?: string | null
+          client_id: string
+          created_at?: string
+          id?: string
+          kind?: string
+          occurred_at?: string
+          owner_id: string
+          title?: string | null
+        }
+        Update: {
+          body?: string | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          occurred_at?: string
+          owner_id?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_interactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          address: string | null
+          company: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          national_id: string | null
+          notes: string | null
+          owner_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          national_id?: string | null
+          notes?: string | null
+          owner_id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          national_id?: string | null
+          notes?: string | null
+          owner_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      courtroom_simulations: {
+        Row: {
+          case_id: string | null
+          created_at: string
+          id: string
+          owner_id: string
+          scenario: Json
+          score: number | null
+          title: string | null
+          transcript: Json
+          verdict: Json | null
+        }
+        Insert: {
+          case_id?: string | null
+          created_at?: string
+          id?: string
+          owner_id: string
+          scenario: Json
+          score?: number | null
+          title?: string | null
+          transcript?: Json
+          verdict?: Json | null
+        }
+        Update: {
+          case_id?: string | null
+          created_at?: string
+          id?: string
+          owner_id?: string
+          scenario?: Json
+          score?: number | null
+          title?: string | null
+          transcript?: Json
+          verdict?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courtroom_simulations_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          case_id: string | null
+          client_id: string | null
+          created_at: string
+          extracted_text: string | null
+          id: string
+          mime_type: string | null
+          name: string
+          owner_id: string
+          size: number | null
+          storage_path: string
+          tags: string[] | null
+        }
+        Insert: {
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          extracted_text?: string | null
+          id?: string
+          mime_type?: string | null
+          name: string
+          owner_id: string
+          size?: number | null
+          storage_path: string
+          tags?: string[] | null
+        }
+        Update: {
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          extracted_text?: string | null
+          id?: string
+          mime_type?: string | null
+          name?: string
+          owner_id?: string
+          size?: number | null
+          storage_path?: string
+          tags?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drafts: {
+        Row: {
+          case_id: string | null
+          content: string
+          created_at: string
+          id: string
+          owner_id: string
+          template: string | null
+          title: string
+          updated_at: string
+          variables: Json | null
+        }
+        Insert: {
+          case_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          owner_id: string
+          template?: string | null
+          title: string
+          updated_at?: string
+          variables?: Json | null
+        }
+        Update: {
+          case_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          owner_id?: string
+          template?: string | null
+          title?: string
+          updated_at?: string
+          variables?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drafts_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
