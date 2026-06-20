@@ -13,6 +13,7 @@ import { generateCase, courtroomTurn, saveSimulation, listSimulations, deleteSim
 import { useServerFn } from "@tanstack/react-start";
 import { MarkdownView } from "@/lib/markdown";
 import { Gavel, Scale, Upload, Sparkles, Loader2, RefreshCw, Send, User as UserIcon, FileText, History, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/courtroom")({
   component: CourtroomPage,
