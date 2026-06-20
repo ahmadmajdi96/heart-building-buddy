@@ -354,23 +354,18 @@ function Modules() {
 
         <div className="grid divide-y divide-border md:grid-cols-2 md:divide-y-0 md:[&>*:nth-child(-n+3)]:border-b md:[&>*:nth-child(odd)]:border-e md:[&>*]:border-border lg:grid-cols-3 lg:[&>*:nth-child(-n+6)]:border-b lg:[&>*:nth-child(3n)]:border-e-0 lg:[&>*]:border-e">
           {modules.map((m) => (
-            <ModuleRow key={m.key} {...m} />
+            <ModuleItem
+              key={m.key}
+              icon={m.icon}
+              titleKey={m.key}
+              descKey={m.descKey}
+              num={m.num}
+            />
           ))}
         </div>
       </div>
     </section>
   );
-}
-
-function ModuleRow({
-  icon: Icon,
-  key: _k,
-  num,
-  descKey,
-}: { icon: ComponentType<{ className?: string }>; key: TKey; descKey: TKey; num: string } & { key: TKey }) {
-  // we pass titleKey via "key" but JSX uses key as React key; pull from arguments
-  const { t } = useI18n();
-  return null as never; // placeholder — replaced below
 }
 
 /* Real Module card (separate component) */
