@@ -152,11 +152,11 @@ function AppLayout() {
                 <Bell className="size-4" />
                 <span className="absolute end-2 top-2 size-1.5 rounded-full bg-destructive" />
               </Button>
-              <Button size="sm" variant="gold" className="gap-1.5">
-                <Plus className="size-4" /> {t("app_new")}
+              <Button size="sm" variant="ghost" className="gap-1.5" onClick={signOut}>
+                <LogOut className="size-4" /> Sign out
               </Button>
               <Avatar className="size-9 ring-2 ring-border">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">LM</AvatarFallback>
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">{(userEmail[0] ?? "L").toUpperCase()}</AvatarFallback>
               </Avatar>
             </div>
           </header>
