@@ -86,6 +86,32 @@ function CourtroomPage() {
   const [history, setHistory] = useState<Msg[]>([]);
   const [verdict, setVerdict] = useState(false);
   const [input, setInput] = useState("");
+  const [simId, setSimId] = useState<string | null>(null);
+  const [pastSims, setPastSims] = useState<{ id: string; title: string | null; created_at: string }[]>([]);
+
+  const saveSim = useServerFn(saveSimulation);
+  const listSims = useServerFn(listSimulations);
+  const delSim = useServerFn(deleteSimulation);
+
+  async function refreshSims() { try { setPastSims((await listSims()) as any); } catch {} }
+  useEffect(() => { refreshSims(); }, []);
+
+  async function persist(extra?: { transcript?: Msg[]; verdict?: boolean }) {
+    if (!caseBrief) return;
+    const tr = extra?.transcript ?? history;
+    const v = extra?.verdict ?? verdict;
+    try {
+      const row = await saveSim({ data: {
+        id: simId ?? undefined,
+        title: caseBrief.title,
+        scenario: caseBrief,
+        transcript: tr,
+        verdict: v ? { reached: true } : null,
+      }}) as any;
+      if (row?.id && !simId) setSimId(row.id);
+      refreshSims();
+    } catch {}
+  }
 
   const transcriptRef = useRef<HTMLDivElement>(null);
   const briefRef = useRef<HTMLDivElement>(null);
