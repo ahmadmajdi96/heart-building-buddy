@@ -5,6 +5,7 @@ export default defineConfig({
     server: { entry: "server" },
   },
   server: {
-    allowedHosts: ["arab.law.cortanexai.com"],
+    host: "0.0.0.0",
+    allowedHosts: true,
   },
 } as any);
