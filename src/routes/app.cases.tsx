@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { listCases, saveCase, deleteCase, getCase, addCaseEvent, deleteCaseEvent } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
-import { listDocuments, createDocument, getSignedDownloadUrl, deleteDocument } from "@/lib/documents.functions";
+import { createDocument, getSignedDownloadUrl, deleteDocument } from "@/lib/documents.functions";
 import { saveAppointment } from "@/lib/appointments.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Loader2, Pencil, Trash2, Search, Calendar, FileText, Upload, Download, MessageSquare } from "lucide-react";
