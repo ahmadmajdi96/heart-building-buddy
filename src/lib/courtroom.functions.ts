@@ -136,3 +136,60 @@ Continue the hearing with 1-3 turns (judge and/or opposing counsel reacting).`;
     });
     return TurnOutput.parse(extractJson(text));
   });
+
+// ---------- Persistence ----------
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+const SaveSimInput = z.object({
+  id: z.string().uuid().optional(),
+  title: z.string().optional(),
+  scenario: z.any(),
+  transcript: z.any(),
+  verdict: z.any().optional(),
+  score: z.number().int().optional(),
+  case_id: z.string().uuid().nullable().optional(),
+});
+
+export const saveSimulation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => SaveSimInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const payload = {
+      title: data.title ?? null,
+      scenario: data.scenario,
+      transcript: data.transcript,
+      verdict: data.verdict ?? null,
+      score: data.score ?? null,
+      case_id: data.case_id || null,
+      owner_id: context.userId,
+    };
+    if (data.id) {
+      const { data: row, error } = await context.supabase.from("courtroom_simulations").update(payload).eq("id", data.id).select().maybeSingle();
+      if (error) throw new Error(error.message);
+      return row;
+    }
+    const { data: row, error } = await context.supabase.from("courtroom_simulations").insert(payload).select().maybeSingle();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+export const listSimulations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("courtroom_simulations")
+      .select("id, title, created_at, score, scenario")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const deleteSimulation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("courtroom_simulations").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
