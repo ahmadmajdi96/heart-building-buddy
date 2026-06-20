@@ -6,8 +6,8 @@ import { createAiGatewayProvider } from "./ai-gateway.server";
 const MODEL = "google/gemini-3-flash-preview";
 
 function getGateway() {
-  const key = process.env.AI_GATEWAY_API_KEY;
-  if (!key) throw new Error("Missing AI_GATEWAY_API_KEY");
+  const key = process.env.AI_GATEWAY_API_KEY || process.env.LOVABLE_API_KEY;
+  if (!key) throw new Error("Missing AI gateway API key. Set AI_GATEWAY_API_KEY in your environment (.env or docker-compose).");
   return createAiGatewayProvider(key);
 }
 
