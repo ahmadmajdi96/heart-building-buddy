@@ -86,12 +86,24 @@ function CourtroomPage() {
   const [input, setInput] = useState("");
 
   const transcriptRef = useRef<HTMLDivElement>(null);
+  const briefRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     transcriptRef.current?.scrollTo({ top: transcriptRef.current.scrollHeight, behavior: "smooth" });
   }, [history, busy]);
 
+  useEffect(() => {
+    if (caseBrief && !started) {
+      // Wait for layout then scroll the brief into view
+      const id = window.setTimeout(() => {
+        briefRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+      return () => window.clearTimeout(id);
+    }
+  }, [caseBrief, started]);
+
   async function handleGenerate() {
     setBusy("case"); setError(null);
+    setCaseBrief(null);
     try {
       const c = await generateCase({ data: { locale, hint: hint || undefined, practiceArea: practice || undefined } });
       setCaseBrief(c as CaseBrief);
