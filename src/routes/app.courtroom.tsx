@@ -329,6 +329,23 @@ function CourtroomPage() {
 
           {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
         </Card>
+
+        {pastSims.length > 0 && (
+          <Card className="p-6">
+            <h2 className="mb-4 text-lg font-semibold flex items-center gap-2"><History className="size-4 text-gold" />{locale === "ar" ? "محاكمات سابقة محفوظة" : "Saved past simulations"}</h2>
+            <ul className="space-y-2">
+              {pastSims.map((s) => (
+                <li key={s.id} className="flex items-center justify-between rounded border px-3 py-2 text-sm">
+                  <div>
+                    <div className="font-medium">{s.title ?? "(untitled)"}</div>
+                    <div className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleString()}</div>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => removeSim(s.id)}><Trash2 className="size-4 text-destructive" /></Button>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
       </div>
     );
   }
