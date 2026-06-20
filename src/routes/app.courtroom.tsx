@@ -9,8 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { generateCase, courtroomTurn } from "@/lib/courtroom.functions";
-import { Gavel, Scale, Upload, Sparkles, Loader2, RefreshCw, Send, User as UserIcon, FileText } from "lucide-react";
+import { generateCase, courtroomTurn, saveSimulation, listSimulations, deleteSimulation } from "@/lib/courtroom.functions";
+import { useServerFn } from "@tanstack/react-start";
+import { MarkdownView } from "@/lib/markdown";
+import { Gavel, Scale, Upload, Sparkles, Loader2, RefreshCw, Send, User as UserIcon, FileText, History, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/app/courtroom")({
   component: CourtroomPage,
