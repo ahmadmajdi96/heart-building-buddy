@@ -86,12 +86,24 @@ function CourtroomPage() {
   const [input, setInput] = useState("");
 
   const transcriptRef = useRef<HTMLDivElement>(null);
+  const briefRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     transcriptRef.current?.scrollTo({ top: transcriptRef.current.scrollHeight, behavior: "smooth" });
   }, [history, busy]);
 
+  useEffect(() => {
+    if (caseBrief && !started) {
+      // Wait for layout then scroll the brief into view
+      const id = window.setTimeout(() => {
+        briefRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+      return () => window.clearTimeout(id);
+    }
+  }, [caseBrief, started]);
+
   async function handleGenerate() {
     setBusy("case"); setError(null);
+    setCaseBrief(null);
     try {
       const c = await generateCase({ data: { locale, hint: hint || undefined, practiceArea: practice || undefined } });
       setCaseBrief(c as CaseBrief);
@@ -248,8 +260,15 @@ function CourtroomPage() {
             </div>
           )}
 
+          {busy === "case" && !caseBrief && (
+            <div className="mt-6 flex items-center gap-3 rounded-md border border-gold/30 bg-gold/5 p-4 text-sm">
+              <Loader2 className="size-4 animate-spin text-gold" />
+              <span>{locale === "ar" ? "جارٍ توليد القضية بواسطة الذكاء الاصطناعي…" : "Generating your case with AI…"}</span>
+            </div>
+          )}
+
           {caseBrief && (
-            <>
+            <div ref={briefRef}>
               <Separator className="my-6" />
               <CaseSummary brief={caseBrief} tt={tt} />
               <div className="mt-6 flex justify-end">
@@ -258,7 +277,7 @@ function CourtroomPage() {
                   {tt("start")}
                 </Button>
               </div>
-            </>
+            </div>
           )}
 
           {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
