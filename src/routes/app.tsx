@@ -1,0 +1,136 @@
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
+import { useI18n, type TKey } from "@/lib/i18n";
+import { BrandMark } from "@/components/brand-mark";
+import { LangToggle } from "@/components/lang-toggle";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  LayoutDashboard,
+  Briefcase,
+  FileText,
+  Search,
+  Sparkles,
+  CalendarDays,
+  Receipt,
+  GraduationCap,
+  BarChart3,
+  Building2,
+  Settings,
+  Bell,
+  Plus,
+  ArrowLeft,
+} from "lucide-react";
+import type { ComponentType } from "react";
+
+export const Route = createFileRoute("/app")({
+  component: AppLayout,
+});
+
+type NavItem = { to: string; key: TKey; icon: ComponentType<{ className?: string }> };
+
+const navItems: NavItem[] = [
+  { to: "/app/dashboard", key: "m_dashboard", icon: LayoutDashboard },
+  { to: "/app/cases", key: "m_cases", icon: Briefcase },
+  { to: "/app/documents", key: "m_documents", icon: FileText },
+  { to: "/app/research", key: "m_research", icon: Search },
+  { to: "/app/drafting", key: "m_drafting", icon: Sparkles },
+  { to: "/app/calendar", key: "m_calendar", icon: CalendarDays },
+  { to: "/app/billing", key: "m_billing", icon: Receipt },
+  { to: "/app/clients", key: "m_clients", icon: Building2 },
+  { to: "/app/education", key: "m_education", icon: GraduationCap },
+  { to: "/app/analytics", key: "m_analytics", icon: BarChart3 },
+];
+
+function AppLayout() {
+  const { t } = useI18n();
+  const { pathname } = useLocation();
+
+  return (
+    <div className="min-h-screen bg-secondary/30">
+      <div className="flex min-h-screen">
+        {/* Sidebar */}
+        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-e border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex">
+          <div className="border-b border-sidebar-border p-5">
+            <Link to="/app/dashboard"><BrandMark tone="dark" /></Link>
+          </div>
+          <nav className="flex-1 overflow-y-auto p-3">
+            <ul className="space-y-0.5">
+              {navItems.map((item) => {
+                const active = pathname === item.to || (item.to !== "/app/dashboard" && pathname.startsWith(item.to));
+                const Icon = item.icon;
+                return (
+                  <li key={item.to}>
+                    <Link
+                      to={item.to}
+                      className={[
+                        "group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                        active
+                          ? "bg-gold/15 text-gold ring-1 ring-gold/25"
+                          : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                      ].join(" ")}
+                    >
+                      <Icon className="size-4" />
+                      <span>{t(item.key)}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="my-4 h-px bg-sidebar-border" />
+            <Link
+              to="/app/settings"
+              className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            >
+              <Settings className="size-4" />
+              {t("m_settings")}
+            </Link>
+          </nav>
+
+          <div className="border-t border-sidebar-border p-4">
+            <div className="rounded-lg bg-sidebar-accent/60 p-3 text-xs text-sidebar-foreground/70">
+              <div className="font-semibold text-sidebar-foreground">Plan: Professional</div>
+              <div className="mt-1">28 / 50 seats used</div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-sidebar-border">
+                <div className="h-full w-[56%] rounded-full bg-gold" />
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main */}
+        <main className="flex min-w-0 flex-1 flex-col">
+          {/* Top bar */}
+          <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-background/85 px-4 backdrop-blur md:px-6">
+            <div className="relative max-w-md flex-1">
+              <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder={t("app_search")}
+                className="h-10 ps-9 bg-secondary/60 border-transparent focus-visible:bg-background"
+              />
+            </div>
+            <div className="ms-auto flex items-center gap-2">
+              <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex">
+                <Link to="/"><ArrowLeft className="size-4" />{t("app_back_site")}</Link>
+              </Button>
+              <LangToggle />
+              <Button variant="ghost" size="icon" aria-label={t("app_notifications")} className="relative">
+                <Bell className="size-4" />
+                <span className="absolute end-2 top-2 size-1.5 rounded-full bg-destructive" />
+              </Button>
+              <Button size="sm" variant="gold" className="gap-1.5">
+                <Plus className="size-4" /> {t("app_new")}
+              </Button>
+              <Avatar className="size-9 ring-2 ring-border">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">LM</AvatarFallback>
+              </Avatar>
+            </div>
+          </header>
+          <div className="flex-1 p-4 md:p-8">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
