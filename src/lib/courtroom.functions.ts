@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateText, Output } from "ai";
+import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 
@@ -11,6 +11,18 @@ function getGateway() {
   return createLovableAiGatewayProvider(key);
 }
 
+function extractJson(text: string): unknown {
+  let s = text.trim();
+  // strip code fences
+  const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fence) s = fence[1].trim();
+  // find first { ... last }
+  const first = s.indexOf("{");
+  const last = s.lastIndexOf("}");
+  if (first >= 0 && last > first) s = s.slice(first, last + 1);
+  return JSON.parse(s);
+}
+
 // ---------- Generate a fictional case ----------
 const GenerateCaseInput = z.object({
   locale: z.enum(["ar", "en"]).default("en"),
@@ -18,34 +30,48 @@ const GenerateCaseInput = z.object({
   practiceArea: z.string().optional(),
 });
 
+const CaseSchema = z.object({
+  title: z.string(),
+  jurisdiction: z.string(),
+  court: z.string(),
+  caseNumber: z.string(),
+  summary: z.string(),
+  facts: z.string(),
+  charges: z.array(z.string()),
+  claimantName: z.string(),
+  defendantName: z.string(),
+  evidence: z.array(z.string()),
+});
+
 export const generateCase = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => GenerateCaseInput.parse(d))
   .handler(async ({ data }) => {
     const gateway = getGateway();
     const lang = data.locale === "ar" ? "Arabic" : "English";
-    const { output } = await generateText({
+    const { text } = await generateText({
       model: gateway(MODEL),
-      output: Output.object({
-        schema: z.object({
-          title: z.string(),
-          jurisdiction: z.string(),
-          court: z.string(),
-          caseNumber: z.string(),
-          summary: z.string(),
-          facts: z.string(),
-          charges: z.array(z.string()),
-          claimantName: z.string(),
-          defendantName: z.string(),
-          evidence: z.array(z.string()),
-        }),
-      }),
-      prompt: `Generate a realistic but fictional legal case scenario suitable for a courtroom simulation in an Arab jurisdiction.
-Language: write all string fields in ${lang}.
+      system: `You are a legal case generator. Always reply with a single valid JSON object and no other text.`,
+      prompt: `Generate a realistic but fictional legal case scenario for a courtroom simulation in an Arab jurisdiction (KSA, UAE, Egypt, Qatar, Jordan etc.).
+Write all string values in ${lang}.
 Practice area hint: ${data.practiceArea ?? "any"}.
-Extra hint from user: ${data.hint ?? "none"}.
-Make the facts detailed (3-5 sentences). Include 2-4 charges/claims and 3-5 pieces of evidence.`,
+Extra hint: ${data.hint ?? "none"}.
+
+Return ONLY a JSON object with this exact shape (no markdown, no commentary):
+{
+  "title": string,
+  "jurisdiction": string,
+  "court": string,
+  "caseNumber": string,
+  "summary": string (1-2 sentences),
+  "facts": string (3-5 sentences of detailed facts),
+  "charges": string[] (2-4 items),
+  "claimantName": string,
+  "defendantName": string,
+  "evidence": string[] (3-5 items)
+}`,
     });
-    return output;
+    const parsed = CaseSchema.parse(extractJson(text));
+    return parsed;
   });
 
 // ---------- Courtroom turn ----------
@@ -63,6 +89,14 @@ const TurnInput = z.object({
   start: z.boolean().optional(),
 });
 
+const TurnOutput = z.object({
+  turns: z.array(z.object({
+    speaker: z.enum(["judge", "opposing", "narrator"]),
+    text: z.string(),
+  })).min(1),
+  verdictReached: z.boolean().optional().default(false),
+});
+
 export const courtroomTurn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => TurnInput.parse(d))
   .handler(async ({ data }) => {
@@ -70,38 +104,35 @@ export const courtroomTurn = createServerFn({ method: "POST" })
     const lang = data.locale === "ar" ? "Arabic" : "English";
     const opposingRole = data.userRole === "claimant" ? "defendant" : "claimant";
 
-    const system = `You are simulating a realistic court hearing in an Arab jurisdiction. Respond entirely in ${lang}.
+    const system = `You simulate a realistic court hearing in an Arab jurisdiction. Reply entirely in ${lang}.
 Roles:
-- "judge": a fair, formal presiding judge who manages procedure, asks questions, makes rulings on objections, and eventually issues a verdict.
-- "opposing": the ${opposingRole}'s counsel — argumentative but professional.
-- The user is the ${data.userRole}'s counsel and speaks for themselves.
-You will return ONE OR MORE turns advancing the hearing. Typical flow: judge opens, calls each side; sides present arguments/respond; judge may interject. Keep each message concise (1-4 sentences). Stay in character. Do NOT speak as the user. When the hearing reaches a natural verdict, the judge issues a final ruling and set verdictReached=true.
+- "judge": fair, formal presiding judge; manages procedure, asks questions, rules on objections, eventually issues a verdict.
+- "opposing": ${opposingRole}'s counsel — argumentative but professional.
+- The user is the ${data.userRole}'s counsel. NEVER speak as the user.
+Keep each message concise (1-4 sentences). Stay in character.
+When the hearing reaches a natural verdict, the judge issues a final ruling and you set verdictReached=true.
+
+Reply with a single JSON object only — no markdown, no commentary — with this shape:
+{
+  "turns": [ { "speaker": "judge" | "opposing" | "narrator", "text": string } ],   // 1-3 items
+  "verdictReached": boolean
+}
 
 CASE BRIEF:
 ${data.caseBrief}
 
 HISTORY SO FAR (chronological):
-${data.history.map((m) => `[${m.speaker}] ${m.text}`).join("\n") || "(none yet)"}
-`;
+${data.history.map((m) => `[${m.speaker}] ${m.text}`).join("\n") || "(none yet)"}`;
 
     const userPrompt = data.start
       ? `Open the hearing. The judge enters, identifies the case, states the charges/claims, and invites the ${data.userRole === "claimant" ? "claimant" : "prosecution/claimant"} to begin. Return 1-2 turns.`
       : `The user (${data.userRole}'s counsel) just said: "${data.userMessage ?? ""}"
-Continue the hearing with 1-3 turns (judge and/or opposing counsel reacting). Do not put words in the user's mouth.`;
+Continue the hearing with 1-3 turns (judge and/or opposing counsel reacting).`;
 
-    const { output } = await generateText({
+    const { text } = await generateText({
       model: gateway(MODEL),
       system,
       prompt: userPrompt,
-      output: Output.object({
-        schema: z.object({
-          turns: z.array(z.object({
-            speaker: z.enum(["judge", "opposing", "narrator"]),
-            text: z.string(),
-          })).min(1).max(4),
-          verdictReached: z.boolean().default(false),
-        }),
-      }),
     });
-    return output;
+    return TurnOutput.parse(extractJson(text));
   });
