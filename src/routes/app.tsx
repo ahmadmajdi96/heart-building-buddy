@@ -49,6 +49,36 @@ const navItems: NavItem[] = [
 function AppLayout() {
   const { t } = useI18n();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const [checking, setChecking] = useState(true);
+  const [userEmail, setUserEmail] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      if (!data.session) {
+        navigate({ to: "/auth" });
+      } else {
+        setUserEmail(data.session.user.email ?? "");
+        setChecking(false);
+      }
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || !session) navigate({ to: "/auth" });
+      else setUserEmail(session.user.email ?? "");
+    });
+    return () => { mounted = false; sub.subscription.unsubscribe(); };
+  }, [navigate]);
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
+  }
+
+  if (checking) {
+    return <div className="min-h-screen grid place-items-center"><Loader2 className="size-6 animate-spin text-gold" /></div>;
+  }
 
   return (
     <div className="min-h-screen bg-secondary/30">
