@@ -1,81 +1,127 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useI18n } from "@/lib/i18n";
 import { PageHeader, StatTile } from "@/components/app/primitives";
-import { billingMonthly, practiceMix } from "@/lib/mock-data";
-import { TrendingUp, Users, Briefcase, Award } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Line, LineChart } from "recharts";
+import { Button } from "@/components/ui/button";
+import { getAnalytics, generateAnalyticsInsights } from "@/lib/analytics.functions";
+import { MarkdownView } from "@/lib/markdown";
+import { TrendingUp, Users, Briefcase, Award, Loader2, Sparkles, FileText, CalendarDays, Gavel } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Pie, PieChart, Cell, Legend, Line, LineChart } from "recharts";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/analytics")({ component: AnalyticsPage });
 
-const lawyerPerf = [
-  { name: "Leila", cases: 9, hours: 168 },
-  { name: "Khaled", cases: 7, hours: 142 },
-  { name: "Hisham", cases: 5, hours: 121 },
-  { name: "Yasser", cases: 8, hours: 154 },
-  { name: "Mona", cases: 4, hours: 98 },
-];
+type Stats = Awaited<ReturnType<typeof getAnalytics>>;
 
 function AnalyticsPage() {
   const { locale } = useI18n();
+  const load = useServerFn(getAnalytics);
+  const insightsFn = useServerFn(generateAnalyticsInsights);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [insights, setInsights] = useState("");
+  const [insightsLoading, setInsightsLoading] = useState(false);
+
+  async function refresh() {
+    setLoading(true);
+    try { setStats(await load()); } catch (e) { toast.error((e as Error).message); } finally { setLoading(false); }
+  }
+  useEffect(() => { refresh(); }, []);
+
+  async function runInsights() {
+    if (!stats) return;
+    setInsightsLoading(true);
+    try { const res = await insightsFn({ data: { locale, summary: stats } }); setInsights(res.insights); }
+    catch (e) { toast.error((e as Error).message); }
+    finally { setInsightsLoading(false); }
+  }
+
+  if (loading || !stats) return <div className="grid place-items-center p-12"><Loader2 className="size-6 animate-spin text-gold" /></div>;
+
+  const statusData = Object.entries(stats.statusCounts).map(([k, v]) => ({ name: k, value: v }));
+  const COLORS = ["#c9a84c", "#0f3460", "#16a34a", "#dc2626", "#9333ea"];
+
   return (
     <div className="space-y-6">
       <PageHeader
-        title={locale === "ar" ? "التحليلات والمؤشرات" : "Analytics & KPIs"}
-        subtitle={locale === "ar" ? "صورة شاملة عن أداء المكتب، الشركاء، ومجالات الممارسة." : "Holistic view of firm, partners and practice-area performance."}
+        title={locale === "ar" ? "التحليلات والمؤشرات" : "Analytics & Insights"}
+        subtitle={locale === "ar" ? "صورة شاملة بناءً على بياناتك الفعلية." : "Real-time view of your firm's performance."}
+        actions={<Button variant="gold" size="sm" className="gap-1.5" onClick={runInsights} disabled={insightsLoading}>
+          {insightsLoading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+          {locale === "ar" ? "رؤى الذكاء الاصطناعي" : "AI insights"}
+        </Button>}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label={locale === "ar" ? "نسبة الفوز" : "Win rate"} value="87%" delta="+4 pts" icon={<TrendingUp className="size-4" />} tone="success" />
-        <StatTile label={locale === "ar" ? "متوسط مدة القضية" : "Avg matter duration"} value="4.2m" icon={<Briefcase className="size-4" />} tone="gold" />
-        <StatTile label={locale === "ar" ? "موكلون نشطون" : "Active clients"} value="312" icon={<Users className="size-4" />} />
-        <StatTile label={locale === "ar" ? "رضا الموكلين (NPS)" : "Client NPS"} value="64" icon={<Award className="size-4" />} tone="success" />
+        <StatTile label={locale === "ar" ? "القضايا" : "Cases"} value={String(stats.totals.cases)} icon={<Briefcase className="size-4" />} tone="gold" />
+        <StatTile label={locale === "ar" ? "الموكلون" : "Clients"} value={String(stats.totals.clients)} icon={<Users className="size-4" />} />
+        <StatTile label={locale === "ar" ? "نسبة الفوز" : "Win rate"} value={stats.winRate != null ? `${stats.winRate}%` : "—"} icon={<TrendingUp className="size-4" />} tone="success" />
+        <StatTile label={locale === "ar" ? "مواعيد قادمة (٧ أيام)" : "Upcoming (7d)"} value={String(stats.totals.upcoming)} icon={<CalendarDays className="size-4" />} />
+        <StatTile label={locale === "ar" ? "المستندات" : "Documents"} value={String(stats.totals.documents)} icon={<FileText className="size-4" />} />
+        <StatTile label={locale === "ar" ? "المسودات" : "Drafts"} value={String(stats.totals.drafts)} icon={<FileText className="size-4" />} />
+        <StatTile label={locale === "ar" ? "محاكاة المحاكم" : "Courtroom sims"} value={String(stats.totals.simulations)} icon={<Gavel className="size-4" />} />
+        <StatTile label={locale === "ar" ? "متوسط درجة المحاكاة" : "Avg sim score"} value={stats.avgSimScore != null ? String(stats.avgSimScore) : "—"} icon={<Award className="size-4" />} tone="success" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="card-elev rounded-xl border bg-card p-6">
-          <div className="mb-4 text-sm font-semibold">{locale === "ar" ? "أداء المحامين" : "Lawyer performance"}</div>
+          <div className="mb-4 text-sm font-semibold">{locale === "ar" ? "النشاط الشهري" : "Monthly activity"}</div>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={lawyerPerf}>
+              <BarChart data={stats.months}>
                 <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.91 0.012 250)" />
-                <XAxis dataKey="name" stroke="oklch(0.48 0.025 252)" fontSize={12} />
-                <YAxis stroke="oklch(0.48 0.025 252)" fontSize={12} />
-                <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid oklch(0.91 0.012 250)" }} />
-                <Bar dataKey="hours" fill="oklch(0.55 0.15 255)" radius={[4,4,0,0]} />
-                <Bar dataKey="cases" fill="oklch(0.76 0.13 78)" radius={[4,4,0,0]} />
+                <XAxis dataKey="m" fontSize={12} />
+                <YAxis fontSize={12} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="cases" fill="#c9a84c" name={locale === "ar" ? "قضايا" : "Cases"} radius={[4,4,0,0]} />
+                <Bar dataKey="clients" fill="#0f3460" name={locale === "ar" ? "موكلون" : "Clients"} radius={[4,4,0,0]} />
+                <Bar dataKey="docs" fill="#7a5c2a" name={locale === "ar" ? "مستندات" : "Docs"} radius={[4,4,0,0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         <div className="card-elev rounded-xl border bg-card p-6">
-          <div className="mb-4 text-sm font-semibold">{locale === "ar" ? "نقاط القوة في الممارسة" : "Practice-area strength"}</div>
+          <div className="mb-4 text-sm font-semibold">{locale === "ar" ? "توزيع حالات القضايا" : "Case status distribution"}</div>
           <div className="h-72">
+            {statusData.length === 0 ? <div className="grid h-full place-items-center text-sm text-muted-foreground">{locale === "ar" ? "لا توجد قضايا بعد" : "No cases yet"}</div> :
             <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={practiceMix}>
-                <PolarGrid stroke="oklch(0.91 0.012 250)" />
-                <PolarAngleAxis dataKey="name" fontSize={11} />
-                <PolarRadiusAxis fontSize={10} />
-                <Radar dataKey="value" stroke="oklch(0.76 0.13 78)" fill="oklch(0.76 0.13 78)" fillOpacity={0.4} />
-              </RadarChart>
-            </ResponsiveContainer>
+              <PieChart>
+                <Pie data={statusData} dataKey="value" nameKey="name" outerRadius={90} label>
+                  {statusData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>}
           </div>
         </div>
 
         <div className="card-elev rounded-xl border bg-card p-6 lg:col-span-2">
-          <div className="mb-4 text-sm font-semibold">{locale === "ar" ? "اتجاه الإيرادات" : "Revenue trend"}</div>
+          <div className="mb-4 text-sm font-semibold">{locale === "ar" ? "اتجاه المستندات" : "Documents trend"}</div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={billingMonthly}>
+              <LineChart data={stats.months}>
                 <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.91 0.012 250)" />
-                <XAxis dataKey="m" stroke="oklch(0.48 0.025 252)" fontSize={12} />
-                <YAxis stroke="oklch(0.48 0.025 252)" fontSize={12} />
-                <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid oklch(0.91 0.012 250)" }} />
-                <Line type="monotone" dataKey="revenue" stroke="oklch(0.76 0.13 78)" strokeWidth={3} dot={{ r: 4 }} />
+                <XAxis dataKey="m" fontSize={12} />
+                <YAxis fontSize={12} />
+                <Tooltip />
+                <Line type="monotone" dataKey="docs" stroke="#c9a84c" strokeWidth={3} dot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
+      </div>
+
+      <div className="card-elev rounded-xl border bg-card p-6">
+        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gold">
+          <Sparkles className="size-4" /> {locale === "ar" ? "رؤى الذكاء الاصطناعي" : "AI insights"}
+        </div>
+        {insightsLoading ? <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Analyzing your data…</div>
+        : insights ? <MarkdownView text={insights} />
+        : <p className="text-sm text-muted-foreground">{locale === "ar" ? "اضغط زر «رؤى الذكاء الاصطناعي» لتوليد توصيات بناءً على بياناتك." : "Click \"AI insights\" to generate recommendations from your real data."}</p>}
       </div>
     </div>
   );

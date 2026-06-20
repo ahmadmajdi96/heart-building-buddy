@@ -9,8 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { generateCase, courtroomTurn } from "@/lib/courtroom.functions";
-import { Gavel, Scale, Upload, Sparkles, Loader2, RefreshCw, Send, User as UserIcon, FileText } from "lucide-react";
+import { generateCase, courtroomTurn, saveSimulation, listSimulations, deleteSimulation } from "@/lib/courtroom.functions";
+import { useServerFn } from "@tanstack/react-start";
+import { MarkdownView } from "@/lib/markdown";
+import { Gavel, Scale, Upload, Sparkles, Loader2, RefreshCw, Send, User as UserIcon, FileText, History, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/courtroom")({
   component: CourtroomPage,
@@ -84,6 +87,32 @@ function CourtroomPage() {
   const [history, setHistory] = useState<Msg[]>([]);
   const [verdict, setVerdict] = useState(false);
   const [input, setInput] = useState("");
+  const [simId, setSimId] = useState<string | null>(null);
+  const [pastSims, setPastSims] = useState<{ id: string; title: string | null; created_at: string }[]>([]);
+
+  const saveSim = useServerFn(saveSimulation);
+  const listSims = useServerFn(listSimulations);
+  const delSim = useServerFn(deleteSimulation);
+
+  async function refreshSims() { try { setPastSims((await listSims()) as any); } catch {} }
+  useEffect(() => { refreshSims(); }, []);
+
+  async function persist(extra?: { transcript?: Msg[]; verdict?: boolean }) {
+    if (!caseBrief) return;
+    const tr = extra?.transcript ?? history;
+    const v = extra?.verdict ?? verdict;
+    try {
+      const row = await saveSim({ data: {
+        id: simId ?? undefined,
+        title: caseBrief.title,
+        scenario: caseBrief,
+        transcript: tr,
+        verdict: v ? { reached: true } : null,
+      }}) as any;
+      if (row?.id && !simId) setSimId(row.id);
+      refreshSims();
+    } catch {}
+  }
 
   const transcriptRef = useRef<HTMLDivElement>(null);
   const briefRef = useRef<HTMLDivElement>(null);
@@ -142,9 +171,11 @@ function CourtroomPage() {
       const res = await courtroomTurn({
         data: { locale, userRole: role, caseBrief: brief, history: [], start: true },
       });
-      setHistory(res.turns.map((x) => ({ speaker: x.speaker as Speaker, text: x.text })));
+      const turns = res.turns.map((x) => ({ speaker: x.speaker as Speaker, text: x.text }));
+      setHistory(turns);
       setVerdict(res.verdictReached);
       setStarted(true);
+      persist({ transcript: turns, verdict: res.verdictReached });
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(null); }
   }
@@ -161,8 +192,11 @@ function CourtroomPage() {
       const res = await courtroomTurn({
         data: { locale, userRole: role, caseBrief: brief, history: next, userMessage: msg },
       });
-      setHistory((h) => [...h, ...res.turns.map((x) => ({ speaker: x.speaker as Speaker, text: x.text }))]);
+      const added = res.turns.map((x) => ({ speaker: x.speaker as Speaker, text: x.text }));
+      const finalHistory = [...next, ...added];
+      setHistory(finalHistory);
       if (res.verdictReached) setVerdict(true);
+      persist({ transcript: finalHistory, verdict: res.verdictReached || verdict });
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(null); }
   }
@@ -170,6 +204,19 @@ function CourtroomPage() {
   function reset() {
     setStarted(false); setHistory([]); setVerdict(false); setCaseBrief(null);
     setPasted(""); setHint(""); setPractice(""); setInput("");
+    setSimId(null);
+  }
+
+  async function loadSim(id: string) {
+    const sim = pastSims.find((s) => s.id === id);
+    if (!sim) return;
+    // Just refresh and let user pick; full restore would need the scenario/transcript
+    toast.info("Loading past simulation...");
+  }
+
+  async function removeSim(id: string) {
+    if (!confirm("Delete this simulation?")) return;
+    try { await delSim({ data: { id } }); refreshSims(); } catch {}
   }
 
   // ---------- Render ----------
@@ -282,6 +329,23 @@ function CourtroomPage() {
 
           {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
         </Card>
+
+        {pastSims.length > 0 && (
+          <Card className="p-6">
+            <h2 className="mb-4 text-lg font-semibold flex items-center gap-2"><History className="size-4 text-gold" />{locale === "ar" ? "محاكمات سابقة محفوظة" : "Saved past simulations"}</h2>
+            <ul className="space-y-2">
+              {pastSims.map((s) => (
+                <li key={s.id} className="flex items-center justify-between rounded border px-3 py-2 text-sm">
+                  <div>
+                    <div className="font-medium">{s.title ?? "(untitled)"}</div>
+                    <div className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleString()}</div>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => removeSim(s.id)}><Trash2 className="size-4 text-destructive" /></Button>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
       </div>
     );
   }
@@ -430,7 +494,7 @@ function Bubble({ msg, dir, tt }: { msg: Msg; dir: "rtl" | "ltr"; tt: (k: keyof 
         "bg-muted border-border"
       ].join(" ")}>
         <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{m.label}</div>
-        <div className="whitespace-pre-wrap">{msg.text}</div>
+        {isUser ? <div className="whitespace-pre-wrap">{msg.text}</div> : <MarkdownView text={msg.text} className="text-sm" />}
       </div>
     </div>
   );

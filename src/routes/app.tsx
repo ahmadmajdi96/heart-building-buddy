@@ -1,10 +1,12 @@
-import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState, type ComponentType } from "react";
 import { useI18n, type TKey } from "@/lib/i18n";
 import { BrandMark } from "@/components/brand-mark";
 import { LangToggle } from "@/components/lang-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard,
   Briefcase,
@@ -18,11 +20,11 @@ import {
   Building2,
   Settings,
   Bell,
-  Plus,
   ArrowLeft,
   Gavel,
+  LogOut,
+  Loader2,
 } from "lucide-react";
-import type { ComponentType } from "react";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -47,6 +49,36 @@ const navItems: NavItem[] = [
 function AppLayout() {
   const { t } = useI18n();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const [checking, setChecking] = useState(true);
+  const [userEmail, setUserEmail] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      if (!data.session) {
+        navigate({ to: "/auth" });
+      } else {
+        setUserEmail(data.session.user.email ?? "");
+        setChecking(false);
+      }
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || !session) navigate({ to: "/auth" });
+      else setUserEmail(session.user.email ?? "");
+    });
+    return () => { mounted = false; sub.subscription.unsubscribe(); };
+  }, [navigate]);
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
+  }
+
+  if (checking) {
+    return <div className="min-h-screen grid place-items-center"><Loader2 className="size-6 animate-spin text-gold" /></div>;
+  }
 
   return (
     <div className="min-h-screen bg-secondary/30">
@@ -120,11 +152,11 @@ function AppLayout() {
                 <Bell className="size-4" />
                 <span className="absolute end-2 top-2 size-1.5 rounded-full bg-destructive" />
               </Button>
-              <Button size="sm" variant="gold" className="gap-1.5">
-                <Plus className="size-4" /> {t("app_new")}
+              <Button size="sm" variant="ghost" className="gap-1.5" onClick={signOut}>
+                <LogOut className="size-4" /> Sign out
               </Button>
               <Avatar className="size-9 ring-2 ring-border">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">LM</AvatarFallback>
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">{(userEmail[0] ?? "L").toUpperCase()}</AvatarFallback>
               </Avatar>
             </div>
           </header>

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { researchSources } from "@/lib/mock-data";
 import { legalResearch } from "@/lib/ai-tasks.functions";
+import { MarkdownView } from "@/lib/markdown";
 import { Sparkles, Search, BookOpen, ScrollText, Globe2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,23 +22,17 @@ function ResearchPage() {
 
   async function run(query: string) {
     if (!query.trim()) return;
-    setLoading(true);
-    setAnswer("");
-    try {
-      const res = await research({ data: { query, locale } });
-      setAnswer(res.answer);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Failed to fetch answer");
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true); setAnswer("");
+    try { const res = await research({ data: { query, locale } }); setAnswer(res.answer); }
+    catch (e) { toast.error((e as Error).message); }
+    finally { setLoading(false); }
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
         title={locale === "ar" ? "البحث القانوني" : "Legal Research"}
-        subtitle={locale === "ar" ? "ابحث في التشريعات والاجتهاد القضائي العربي والدولي." : "Search Arab and international legislation and case law."}
+        subtitle={locale === "ar" ? "ابحث في التشريعات والاجتهاد القضائي." : "Search Arab and international legislation and case law."}
       />
 
       <div className="card-elev rounded-2xl border bg-gradient-to-br from-card via-card to-gold/5 p-6">
@@ -47,13 +42,7 @@ function ResearchPage() {
         <div className="flex flex-wrap gap-2">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute start-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && run(q)}
-              placeholder={locale === "ar" ? "اطرح سؤالاً قانونياً، أو ابحث عن مادة أو حكم…" : "Ask a legal question, or search for a statute or ruling…"}
-              className="h-14 ps-12 text-base"
-            />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && run(q)} placeholder={locale === "ar" ? "اطرح سؤالاً قانونياً…" : "Ask a legal question…"} className="h-14 ps-12 text-base" />
           </div>
           <Button size="lg" variant="gold" className="h-14 px-6" onClick={() => run(q)} disabled={loading}>
             {loading ? <Loader2 className="size-4 animate-spin" /> : (locale === "ar" ? "ابحث" : "Search")}
@@ -61,12 +50,10 @@ function ResearchPage() {
         </div>
         <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
           {(locale === "ar"
-            ? ["تعويض الفسخ التعسفي", "شروط التحكيم الإلزامي", "حماية البيانات الشخصية", "علامة تجارية مشهورة"]
-            : ["Wrongful termination damages", "Mandatory arbitration clauses", "Personal data protection", "Well-known trademark"]
+            ? ["تعويض الفسخ التعسفي", "شروط التحكيم الإلزامي", "حماية البيانات الشخصية"]
+            : ["Wrongful termination damages", "Mandatory arbitration clauses", "Personal data protection"]
           ).map((s) => (
-            <button key={s} onClick={() => { setQ(s); run(s); }} className="rounded-full border bg-background px-3 py-1.5 transition hover:border-gold hover:text-foreground">
-              {s}
-            </button>
+            <button key={s} onClick={() => { setQ(s); run(s); }} className="rounded-full border bg-background px-3 py-1.5 hover:border-gold">{s}</button>
           ))}
         </div>
       </div>
@@ -76,13 +63,8 @@ function ResearchPage() {
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gold">
             <Sparkles className="size-4" /> {locale === "ar" ? "إجابة الذكاء الاصطناعي" : "AI answer"}
           </div>
-          {loading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" /> {locale === "ar" ? "جاري البحث…" : "Researching…"}
-            </div>
-          ) : (
-            <p className="whitespace-pre-wrap leading-relaxed text-foreground/90">{answer}</p>
-          )}
+          {loading ? <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> {locale === "ar" ? "جاري البحث…" : "Researching…"}</div>
+          : <MarkdownView text={answer} />}
         </div>
       )}
 
@@ -90,9 +72,9 @@ function ResearchPage() {
         <div className="mb-3 flex items-center justify-between">
           <div className="text-sm font-semibold">{locale === "ar" ? "المصادر ذات الصلة" : "Relevant sources"}</div>
           <div className="flex gap-1.5 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1"><BookOpen className="size-3.5" /> {locale === "ar" ? "تشريع" : "Statute"}</span>
-            <span className="inline-flex items-center gap-1"><ScrollText className="size-3.5" /> {locale === "ar" ? "اجتهاد" : "Case law"}</span>
-            <span className="inline-flex items-center gap-1"><Globe2 className="size-3.5" /> {locale === "ar" ? "معاهدة" : "Treaty"}</span>
+            <span className="inline-flex items-center gap-1"><BookOpen className="size-3.5" /> Statute</span>
+            <span className="inline-flex items-center gap-1"><ScrollText className="size-3.5" /> Case law</span>
+            <span className="inline-flex items-center gap-1"><Globe2 className="size-3.5" /> Treaty</span>
           </div>
         </div>
         <div className="grid gap-3 md:grid-cols-2">

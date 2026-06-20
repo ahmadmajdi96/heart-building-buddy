@@ -1,71 +1,147 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useI18n } from "@/lib/i18n";
-import { PageHeader, StatusBadge } from "@/components/app/primitives";
+import { PageHeader } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
-import { documents } from "@/lib/mock-data";
-import { FileText, FilePen, Gavel, FolderArchive, UploadCloud, Sparkles } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { listDocuments, createDocument, getSignedDownloadUrl, deleteDocument } from "@/lib/documents.functions";
+import { listCases } from "@/lib/cases.functions";
+import { listClients } from "@/lib/clients.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { FileText, Upload, Download, Trash2, Loader2, Search } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/documents")({ component: DocsPage });
 
-const typeIcon = {
-  contract: FilePen,
-  brief: FileText,
-  evidence: FolderArchive,
-  judgment: Gavel,
-  template: Sparkles,
-} as const;
+type Doc = { id: string; name: string; mime_type: string | null; size: number | null; case_id: string | null; client_id: string | null; created_at: string; cases?: { id: string; title: string } | null; clients?: { id: string; name: string } | null };
 
 function DocsPage() {
   const { locale } = useI18n();
+  const list = useServerFn(listDocuments);
+  const create = useServerFn(createDocument);
+  const signed = useServerFn(getSignedDownloadUrl);
+  const del = useServerFn(deleteDocument);
+  const listC = useServerFn(listCases);
+  const listCl = useServerFn(listClients);
+
+  const [docs, setDocs] = useState<Doc[]>([]);
+  const [cases, setCases] = useState<{ id: string; title: string }[]>([]);
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [q, setQ] = useState("");
+  const [caseId, setCaseId] = useState<string>("none");
+  const [clientId, setClientId] = useState<string>("none");
+
+  async function refresh() {
+    setLoading(true);
+    try {
+      const [d, c, cl] = await Promise.all([list(), listC(), listCl()]);
+      setDocs(d as Doc[]);
+      setCases((c as any[]).map((x) => ({ id: x.id, title: x.title })));
+      setClients((cl as any[]).map((x) => ({ id: x.id, name: x.name })));
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { refresh(); }, []);
+
+  async function upload(file: File) {
+    setUploading(true);
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not signed in");
+      const path = `${u.user.id}/general/${Date.now()}-${file.name}`;
+      const { error } = await supabase.storage.from("documents").upload(path, file);
+      if (error) throw error;
+      let extracted: string | undefined;
+      if (file.type.startsWith("text/") || /\.(txt|md)$/i.test(file.name)) {
+        extracted = (await file.text()).slice(0, 60000);
+      }
+      await create({ data: {
+        name: file.name, mime_type: file.type, size: file.size, storage_path: path, extracted_text: extracted,
+        case_id: caseId === "none" ? null : caseId, client_id: clientId === "none" ? null : clientId,
+      }});
+      toast.success(locale === "ar" ? "تم الرفع" : "Uploaded");
+      refresh();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setUploading(false); }
+  }
+
+  async function download(id: string) {
+    try { const { url, name } = await signed({ data: { id } }); const a = document.createElement("a"); a.href = url; a.download = name; a.click(); }
+    catch (e) { toast.error((e as Error).message); }
+  }
+  async function remove(id: string) {
+    if (!confirm(locale === "ar" ? "حذف المستند؟" : "Delete document?")) return;
+    try { await del({ data: { id } }); refresh(); } catch (e) { toast.error((e as Error).message); }
+  }
+
+  const filtered = docs.filter((d) => !q || d.name.toLowerCase().includes(q.toLowerCase()));
+
   return (
     <div className="space-y-6">
       <PageHeader
-        title={locale === "ar" ? "إدارة المستندات" : "Document Management"}
-        subtitle={locale === "ar" ? "تخزين آمن، إصدارات، توقيع إلكتروني، واسترجاع ذكي." : "Secure storage, versioning, e-signature and intelligent retrieval."}
-        actions={<Button size="sm" variant="gold" className="gap-1.5"><UploadCloud className="size-4" />{locale === "ar" ? "رفع مستند" : "Upload"}</Button>}
+        title={locale === "ar" ? "المستندات" : "Documents"}
+        subtitle={locale === "ar" ? "تخزين آمن وتحميل وحذف المستندات." : "Secure storage, downloads and deletions."}
       />
 
-      <div className="grid gap-4 md:grid-cols-4">
-        {[
-          { label: locale === "ar" ? "إجمالي المستندات" : "Total documents", value: "4,128" },
-          { label: locale === "ar" ? "في المراجعة" : "In review", value: "47" },
-          { label: locale === "ar" ? "تواقيع معلّقة" : "Awaiting signature", value: "12" },
-          { label: locale === "ar" ? "تخزين مستخدم" : "Storage used", value: "186 GB" },
-        ].map((s) => (
-          <div key={s.label} className="rounded-xl border bg-card p-5 card-elev">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">{s.label}</div>
-            <div className="mt-2 font-serif text-2xl">{s.value}</div>
-          </div>
-        ))}
+      <div className="card-elev rounded-xl border bg-card p-5 space-y-3">
+        <div className="text-sm font-semibold">{locale === "ar" ? "رفع مستند جديد" : "Upload a new document"}</div>
+        <div className="grid gap-3 md:grid-cols-3">
+          <Select value={caseId} onValueChange={setCaseId}>
+            <SelectTrigger><SelectValue placeholder={locale === "ar" ? "ربط بقضية" : "Link to case"} /></SelectTrigger>
+            <SelectContent><SelectItem value="none">{locale === "ar" ? "بدون قضية" : "No case"}</SelectItem>{cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={clientId} onValueChange={setClientId}>
+            <SelectTrigger><SelectValue placeholder={locale === "ar" ? "ربط بموكل" : "Link to client"} /></SelectTrigger>
+            <SelectContent><SelectItem value="none">{locale === "ar" ? "بدون موكل" : "No client"}</SelectItem>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+          </Select>
+          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-2.5 text-sm text-muted-foreground hover:bg-secondary/40">
+            {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+            <span>{locale === "ar" ? "اختر ملفاً" : "Choose file"}</span>
+            <input type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
+          </label>
+        </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {documents.map((d) => {
-          const Icon = typeIcon[d.type];
-          return (
-            <div key={d.id} className="group card-elev flex gap-4 rounded-xl border bg-card p-5">
-              <div className="grid size-12 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                <Icon className="size-5" />
-              </div>
+      <div className="card-elev rounded-xl border bg-card">
+        <div className="border-b p-4">
+          <div className="relative max-w-sm">
+            <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={locale === "ar" ? "ابحث…" : "Search documents…"} className="h-9 ps-9" />
+          </div>
+        </div>
+
+        {loading ? <div className="grid place-items-center p-12"><Loader2 className="size-5 animate-spin text-gold" /></div>
+        : filtered.length === 0 ? <div className="p-12 text-center text-muted-foreground text-sm">{locale === "ar" ? "لا توجد مستندات بعد." : "No documents uploaded yet."}</div>
+        : <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 p-4">
+          {filtered.map((d) => (
+            <div key={d.id} className="card-elev rounded-xl border bg-card p-4 flex gap-3">
+              <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-gold/15 text-gold"><FileText className="size-5" /></div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="truncate font-medium">{d.name}</div>
-                    <div className="mt-0.5 text-xs text-muted-foreground">
-                      {d.caseRef && <><span className="font-mono">{d.caseRef}</span> · </>}{d.author}
-                    </div>
-                  </div>
-                  <StatusBadge status={d.status} />
+                <div className="truncate text-sm font-medium">{d.name}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {d.cases?.title ? `${d.cases.title} · ` : ""}{d.clients?.name ? `${d.clients.name} · ` : ""}{formatBytes(d.size)}
                 </div>
-                <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{d.updated}</span>
-                  <span className="tabular-nums">{d.size}</span>
-                </div>
+                <div className="text-[11px] text-muted-foreground">{new Date(d.created_at).toLocaleDateString()}</div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Button variant="ghost" size="icon" onClick={() => download(d.id)}><Download className="size-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => remove(d.id)}><Trash2 className="size-4 text-destructive" /></Button>
               </div>
             </div>
-          );
-        })}
+          ))}
+        </div>}
       </div>
     </div>
   );
+}
+
+function formatBytes(n: number | null) {
+  if (!n) return "—";
+  const u = ["B","KB","MB","GB"]; let i = 0; let v = n;
+  while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+  return `${v.toFixed(1)} ${u[i]}`;
 }
