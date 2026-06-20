@@ -430,7 +430,7 @@ function Bubble({ msg, dir, tt }: { msg: Msg; dir: "rtl" | "ltr"; tt: (k: keyof 
         "bg-muted border-border"
       ].join(" ")}>
         <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{m.label}</div>
-        <div className="whitespace-pre-wrap">{msg.text}</div>
+        {isUser ? <div className="whitespace-pre-wrap">{msg.text}</div> : <MarkdownView text={msg.text} className="text-sm" />}
       </div>
     </div>
   );
