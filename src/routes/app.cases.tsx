@@ -337,5 +337,3 @@ function CaseDetailSheet({ id, clients, onClose }: { id: string | null; clients:
   );
 }
 
-// Re-export to satisfy `listDocuments` import that vite tree-shakes
-export const _unused = listDocuments;
