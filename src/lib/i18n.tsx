@@ -52,6 +52,7 @@ const dict = {
   m_education: { ar: "الأكاديمية القانونية", en: "Legal Academy" },
   m_analytics: { ar: "التحليلات", en: "Analytics" },
   m_clients: { ar: "العملاء", en: "Clients" },
+  m_courtroom: { ar: "محاكاة المحكمة", en: "Courtroom Sim" },
   m_settings: { ar: "الإعدادات", en: "Settings" },
 
   m_dashboard_desc: { ar: "نظرة شاملة على أداء المكتب والإنذارات والمهام.", en: "Firm-wide overview of performance, alerts and tasks." },
