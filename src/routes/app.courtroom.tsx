@@ -191,8 +191,11 @@ function CourtroomPage() {
       const res = await courtroomTurn({
         data: { locale, userRole: role, caseBrief: brief, history: next, userMessage: msg },
       });
-      setHistory((h) => [...h, ...res.turns.map((x) => ({ speaker: x.speaker as Speaker, text: x.text }))]);
+      const added = res.turns.map((x) => ({ speaker: x.speaker as Speaker, text: x.text }));
+      const finalHistory = [...next, ...added];
+      setHistory(finalHistory);
       if (res.verdictReached) setVerdict(true);
+      persist({ transcript: finalHistory, verdict: res.verdictReached || verdict });
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(null); }
   }
@@ -200,6 +203,19 @@ function CourtroomPage() {
   function reset() {
     setStarted(false); setHistory([]); setVerdict(false); setCaseBrief(null);
     setPasted(""); setHint(""); setPractice(""); setInput("");
+    setSimId(null);
+  }
+
+  async function loadSim(id: string) {
+    const sim = pastSims.find((s) => s.id === id);
+    if (!sim) return;
+    // Just refresh and let user pick; full restore would need the scenario/transcript
+    toast.info("Loading past simulation...");
+  }
+
+  async function removeSim(id: string) {
+    if (!confirm("Delete this simulation?")) return;
+    try { await delSim({ data: { id } }); refreshSims(); } catch {}
   }
 
   // ---------- Render ----------
