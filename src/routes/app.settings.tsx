@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { LogoPicker } from "@/components/logo-picker";
 
 export const Route = createFileRoute("/app/settings")({ component: SettingsPage });
 
@@ -73,28 +74,35 @@ function OrgTab({ editable }: { editable: boolean }) {
   }
 
   return (
-    <Card className="p-6 space-y-4">
-      <div className="flex items-center gap-4">
-        {form.logo_path ? <img src={form.logo_path} alt="" className="h-16 w-auto object-contain"/> : <div className="grid size-16 place-items-center rounded-lg bg-gold/15 font-serif text-2xl text-gold">{(form.legal_name ?? "").charAt(0) || "L"}</div>}
-        <div className="flex-1"><Label>{locale === "ar" ? "رابط الشعار" : "Logo URL"}</Label><Input className="mt-1.5" value={form.logo_path ?? ""} onChange={(e) => setForm({ ...form, logo_path: e.target.value })} disabled={!editable}/></div>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <div><Label>{locale === "ar" ? "الاسم القانوني" : "Legal name"}</Label><Input className="mt-1.5" value={form.legal_name ?? ""} onChange={(e) => setForm({ ...form, legal_name: e.target.value })} disabled={!editable}/></div>
-        <div><Label>{locale === "ar" ? "الاسم التجاري" : "Display name"}</Label><Input className="mt-1.5" value={form.display_name ?? ""} onChange={(e) => setForm({ ...form, display_name: e.target.value })} disabled={!editable}/></div>
-        <div><Label>{locale === "ar" ? "البريد الإلكتروني" : "Email"}</Label><Input className="mt-1.5" value={form.email ?? ""} onChange={(e) => setForm({ ...form, email: e.target.value })} disabled={!editable}/></div>
-        <div><Label>{locale === "ar" ? "الهاتف" : "Phone"}</Label><Input className="mt-1.5" value={form.phone ?? ""} onChange={(e) => setForm({ ...form, phone: e.target.value })} disabled={!editable}/></div>
-      </div>
-      <div><Label>{locale === "ar" ? "العنوان" : "Address"}</Label><Textarea rows={2} className="mt-1.5" value={form.address ?? ""} onChange={(e) => setForm({ ...form, address: e.target.value })} disabled={!editable}/></div>
-      <div className="grid gap-4 md:grid-cols-3">
-        <div><Label>{locale === "ar" ? "الرقم الضريبي" : "Tax ID"}</Label><Input className="mt-1.5" value={form.tax_id ?? ""} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} disabled={!editable}/></div>
-        <div><Label>{locale === "ar" ? "العملة" : "Currency"}</Label><Input className="mt-1.5" value={form.currency ?? ""} onChange={(e) => setForm({ ...form, currency: e.target.value })} disabled={!editable}/></div>
-        <div><Label>{locale === "ar" ? "ضريبة افتراضية %" : "Default tax %"}</Label><Input type="number" step="0.01" className="mt-1.5" value={form.default_tax_rate ?? 0} onChange={(e) => setForm({ ...form, default_tax_rate: e.target.value })} disabled={!editable}/></div>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <div><Label>{locale === "ar" ? "بادئة الفاتورة" : "Invoice prefix"}</Label><Input className="mt-1.5" value={form.invoice_prefix ?? "INV"} onChange={(e) => setForm({ ...form, invoice_prefix: e.target.value })} disabled={!editable}/></div>
-        <div><Label>{locale === "ar" ? "بادئة عرض السعر" : "Quote prefix"}</Label><Input className="mt-1.5" value={form.quote_prefix ?? "QUO"} onChange={(e) => setForm({ ...form, quote_prefix: e.target.value })} disabled={!editable}/></div>
-      </div>
-      {editable && <div className="pt-2"><Button variant="gold" onClick={save} disabled={saving}>{saving && <Loader2 className="size-4 animate-spin"/>}{locale === "ar" ? "حفظ التغييرات" : "Save changes"}</Button></div>}
+    <Card className="p-6">
+      <form onSubmit={(e) => { e.preventDefault(); if (editable) save(); }} className="space-y-4">
+        <div>
+          <Label className="mb-2 block">{locale === "ar" ? "الشعار" : "Logo"}</Label>
+          <LogoPicker
+            value={form.logo_path}
+            onChange={(v) => setForm({ ...form, logo_path: v })}
+            ownerKey={org!.id}
+            disabled={!editable}
+          />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div><Label>{locale === "ar" ? "الاسم القانوني" : "Legal name"}</Label><Input className="mt-1.5" value={form.legal_name ?? ""} onChange={(e) => setForm({ ...form, legal_name: e.target.value })} disabled={!editable}/></div>
+          <div><Label>{locale === "ar" ? "الاسم التجاري" : "Display name"}</Label><Input className="mt-1.5" value={form.display_name ?? ""} onChange={(e) => setForm({ ...form, display_name: e.target.value })} disabled={!editable}/></div>
+          <div><Label>{locale === "ar" ? "البريد الإلكتروني" : "Email"}</Label><Input className="mt-1.5" value={form.email ?? ""} onChange={(e) => setForm({ ...form, email: e.target.value })} disabled={!editable}/></div>
+          <div><Label>{locale === "ar" ? "الهاتف" : "Phone"}</Label><Input className="mt-1.5" value={form.phone ?? ""} onChange={(e) => setForm({ ...form, phone: e.target.value })} disabled={!editable}/></div>
+        </div>
+        <div><Label>{locale === "ar" ? "العنوان" : "Address"}</Label><Textarea rows={2} className="mt-1.5" value={form.address ?? ""} onChange={(e) => setForm({ ...form, address: e.target.value })} disabled={!editable}/></div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div><Label>{locale === "ar" ? "الرقم الضريبي" : "Tax ID"}</Label><Input className="mt-1.5" value={form.tax_id ?? ""} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} disabled={!editable}/></div>
+          <div><Label>{locale === "ar" ? "العملة" : "Currency"}</Label><Input className="mt-1.5" value={form.currency ?? ""} onChange={(e) => setForm({ ...form, currency: e.target.value })} disabled={!editable}/></div>
+          <div><Label>{locale === "ar" ? "ضريبة افتراضية %" : "Default tax %"}</Label><Input type="number" step="0.01" className="mt-1.5" value={form.default_tax_rate ?? 0} onChange={(e) => setForm({ ...form, default_tax_rate: e.target.value })} disabled={!editable}/></div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div><Label>{locale === "ar" ? "بادئة الفاتورة" : "Invoice prefix"}</Label><Input className="mt-1.5" value={form.invoice_prefix ?? "INV"} onChange={(e) => setForm({ ...form, invoice_prefix: e.target.value })} disabled={!editable}/></div>
+          <div><Label>{locale === "ar" ? "بادئة عرض السعر" : "Quote prefix"}</Label><Input className="mt-1.5" value={form.quote_prefix ?? "QUO"} onChange={(e) => setForm({ ...form, quote_prefix: e.target.value })} disabled={!editable}/></div>
+        </div>
+        {editable && <div className="pt-2"><Button type="submit" variant="gold" disabled={saving}>{saving && <Loader2 className="size-4 animate-spin"/>}{locale === "ar" ? "حفظ التغييرات" : "Save changes"}</Button></div>}
+      </form>
     </Card>
   );
 }

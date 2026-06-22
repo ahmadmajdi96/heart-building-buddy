@@ -1,17 +1,19 @@
 import { useOrg } from "@/lib/org-context";
 import { useI18n } from "@/lib/i18n";
+import { useLogoUrl } from "@/lib/logo";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
 
 export function DocumentHeader() {
   const { org } = useOrg();
+  const logo = useLogoUrl(org?.logo_path);
   if (!org) return null;
   return (
     <div className="flex items-start justify-between gap-6 border-b pb-6">
       <div className="flex items-center gap-4">
-        {org.logo_path ? (
-          <img src={org.logo_path} alt={org.legal_name} className="h-16 w-auto object-contain"/>
+        {logo ? (
+          <img src={logo} alt={org.legal_name} className="h-16 w-auto object-contain"/>
         ) : (
           <div className="grid size-16 place-items-center rounded-lg bg-gold/15 font-serif text-2xl text-gold">{org.legal_name.charAt(0)}</div>
         )}
