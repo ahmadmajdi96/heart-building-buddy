@@ -11,7 +11,7 @@ import { OrgProvider, useOrg, type Permission } from "@/lib/org-context";
 import {
   LayoutDashboard, Briefcase, FileText, Search, Sparkles, CalendarDays,
   Receipt, GraduationCap, BarChart3, Building2, Settings, Bell,
-  ArrowLeft, Gavel, LogOut, Loader2,
+  ArrowLeft, Gavel, LogOut, Loader2, Mic,
 } from "lucide-react";
 
 export const Route = createFileRoute("/app")({
@@ -28,6 +28,7 @@ const navItems: NavItem[] = [
   { to: "/app/drafting", key: "m_drafting", icon: Sparkles, perm: "edit_cases" },
   { to: "/app/calendar", key: "m_calendar", icon: CalendarDays },
   { to: "/app/courtroom", key: "m_courtroom", icon: Gavel },
+  { to: "/app/live-sessions", key: "m_live_sessions", icon: Mic },
   { to: "/app/financials", key: "m_financials", icon: Receipt, perm: "view_financials" },
   { to: "/app/clients", key: "m_clients", icon: Building2, perm: "view_clients" },
   { to: "/app/education", key: "m_education", icon: GraduationCap },
