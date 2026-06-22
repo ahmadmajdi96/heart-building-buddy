@@ -50,6 +50,9 @@ function OnboardingPage() {
     if (!loading && org) navigate({ to: "/app/dashboard" });
   }, [loading, org, navigate]);
 
+  const logFailure = useServerFn(logOnboardingFailure);
+  const verify = useServerFn(verifyOnboarding);
+
   async function submit(e?: React.FormEvent) {
     e?.preventDefault();
     if (!type || saving) return;
@@ -58,37 +61,61 @@ function OnboardingPage() {
     try {
       const { data: sess } = await supabase.auth.getSession();
       const uid = sess.session?.user.id;
-      if (!uid) { toast.error("Not signed in"); return; }
+      if (!uid) { toast.error(locale === "ar" ? "غير مسجّل الدخول" : "Not signed in. Please sign in again."); return; }
       const orgId = crypto.randomUUID();
-      const { error: oErr } = await supabase.from("organizations").insert({
+      const orgPayload = {
         id: orgId,
         type, legal_name: form.legal_name, display_name: form.display_name || form.legal_name,
         email: form.email || sess.session!.user.email, phone: form.phone, address: form.address,
         tax_id: form.tax_id, logo_path: form.logo_path || null, currency: form.currency,
         default_tax_rate: Number(form.default_tax_rate) || 0, created_by: uid,
-      });
-      if (oErr) { toast.error(oErr.message); return; }
+      };
+      const { error: oErr } = await supabase.from("organizations").insert(orgPayload);
+      if (oErr) {
+        toast.error(describeError(oErr as PgErr, locale));
+        await logFailure({ data: { stage: "org_insert", code: (oErr as PgErr).code, message: oErr.message, details: (oErr as PgErr).details, hint: (oErr as PgErr).hint, payload: { orgId, type } } }).catch(() => {});
+        return;
+      }
       const { error: mErr } = await supabase.from("organization_members").insert({
         org_id: orgId, user_id: uid, role: "owner", status: "active",
       });
-      if (mErr) { toast.error(mErr.message); return; }
+      if (mErr) {
+        toast.error(describeError(mErr as PgErr, locale));
+        await logFailure({ data: { stage: "member_insert", code: (mErr as PgErr).code, message: mErr.message, details: (mErr as PgErr).details, hint: (mErr as PgErr).hint, payload: { orgId } } }).catch(() => {});
+        return;
+      }
       // Move any pending-uploaded logo into the real org folder
       if (form.logo_path && form.logo_path.startsWith(`pending/${uid}/`)) {
         const newPath = form.logo_path.replace(`pending/${uid}/`, `${orgId}/`);
         const { error: mvErr } = await supabase.storage.from("org-assets").move(form.logo_path, newPath);
-        if (!mvErr) {
+        if (mvErr) {
+          await logFailure({ data: { stage: "logo_move", code: null, message: mvErr.message, payload: { from: form.logo_path, to: newPath } } }).catch(() => {});
+        } else {
           await supabase.from("organizations").update({ logo_path: newPath }).eq("id", orgId);
         }
+      }
+      // Backend verification — confirms both rows are visible under user RLS.
+      const v = await verify({ data: { orgId } }).catch((e: Error) => ({ orgExists: false, memberExists: false, orgError: e.message, memberError: e.message, role: null, status: null }));
+      if (!v.orgExists || !v.memberExists) {
+        const msg = locale === "ar"
+          ? `تم الإنشاء لكن لم تظهر السجلات (org=${v.orgExists}, member=${v.memberExists}). تحقق من سياسات RLS.`
+          : `Created, but verification could not read it back (org=${v.orgExists}, member=${v.memberExists}). Check RLS policies.`;
+        toast.error(msg);
+        await logFailure({ data: { stage: v.orgExists ? "verify_member" : "verify_org", message: msg, details: v.orgError || v.memberError || null, payload: { orgId } } }).catch(() => {});
+        return;
       }
       await refresh();
       toast.success(locale === "ar" ? "تم إنشاء المؤسسة" : "Organization created");
       navigate({ to: "/app/dashboard" });
     } catch (err) {
-      toast.error((err as Error).message);
+      const e = err as PgErr;
+      toast.error(describeError(e, locale));
+      await logFailure({ data: { stage: "unknown", code: e.code, message: e.message, details: e.details, hint: e.hint } }).catch(() => {});
     } finally {
       setSaving(false);
     }
   }
+
 
   if (loading) return <div className="grid min-h-[60vh] place-items-center"><Loader2 className="size-6 animate-spin text-gold"/></div>;
 
