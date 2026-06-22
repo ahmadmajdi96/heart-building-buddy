@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useScribe } from "@elevenlabs/react";
+import { useScribe, n as CommitStrategy } from "@elevenlabs/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -27,8 +27,8 @@ export const Route = createFileRoute("/app/live-sessions")({
 });
 
 function LiveSessionsPage() {
-  const { t, lang } = useI18n();
-  const isAr = lang === "ar";
+  const { t, locale } = useI18n();
+  const isAr = locale === "ar";
   const qc = useQueryClient();
 
   const sessions = useQuery({ queryKey: ["live-sessions"], queryFn: () => listLiveSessions() });
@@ -55,9 +55,11 @@ function LiveSessionsPage() {
 
   const scribe = useScribe({
     modelId: "scribe_v2_realtime",
-    commitStrategy: "vad",
-    onPartialTranscript: (data: { text?: string }) => setPartial(data.text ?? ""),
-    onCommittedTranscriptWithTimestamps: (data: { text?: string; words?: Array<{ speaker?: string; start?: number; end?: number }> }) => {
+    commitStrategy: CommitStrategy.VAD,
+    includeTimestamps: true,
+    languageCode: language,
+    onPartialTranscript: (data) => setPartial(data.text ?? ""),
+    onCommittedTranscriptWithTimestamps: (data) => {
       const words = data.words ?? [];
       const speaker = words[0]?.speaker ?? "Speaker 1";
       setTurns((prev) => [
