@@ -26,6 +26,7 @@ import { Route as AppClientsRouteImport } from './routes/app.clients'
 import { Route as AppCasesRouteImport } from './routes/app.cases'
 import { Route as AppCalendarRouteImport } from './routes/app.calendar'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
+import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -112,6 +113,11 @@ const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCasesCaseIdRoute = AppCasesCaseIdRouteImport.update({
+  id: '/$caseId',
+  path: '/$caseId',
+  getParentRoute: () => AppCasesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -119,7 +125,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/calendar': typeof AppCalendarRoute
-  '/app/cases': typeof AppCasesRoute
+  '/app/cases': typeof AppCasesRouteWithChildren
   '/app/clients': typeof AppClientsRoute
   '/app/courtroom': typeof AppCourtroomRoute
   '/app/dashboard': typeof AppDashboardRoute
@@ -131,13 +137,14 @@ export interface FileRoutesByFullPath {
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
+  '/app/cases/$caseId': typeof AppCasesCaseIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/calendar': typeof AppCalendarRoute
-  '/app/cases': typeof AppCasesRoute
+  '/app/cases': typeof AppCasesRouteWithChildren
   '/app/clients': typeof AppClientsRoute
   '/app/courtroom': typeof AppCourtroomRoute
   '/app/dashboard': typeof AppDashboardRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app': typeof AppIndexRoute
+  '/app/cases/$caseId': typeof AppCasesCaseIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -157,7 +165,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/calendar': typeof AppCalendarRoute
-  '/app/cases': typeof AppCasesRoute
+  '/app/cases': typeof AppCasesRouteWithChildren
   '/app/clients': typeof AppClientsRoute
   '/app/courtroom': typeof AppCourtroomRoute
   '/app/dashboard': typeof AppDashboardRoute
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
+  '/app/cases/$caseId': typeof AppCasesCaseIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -190,6 +199,7 @@ export interface FileRouteTypes {
     | '/app/research'
     | '/app/settings'
     | '/app/'
+    | '/app/cases/$caseId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/app/research'
     | '/app/settings'
     | '/app'
+    | '/app/cases/$caseId'
   id:
     | '__root__'
     | '/'
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/app/research'
     | '/app/settings'
     | '/app/'
+    | '/app/cases/$caseId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -356,13 +368,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAnalyticsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/cases/$caseId': {
+      id: '/app/cases/$caseId'
+      path: '/$caseId'
+      fullPath: '/app/cases/$caseId'
+      preLoaderRoute: typeof AppCasesCaseIdRouteImport
+      parentRoute: typeof AppCasesRoute
+    }
   }
 }
+
+interface AppCasesRouteChildren {
+  AppCasesCaseIdRoute: typeof AppCasesCaseIdRoute
+}
+
+const AppCasesRouteChildren: AppCasesRouteChildren = {
+  AppCasesCaseIdRoute: AppCasesCaseIdRoute,
+}
+
+const AppCasesRouteWithChildren = AppCasesRoute._addFileChildren(
+  AppCasesRouteChildren,
+)
 
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppCalendarRoute: typeof AppCalendarRoute
-  AppCasesRoute: typeof AppCasesRoute
+  AppCasesRoute: typeof AppCasesRouteWithChildren
   AppClientsRoute: typeof AppClientsRoute
   AppCourtroomRoute: typeof AppCourtroomRoute
   AppDashboardRoute: typeof AppDashboardRoute
@@ -379,7 +410,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppCalendarRoute: AppCalendarRoute,
-  AppCasesRoute: AppCasesRoute,
+  AppCasesRoute: AppCasesRouteWithChildren,
   AppClientsRoute: AppClientsRoute,
   AppCourtroomRoute: AppCourtroomRoute,
   AppDashboardRoute: AppDashboardRoute,
