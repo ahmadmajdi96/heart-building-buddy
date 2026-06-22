@@ -6,22 +6,9 @@ services:
     container_name: app
     ports:
       - "5555:5555"
+    env_file:
+      - .env
     environment:
       HOST: 0.0.0.0
       PORT: 5555
-      # Backend / database
-      SUPABASE_URL: ${SUPABASE_URL}
-      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY}
-      SUPABASE_PROJECT_ID: ${SUPABASE_PROJECT_ID}
-      VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
-      VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
-      VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
-      # AI gateway (configure your own endpoint or use the default)
-      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:-}
-      LOVABLE_API_KEY: ${LOVABLE_API_KEY:-}
-      AI_GATEWAY_BASE_URL: ${AI_GATEWAY_BASE_URL:-}
-      AI_GATEWAY_HEADER: ${AI_GATEWAY_HEADER:-}
-    volumes:
-      - ./src:/app/src
-      - ./public:/app/public
     restart: unless-stopped
