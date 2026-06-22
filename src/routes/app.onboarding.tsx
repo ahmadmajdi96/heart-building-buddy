@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Loader2, Scale, Building2 } from "lucide-react";
 import { toast } from "sonner";
+import { LogoPicker } from "@/components/logo-picker";
 
 export const Route = createFileRoute("/app/onboarding")({ component: OnboardingPage });
 
