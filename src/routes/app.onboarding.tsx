@@ -17,7 +17,7 @@ export const Route = createFileRoute("/app/onboarding")({ component: OnboardingP
 function OnboardingPage() {
   const { locale } = useI18n();
   const navigate = useNavigate();
-  const { org, loading, refresh } = useOrg();
+  const { org, loading, refresh, userId } = useOrg();
   const [type, setType] = useState<"solo" | "firm" | null>(null);
   const [form, setForm] = useState({
     legal_name: "", display_name: "", email: "", phone: "", address: "", tax_id: "",
