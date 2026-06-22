@@ -3,7 +3,7 @@ import { generateText } from "ai";
 import { z } from "zod";
 import { createAiGatewayProvider, getAiGatewayApiKey } from "./ai-gateway.server";
 
-const MODEL = "google/gemini-3-flash-preview";
+const MODEL = process.env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct";
 
 function getGateway() {
   return createAiGatewayProvider(getAiGatewayApiKey());
