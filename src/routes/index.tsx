@@ -329,7 +329,7 @@ const modules: { key: TKey; descKey: TKey; icon: ComponentType<{ className?: str
   { key: "m_research", descKey: "m_research_desc", icon: Search, num: "03" },
   { key: "m_drafting", descKey: "m_drafting_desc", icon: Sparkles, num: "04" },
   { key: "m_calendar", descKey: "m_calendar_desc", icon: CalendarDays, num: "05" },
-  { key: "m_billing", descKey: "m_billing_desc", icon: Receipt, num: "06" },
+  { key: "m_financials", descKey: "m_financials_desc", icon: Receipt, num: "06" },
   { key: "m_education", descKey: "m_education_desc", icon: GraduationCap, num: "07" },
   { key: "m_analytics", descKey: "m_analytics_desc", icon: BarChart3, num: "08" },
   { key: "m_clients", descKey: "m_clients_desc", icon: Building2, num: "09" },
