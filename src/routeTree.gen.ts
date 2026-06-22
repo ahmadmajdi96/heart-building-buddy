@@ -16,6 +16,7 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppResearchRouteImport } from './routes/app.research'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
+import { Route as AppLiveSessionsRouteImport } from './routes/app.live-sessions'
 import { Route as AppFinancialsRouteImport } from './routes/app.financials'
 import { Route as AppEducationRouteImport } from './routes/app.education'
 import { Route as AppDraftingRouteImport } from './routes/app.drafting'
@@ -62,6 +63,11 @@ const AppResearchRoute = AppResearchRouteImport.update({
 const AppOnboardingRoute = AppOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLiveSessionsRoute = AppLiveSessionsRouteImport.update({
+  id: '/live-sessions',
+  path: '/live-sessions',
   getParentRoute: () => AppRoute,
 } as any)
 const AppFinancialsRoute = AppFinancialsRouteImport.update({
@@ -139,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
+  '/app/live-sessions': typeof AppLiveSessionsRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
@@ -159,6 +166,7 @@ export interface FileRoutesByTo {
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
+  '/app/live-sessions': typeof AppLiveSessionsRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
@@ -181,6 +189,7 @@ export interface FileRoutesById {
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
+  '/app/live-sessions': typeof AppLiveSessionsRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
@@ -204,6 +213,7 @@ export interface FileRouteTypes {
     | '/app/drafting'
     | '/app/education'
     | '/app/financials'
+    | '/app/live-sessions'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
@@ -224,6 +234,7 @@ export interface FileRouteTypes {
     | '/app/drafting'
     | '/app/education'
     | '/app/financials'
+    | '/app/live-sessions'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
@@ -245,6 +256,7 @@ export interface FileRouteTypes {
     | '/app/drafting'
     | '/app/education'
     | '/app/financials'
+    | '/app/live-sessions'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
@@ -310,6 +322,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/app/onboarding'
       preLoaderRoute: typeof AppOnboardingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/live-sessions': {
+      id: '/app/live-sessions'
+      path: '/live-sessions'
+      fullPath: '/app/live-sessions'
+      preLoaderRoute: typeof AppLiveSessionsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/financials': {
@@ -409,6 +428,7 @@ interface AppRouteChildren {
   AppDraftingRoute: typeof AppDraftingRoute
   AppEducationRoute: typeof AppEducationRoute
   AppFinancialsRoute: typeof AppFinancialsRoute
+  AppLiveSessionsRoute: typeof AppLiveSessionsRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppResearchRoute: typeof AppResearchRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -427,6 +447,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDraftingRoute: AppDraftingRoute,
   AppEducationRoute: AppEducationRoute,
   AppFinancialsRoute: AppFinancialsRoute,
+  AppLiveSessionsRoute: AppLiveSessionsRoute,
   AppOnboardingRoute: AppOnboardingRoute,
   AppResearchRoute: AppResearchRoute,
   AppSettingsRoute: AppSettingsRoute,
