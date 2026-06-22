@@ -98,45 +98,51 @@ function OnboardingPage() {
         <h1 className="mt-3 font-serif text-3xl">{type === "solo" ? (locale === "ar" ? "بيانات المحامي" : "Lawyer profile") : (locale === "ar" ? "بيانات المكتب" : "Firm profile")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{locale === "ar" ? "ستستخدم هذه البيانات في الفواتير وعروض الأسعار." : "These details appear on every invoice and quote."}</p>
       </div>
-      <Card className="p-6 space-y-4">
-        <Field label={locale === "ar" ? "الاسم القانوني" : "Legal name"} required>
-          <Input value={form.legal_name} onChange={(e) => setForm({ ...form, legal_name: e.target.value })} />
-        </Field>
-        <Field label={locale === "ar" ? "الاسم التجاري (اختياري)" : "Display name (optional)"}>
-          <Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} />
-        </Field>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label={locale === "ar" ? "البريد الإلكتروني" : "Email"}>
-            <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+      <Card className="p-6">
+        <form onSubmit={submit} className="space-y-4">
+          <Field label={locale === "ar" ? "الاسم القانوني" : "Legal name"} required>
+            <Input value={form.legal_name} onChange={(e) => setForm({ ...form, legal_name: e.target.value })} required />
           </Field>
-          <Field label={locale === "ar" ? "الهاتف" : "Phone"}>
-            <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+          <Field label={locale === "ar" ? "الاسم التجاري (اختياري)" : "Display name (optional)"}>
+            <Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} />
           </Field>
-        </div>
-        <Field label={locale === "ar" ? "العنوان" : "Address"}>
-          <Textarea rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-        </Field>
-        <div className="grid gap-4 md:grid-cols-3">
-          <Field label={locale === "ar" ? "الرقم الضريبي" : "Tax ID / VAT"}>
-            <Input value={form.tax_id} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} />
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label={locale === "ar" ? "البريد الإلكتروني" : "Email"}>
+              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            </Field>
+            <Field label={locale === "ar" ? "الهاتف" : "Phone"}>
+              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            </Field>
+          </div>
+          <Field label={locale === "ar" ? "العنوان" : "Address"}>
+            <Textarea rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           </Field>
-          <Field label={locale === "ar" ? "العملة" : "Currency"}>
-            <Input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} />
+          <div className="grid gap-4 md:grid-cols-3">
+            <Field label={locale === "ar" ? "الرقم الضريبي" : "Tax ID / VAT"}>
+              <Input value={form.tax_id} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} />
+            </Field>
+            <Field label={locale === "ar" ? "العملة" : "Currency"}>
+              <Input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} />
+            </Field>
+            <Field label={locale === "ar" ? "ضريبة افتراضية %" : "Default tax %"}>
+              <Input type="number" step="0.01" value={form.default_tax_rate} onChange={(e) => setForm({ ...form, default_tax_rate: e.target.value })} />
+            </Field>
+          </div>
+          <Field label={locale === "ar" ? "الشعار" : "Logo"}>
+            <LogoPicker
+              value={form.logo_path}
+              onChange={(v) => setForm({ ...form, logo_path: v })}
+              ownerKey={userId ? `pending/${userId}` : "pending/anon"}
+            />
           </Field>
-          <Field label={locale === "ar" ? "ضريبة افتراضية %" : "Default tax %"}>
-            <Input type="number" step="0.01" value={form.default_tax_rate} onChange={(e) => setForm({ ...form, default_tax_rate: e.target.value })} />
-          </Field>
-        </div>
-        <Field label={locale === "ar" ? "رابط الشعار (URL)" : "Logo URL"}>
-          <Input placeholder="https://…/logo.png" value={form.logo_path} onChange={(e) => setForm({ ...form, logo_path: e.target.value })} />
-        </Field>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="outline" onClick={() => setType(null)}>{locale === "ar" ? "إلغاء" : "Cancel"}</Button>
-          <Button variant="gold" disabled={!form.legal_name || saving} onClick={submit}>
-            {saving && <Loader2 className="size-4 animate-spin"/>}
-            {locale === "ar" ? "إنشاء المؤسسة" : "Create organization"}
-          </Button>
-        </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => setType(null)}>{locale === "ar" ? "إلغاء" : "Cancel"}</Button>
+            <Button type="submit" variant="gold" disabled={!form.legal_name.trim() || saving}>
+              {saving && <Loader2 className="size-4 animate-spin"/>}
+              {locale === "ar" ? "إنشاء المؤسسة" : "Create organization"}
+            </Button>
+          </div>
+        </form>
       </Card>
     </div>
   );
