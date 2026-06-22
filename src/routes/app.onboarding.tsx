@@ -38,23 +38,25 @@ function OnboardingPage() {
       const { data: sess } = await supabase.auth.getSession();
       const uid = sess.session?.user.id;
       if (!uid) { toast.error("Not signed in"); return; }
-      const { data: orgRow, error: oErr } = await supabase.from("organizations").insert({
+      const orgId = crypto.randomUUID();
+      const { error: oErr } = await supabase.from("organizations").insert({
+        id: orgId,
         type, legal_name: form.legal_name, display_name: form.display_name || form.legal_name,
         email: form.email || sess.session!.user.email, phone: form.phone, address: form.address,
         tax_id: form.tax_id, logo_path: form.logo_path || null, currency: form.currency,
         default_tax_rate: Number(form.default_tax_rate) || 0, created_by: uid,
-      }).select("id").single();
-      if (oErr || !orgRow) { toast.error(oErr?.message ?? "Failed to create organization"); return; }
+      });
+      if (oErr) { toast.error(oErr.message); return; }
       const { error: mErr } = await supabase.from("organization_members").insert({
-        org_id: orgRow.id, user_id: uid, role: "owner", status: "active",
+        org_id: orgId, user_id: uid, role: "owner", status: "active",
       });
       if (mErr) { toast.error(mErr.message); return; }
       // Move any pending-uploaded logo into the real org folder
       if (form.logo_path && form.logo_path.startsWith(`pending/${uid}/`)) {
-        const newPath = form.logo_path.replace(`pending/${uid}/`, `${orgRow.id}/`);
+        const newPath = form.logo_path.replace(`pending/${uid}/`, `${orgId}/`);
         const { error: mvErr } = await supabase.storage.from("org-assets").move(form.logo_path, newPath);
         if (!mvErr) {
-          await supabase.from("organizations").update({ logo_path: newPath }).eq("id", orgRow.id);
+          await supabase.from("organizations").update({ logo_path: newPath }).eq("id", orgId);
         }
       }
       await refresh();
