@@ -16,14 +16,17 @@ export const getDashboardStats = createServerFn({ method: "GET" })
       supabase.from("documents").select("id", { count: "exact", head: true }),
       supabase.from("cases").select("id,title,case_number,status,court,opened_at,clients(name)").order("opened_at", { ascending: false }).limit(5),
       supabase.from("appointments").select("id,title,starts_at,location,kind,cases(title,case_number)").gte("starts_at", now.toISOString()).order("starts_at", { ascending: true }).limit(5),
-      supabase.from("tax_invoices").select("total,issued_at,status").gte("issued_at", startMonth),
-      supabase.from("payments").select("amount,received_at").gte("received_at", startMonth),
+      supabase.from("tax_invoices").select("total,issue_date,status,amount_paid").gte("issue_date", startMonth),
+      supabase.from("payments").select("amount,paid_at").gte("paid_at", startMonth),
     ]);
 
     const cases = casesRes.data ?? [];
     const activeCases = cases.filter((c) => c.status === "open" || c.status === "pending").length;
     const monthRevenue = (payments.data ?? []).reduce((s, p) => s + Number(p.amount || 0), 0);
-    const outstanding = (invoices.data ?? []).filter((i) => i.status !== "paid").reduce((s, i) => s + Number(i.total || 0), 0);
+    const outstanding = (invoices.data ?? []).reduce(
+      (s, i) => s + Math.max(Number(i.total || 0) - Number(i.amount_paid || 0), 0),
+      0,
+    );
 
     return {
       counts: {
