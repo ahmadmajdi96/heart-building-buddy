@@ -73,15 +73,17 @@ export const saveLiveSession = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> = {
+    const patch = {
       transcript: data.transcript,
       turns: data.turns,
+      ...(data.finalize
+        ? {
+            status: "completed",
+            ended_at: new Date().toISOString(),
+            ...(data.duration_seconds != null ? { duration_seconds: data.duration_seconds } : {}),
+          }
+        : {}),
     };
-    if (data.finalize) {
-      patch.status = "completed";
-      patch.ended_at = new Date().toISOString();
-      if (data.duration_seconds != null) patch.duration_seconds = data.duration_seconds;
-    }
     const { error } = await context.supabase
       .from("live_sessions")
       .update(patch)

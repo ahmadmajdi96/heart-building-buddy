@@ -27,6 +27,7 @@ import { Route as AppCalendarRouteImport } from './routes/app.calendar'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppCasesIndexRouteImport } from './routes/app.cases.index'
 import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
+import { Route as ApiElevenlabsScribeTokenRouteImport } from './routes/api.elevenlabs.scribe-token'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -118,6 +119,12 @@ const AppCasesCaseIdRoute = AppCasesCaseIdRouteImport.update({
   path: '/cases/$caseId',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiElevenlabsScribeTokenRoute =
+  ApiElevenlabsScribeTokenRouteImport.update({
+    id: '/api/elevenlabs/scribe-token',
+    path: '/api/elevenlabs/scribe-token',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
+  '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
 }
@@ -155,6 +163,7 @@ export interface FileRoutesByTo {
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app': typeof AppIndexRoute
+  '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/cases': typeof AppCasesIndexRoute
 }
@@ -176,6 +185,7 @@ export interface FileRoutesById {
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
+  '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
 }
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/app/research'
     | '/app/settings'
     | '/app/'
+    | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
     | '/app/cases/'
   fileRoutesByTo: FileRoutesByTo
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/app/research'
     | '/app/settings'
     | '/app'
+    | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
     | '/app/cases'
   id:
@@ -237,6 +249,7 @@ export interface FileRouteTypes {
     | '/app/research'
     | '/app/settings'
     | '/app/'
+    | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
     | '/app/cases/'
   fileRoutesById: FileRoutesById
@@ -245,6 +258,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiElevenlabsScribeTokenRoute: typeof ApiElevenlabsScribeTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -375,6 +389,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCasesCaseIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/elevenlabs/scribe-token': {
+      id: '/api/elevenlabs/scribe-token'
+      path: '/api/elevenlabs/scribe-token'
+      fullPath: '/api/elevenlabs/scribe-token'
+      preLoaderRoute: typeof ApiElevenlabsScribeTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -420,6 +441,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiElevenlabsScribeTokenRoute: ApiElevenlabsScribeTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
