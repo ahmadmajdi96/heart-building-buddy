@@ -55,13 +55,13 @@ function LiveSessionsPage() {
 
   const scribe = useScribe({
     modelId: "scribe_v2_realtime",
-    commitStrategy: CommitStrategy.VAD,
+    commitStrategy: "vad" as never,
     includeTimestamps: true,
     languageCode: language,
     onPartialTranscript: (data) => setPartial(data.text ?? ""),
     onCommittedTranscriptWithTimestamps: (data) => {
       const words = data.words ?? [];
-      const speaker = words[0]?.speaker ?? "Speaker 1";
+      const speaker = words[0]?.speaker_id ?? "Speaker 1";
       setTurns((prev) => [
         ...prev,
         {
@@ -73,7 +73,7 @@ function LiveSessionsPage() {
       ]);
       setPartial("");
     },
-    onCommittedTranscript: (data: { text?: string }) => {
+    onCommittedTranscript: (data) => {
       // Fallback when timestamps aren't enabled
       if (!data.text) return;
       setTurns((prev) => {
