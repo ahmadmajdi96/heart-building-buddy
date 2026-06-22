@@ -11,6 +11,27 @@ import { Card } from "@/components/ui/card";
 import { Loader2, Scale, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { LogoPicker } from "@/components/logo-picker";
+import { useServerFn } from "@tanstack/react-start";
+import { logOnboardingFailure, verifyOnboarding } from "@/lib/onboarding.functions";
+
+type PgErr = { message: string; code?: string; details?: string | null; hint?: string | null };
+
+function describeError(e: PgErr, locale: string): string {
+  const code = e.code ?? "";
+  // 42501 = insufficient_privilege (missing GRANT). 42P17 = recursive policy.
+  // PostgREST returns "PGRST" codes; "42501" surfaces as message too.
+  const isRls = code === "42501" || /row-level security|permission denied|violates row-level/i.test(e.message);
+  if (isRls) {
+    return locale === "ar"
+      ? `رفض الوصول من قِبَل سياسة الأمان (RLS). ${e.message}${e.hint ? ` — ${e.hint}` : ""}`
+      : `Blocked by row-level security policy. ${e.message}${e.hint ? ` — ${e.hint}` : ""}`;
+  }
+  if (/Failed to fetch|NetworkError|ERR_NETWORK/i.test(e.message)) {
+    return locale === "ar" ? "تعذّر الاتصال بالخادم. تحقق من الشبكة." : "Network error reaching the server. Check your connection.";
+  }
+  return e.message;
+}
+
 
 export const Route = createFileRoute("/app/onboarding")({ component: OnboardingPage });
 
