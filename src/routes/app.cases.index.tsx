@@ -14,7 +14,7 @@ import { listClients } from "@/lib/clients.functions";
 import { Plus, Loader2, Pencil, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/app/cases")({ component: CasesPage });
+export const Route = createFileRoute("/app/cases/")({ component: CasesPage });
 
 type CaseRow = { id: string; title: string; case_number: string | null; court: string | null; jurisdiction: string | null; status: string; priority: string | null; opened_at: string; client_id: string | null; description: string | null; clients?: { id: string; name: string } | null };
 type ClientRow = { id: string; name: string };
