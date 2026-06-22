@@ -10,11 +10,10 @@ function gateway() {
 }
 
 const GenInput = z.object({
-  prompt: z.string().min(2),
-  template: z.string().optional(),
+  prompt: z.string().optional().default(""),
   locale: z.enum(["ar", "en"]).default("ar"),
   variables: z.record(z.string(), z.string()).optional(),
-  documentIds: z.array(z.string().uuid()).optional(),
+  templateIds: z.array(z.string().uuid()).max(3).optional(),
 });
 
 export const generateDraft = createServerFn({ method: "POST" })
@@ -23,34 +22,53 @@ export const generateDraft = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const lang = data.locale === "ar" ? "Arabic" : "English";
 
-    // Build variables block
     const vars = data.variables ?? {};
     const varBlock = Object.entries(vars).length
-      ? `Variables to substitute (replace any matching {{key}} placeholders with these values):\n${Object.entries(vars).map(([k, v]) => `- ${k}: ${v}`).join("\n")}`
+      ? `Variables to use throughout the document (replace any matching placeholders and weave the values into the prose naturally):\n${Object.entries(vars).map(([k, v]) => `- ${k}: ${v}`).join("\n")}`
       : "";
 
-    // Pull reference document text
-    let refBlock = "";
-    if (data.documentIds && data.documentIds.length) {
+    // Templates: PDF/DOC → use text verbatim as the master template; others → reference only.
+    let primaryTemplate = "";
+    const referenceParts: string[] = [];
+    if (data.templateIds?.length) {
       const { data: docs } = await context.supabase
         .from("documents")
-        .select("name, extracted_text")
-        .in("id", data.documentIds);
-      const lines = (docs ?? [])
-        .filter((d) => d.extracted_text && d.extracted_text.trim().length > 0)
-        .map((d) => `### ${d.name}\n${d.extracted_text!.slice(0, 8000)}`);
-      if (lines.length) refBlock = `Reference documents to use as source material:\n${lines.join("\n\n")}`;
+        .select("name, mime_type, extracted_text")
+        .in("id", data.templateIds);
+      for (const d of docs ?? []) {
+        const mime = (d.mime_type || "").toLowerCase();
+        const name = d.name.toLowerCase();
+        const isTextual =
+          mime === "application/pdf" ||
+          name.endsWith(".pdf") ||
+          mime.includes("wordprocessingml") ||
+          name.endsWith(".doc") ||
+          name.endsWith(".docx");
+        if (isTextual && d.extracted_text && d.extracted_text.trim()) {
+          primaryTemplate += `\n\n--- TEMPLATE: ${d.name} ---\n${d.extracted_text.slice(0, 20_000)}`;
+        } else {
+          referenceParts.push(`- ${d.name} (${mime || "file"})${d.extracted_text ? `: ${d.extracted_text.slice(0, 2000)}` : ""}`);
+        }
+      }
     }
+
+    const system = primaryTemplate
+      ? `You are an expert Arab legal drafter. You will be given one or more legal TEMPLATE documents. Reproduce the template text VERBATIM in ${lang} — preserve its wording, structure, numbering, and clauses exactly. The ONLY changes you may make are: (1) substitute the provided variable values everywhere they contextually belong, and (2) if multiple templates are provided, merge them coherently. Do not invent new clauses, do not summarize, do not paraphrase. Output the final document only — clean Markdown, no commentary.`
+      : `You are an expert Arab legal drafter. Produce a polished, ready-to-use legal document in ${lang}. Use proper structure: title, parties, preamble, numbered clauses, governing law, signatures. Format with clean Markdown. Substitute all known variables inline. Output the document text only — no commentary.`;
+
+    const userParts = [
+      data.prompt?.trim() ? `User instructions: ${data.prompt.trim()}` : "",
+      varBlock,
+      referenceParts.length ? `Supporting reference materials (use as context only, do NOT copy verbatim):\n${referenceParts.join("\n")}` : "",
+      primaryTemplate ? `TEMPLATE TEXT (reproduce verbatim, only substituting variables):${primaryTemplate}` : "",
+    ].filter(Boolean);
+
+    if (!userParts.length) throw new Error("Provide a prompt or pick a template document.");
 
     const { text } = await generateText({
       model: gateway()(MODEL),
-      system: `You are an expert Arab legal drafter. Produce a polished, ready-to-use legal document in ${lang}. Use proper structure: title, parties, preamble, numbered clauses, governing law, signatures. Format the output with clean Markdown (use **bold** for headings/labels, numbered lists, bullet lists where appropriate). Substitute all known variables from the user's variable list inline. Output the document text only — no commentary.`,
-      prompt: [
-        data.template ? `Template: ${data.template}` : "",
-        `User request: ${data.prompt}`,
-        varBlock,
-        refBlock,
-      ].filter(Boolean).join("\n\n"),
+      system,
+      prompt: userParts.join("\n\n"),
     });
     return { draft: text };
   });

@@ -196,8 +196,26 @@ function CaseDetailSheet({ id, clients, onClose }: { id: string | null; clients:
 
   async function logEvent() {
     if (!id || !newEv.title) return;
+    if (newEv.kind === "court_session" && !newEv.scheduled_at) {
+      toast.error(locale === "ar" ? "تاريخ الجلسة مطلوب" : "Session date is required");
+      return;
+    }
     try {
       await addEv({ data: { case_id: id, kind: newEv.kind, title: newEv.title, body: newEv.body || undefined, scheduled_at: newEv.scheduled_at || null } });
+      // For court sessions, also place the entry on the user's calendar.
+      if (newEv.kind === "court_session" && newEv.scheduled_at) {
+        try {
+          const starts = new Date(newEv.scheduled_at).toISOString();
+          const ends = new Date(new Date(newEv.scheduled_at).getTime() + 3600_000).toISOString();
+          await saveAppt({ data: {
+            title: newEv.title, starts_at: starts, ends_at: ends, all_day: false,
+            kind: "court", case_id: id, description: newEv.body || undefined,
+          }});
+          toast.success(locale === "ar" ? "أُضيفت الجلسة إلى التقويم" : "Session added to your calendar");
+        } catch (apptErr) {
+          toast.error(locale === "ar" ? `تم حفظ الحدث، لكن فشل إنشاء الموعد: ${(apptErr as Error).message}` : `Event saved, but calendar entry failed: ${(apptErr as Error).message}`);
+        }
+      }
       setNewEv({ kind: "update", title: "", body: "", scheduled_at: "" });
       refresh();
     } catch (e) { toast.error((e as Error).message); }
@@ -314,6 +332,12 @@ function CaseDetailSheet({ id, clients, onClose }: { id: string | null; clients:
                 </Select>
                 <Input className="col-span-2 h-9" placeholder={locale === "ar" ? "العنوان" : "Title"} value={newEv.title} onChange={(e) => setNewEv({ ...newEv, title: e.target.value })} />
               </div>
+              {newEv.kind === "court_session" && (
+                <div>
+                  <Label className="text-xs">{locale === "ar" ? "تاريخ ووقت الجلسة *" : "Session date & time *"}</Label>
+                  <Input type="datetime-local" value={newEv.scheduled_at} onChange={(e) => setNewEv({ ...newEv, scheduled_at: e.target.value })} />
+                </div>
+              )}
               <Textarea rows={2} placeholder={locale === "ar" ? "تفاصيل…" : "Details…"} value={newEv.body} onChange={(e) => setNewEv({ ...newEv, body: e.target.value })} />
               <Button size="sm" variant="gold" onClick={logEvent}>{locale === "ar" ? "إضافة" : "Add"}</Button>
             </div>

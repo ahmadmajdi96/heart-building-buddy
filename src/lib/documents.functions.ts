@@ -11,6 +11,7 @@ const DocInput = z.object({
   tags: z.array(z.string()).optional(),
   case_id: z.string().uuid().nullable().optional(),
   client_id: z.string().uuid().nullable().optional(),
+  is_template: z.boolean().optional(),
 });
 
 export const listDocuments = createServerFn({ method: "GET" })
@@ -24,16 +25,37 @@ export const listDocuments = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+export const listTemplateDocuments = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("documents")
+      .select("id, name, mime_type, size, extracted_text, created_at")
+      .eq("is_template", true)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
 export const createDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => DocInput.parse(d))
   .handler(async ({ data, context }) => {
-    const { data: row, error } = await context.supabase.from("documents").insert({
-      ...data,
-      case_id: data.case_id || null,
-      client_id: data.client_id || null,
-      owner_id: context.userId,
-    }).select().maybeSingle();
+    const caseId = data.case_id || null;
+    const clientId = data.client_id || null;
+    // A document with neither case nor client is a template by default.
+    const isTemplate = data.is_template ?? (!caseId && !clientId);
+    const { data: row, error } = await context.supabase
+      .from("documents")
+      .insert({
+        ...data,
+        case_id: caseId,
+        client_id: clientId,
+        is_template: isTemplate,
+        owner_id: context.userId,
+      })
+      .select()
+      .maybeSingle();
     if (error) throw new Error(error.message);
     return row;
   });

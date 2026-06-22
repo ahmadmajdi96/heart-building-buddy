@@ -10,12 +10,19 @@ import { listDocuments, createDocument, getSignedDownloadUrl, deleteDocument } f
 import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Upload, Download, Trash2, Loader2, Search } from "lucide-react";
+import { extractTextFromFile, validateDocFile, ALLOWED_DOC_EXT, MAX_DOC_BYTES } from "@/lib/extract-text";
+import { FileText, Upload, Download, Trash2, Loader2, Search, BookMarked } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/documents")({ component: DocsPage });
 
-type Doc = { id: string; name: string; mime_type: string | null; size: number | null; case_id: string | null; client_id: string | null; created_at: string; cases?: { id: string; title: string } | null; clients?: { id: string; name: string } | null };
+type Doc = {
+  id: string; name: string; mime_type: string | null; size: number | null;
+  case_id: string | null; client_id: string | null; created_at: string;
+  is_template?: boolean | null;
+  cases?: { id: string; title: string } | null;
+  clients?: { id: string; name: string } | null;
+};
 
 function DocsPage() {
   const { locale } = useI18n();
@@ -48,22 +55,29 @@ function DocsPage() {
   useEffect(() => { refresh(); }, []);
 
   async function upload(file: File) {
+    const v = validateDocFile(file);
+    if (!v.ok) { toast.error(v.reason); return; }
     setUploading(true);
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Not signed in");
-      const path = `${u.user.id}/general/${Date.now()}-${file.name}`;
+      const folder = caseId === "none" ? "general" : caseId;
+      const path = `${u.user.id}/${folder}/${Date.now()}-${file.name}`;
       const { error } = await supabase.storage.from("documents").upload(path, file);
       if (error) throw error;
-      let extracted: string | undefined;
-      if (file.type.startsWith("text/") || /\.(txt|md)$/i.test(file.name)) {
-        extracted = (await file.text()).slice(0, 60000);
-      }
+      // Extract text client-side for PDF / DOCX / text — used by AI drafting.
+      const extracted = await extractTextFromFile(file);
+      const cId = caseId === "none" ? null : caseId;
+      const clId = clientId === "none" ? null : clientId;
+      const isTemplate = !cId && !clId;
       await create({ data: {
-        name: file.name, mime_type: file.type, size: file.size, storage_path: path, extracted_text: extracted,
-        case_id: caseId === "none" ? null : caseId, client_id: clientId === "none" ? null : clientId,
+        name: file.name, mime_type: file.type, size: file.size, storage_path: path,
+        extracted_text: extracted || undefined,
+        case_id: cId, client_id: clId, is_template: isTemplate,
       }});
-      toast.success(locale === "ar" ? "تم الرفع" : "Uploaded");
+      toast.success(isTemplate
+        ? (locale === "ar" ? "تم الرفع كقالب" : "Uploaded as template")
+        : (locale === "ar" ? "تم الرفع" : "Uploaded"));
       refresh();
     } catch (e) { toast.error((e as Error).message); }
     finally { setUploading(false); }
@@ -79,16 +93,22 @@ function DocsPage() {
   }
 
   const filtered = docs.filter((d) => !q || d.name.toLowerCase().includes(q.toLowerCase()));
+  const accept = "." + ALLOWED_DOC_EXT.join(",.");
 
   return (
     <div className="space-y-6">
       <PageHeader
         title={locale === "ar" ? "المستندات" : "Documents"}
-        subtitle={locale === "ar" ? "تخزين آمن وتحميل وحذف المستندات." : "Secure storage, downloads and deletions."}
+        subtitle={locale === "ar" ? "PDF · DOC · DOCX · CSV · JPG — الحد الأقصى 4 ميغابايت لكل ملف." : "PDF · DOC · DOCX · CSV · JPG — 4 MB max per file."}
       />
 
       <div className="card-elev rounded-xl border bg-card p-5 space-y-3">
         <div className="text-sm font-semibold">{locale === "ar" ? "رفع مستند جديد" : "Upload a new document"}</div>
+        <p className="text-xs text-muted-foreground">
+          {locale === "ar"
+            ? "ملاحظة: المستند المُحمَّل بدون قضية أو موكل سيُعتبر قالبًا متاحًا في الصياغة الذكية."
+            : "Tip: a document uploaded without a case AND client will be saved as a template available in AI Drafting."}
+        </p>
         <div className="grid gap-3 md:grid-cols-3">
           <Select value={caseId} onValueChange={setCaseId}>
             <SelectTrigger><SelectValue placeholder={locale === "ar" ? "ربط بقضية" : "Link to case"} /></SelectTrigger>
@@ -101,7 +121,12 @@ function DocsPage() {
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-2.5 text-sm text-muted-foreground hover:bg-secondary/40">
             {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
             <span>{locale === "ar" ? "اختر ملفاً" : "Choose file"}</span>
-            <input type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
+            <input
+              type="file"
+              accept={accept}
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }}
+            />
           </label>
         </div>
       </div>
@@ -118,10 +143,16 @@ function DocsPage() {
         : filtered.length === 0 ? <div className="p-12 text-center text-muted-foreground text-sm">{locale === "ar" ? "لا توجد مستندات بعد." : "No documents uploaded yet."}</div>
         : <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 p-4">
           {filtered.map((d) => (
-            <div key={d.id} className="card-elev rounded-xl border bg-card p-4 flex gap-3">
+            <div key={d.id} className="card-elev rounded-xl border bg-card p-4 flex gap-3 relative">
+              {d.is_template && (
+                <span className="absolute end-3 top-3 inline-flex items-center gap-1 rounded-full bg-gold/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-gold">
+                  <BookMarked className="size-3" />
+                  {locale === "ar" ? "قالب" : "Template"}
+                </span>
+              )}
               <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-gold/15 text-gold"><FileText className="size-5" /></div>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">{d.name}</div>
+                <div className="truncate text-sm font-medium pe-16">{d.name}</div>
                 <div className="text-xs text-muted-foreground mt-0.5">
                   {d.cases?.title ? `${d.cases.title} · ` : ""}{d.clients?.name ? `${d.clients.name} · ` : ""}{formatBytes(d.size)}
                 </div>
@@ -145,3 +176,5 @@ function formatBytes(n: number | null) {
   while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
   return `${v.toFixed(1)} ${u[i]}`;
 }
+
+void MAX_DOC_BYTES;

@@ -1,0 +1,2 @@
+ALTER TABLE public.documents ADD COLUMN IF NOT EXISTS is_template boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS documents_is_template_idx ON public.documents (owner_id, is_template) WHERE is_template = true;

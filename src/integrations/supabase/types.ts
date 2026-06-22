@@ -314,6 +314,7 @@ export type Database = {
           created_at: string
           extracted_text: string | null
           id: string
+          is_template: boolean
           mime_type: string | null
           name: string
           owner_id: string
@@ -327,6 +328,7 @@ export type Database = {
           created_at?: string
           extracted_text?: string | null
           id?: string
+          is_template?: boolean
           mime_type?: string | null
           name: string
           owner_id: string
@@ -340,6 +342,7 @@ export type Database = {
           created_at?: string
           extracted_text?: string | null
           id?: string
+          is_template?: boolean
           mime_type?: string | null
           name?: string
           owner_id?: string
