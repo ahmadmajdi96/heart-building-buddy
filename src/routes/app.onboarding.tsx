@@ -29,26 +29,42 @@ function OnboardingPage() {
     if (!loading && org) navigate({ to: "/app/dashboard" });
   }, [loading, org, navigate]);
 
-  async function submit() {
-    if (!type) return;
+  async function submit(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (!type || saving) return;
+    if (!form.legal_name.trim()) { toast.error(locale === "ar" ? "أدخل الاسم القانوني" : "Legal name is required"); return; }
     setSaving(true);
-    const { data: sess } = await supabase.auth.getSession();
-    const uid = sess.session?.user.id;
-    if (!uid) { toast.error("Not signed in"); setSaving(false); return; }
-    const { data: orgRow, error: oErr } = await supabase.from("organizations").insert({
-      type, legal_name: form.legal_name, display_name: form.display_name || form.legal_name,
-      email: form.email || sess.session!.user.email, phone: form.phone, address: form.address,
-      tax_id: form.tax_id, logo_path: form.logo_path || null, currency: form.currency,
-      default_tax_rate: Number(form.default_tax_rate) || 0, created_by: uid,
-    }).select("id").single();
-    if (oErr || !orgRow) { toast.error(oErr?.message ?? "Failed"); setSaving(false); return; }
-    const { error: mErr } = await supabase.from("organization_members").insert({
-      org_id: orgRow.id, user_id: uid, role: "owner", status: "active",
-    });
-    if (mErr) { toast.error(mErr.message); setSaving(false); return; }
-    await refresh();
-    toast.success(locale === "ar" ? "تم إنشاء المؤسسة" : "Organization created");
-    navigate({ to: "/app/dashboard" });
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const uid = sess.session?.user.id;
+      if (!uid) { toast.error("Not signed in"); return; }
+      const { data: orgRow, error: oErr } = await supabase.from("organizations").insert({
+        type, legal_name: form.legal_name, display_name: form.display_name || form.legal_name,
+        email: form.email || sess.session!.user.email, phone: form.phone, address: form.address,
+        tax_id: form.tax_id, logo_path: form.logo_path || null, currency: form.currency,
+        default_tax_rate: Number(form.default_tax_rate) || 0, created_by: uid,
+      }).select("id").single();
+      if (oErr || !orgRow) { toast.error(oErr?.message ?? "Failed to create organization"); return; }
+      const { error: mErr } = await supabase.from("organization_members").insert({
+        org_id: orgRow.id, user_id: uid, role: "owner", status: "active",
+      });
+      if (mErr) { toast.error(mErr.message); return; }
+      // Move any pending-uploaded logo into the real org folder
+      if (form.logo_path && form.logo_path.startsWith(`pending/${uid}/`)) {
+        const newPath = form.logo_path.replace(`pending/${uid}/`, `${orgRow.id}/`);
+        const { error: mvErr } = await supabase.storage.from("org-assets").move(form.logo_path, newPath);
+        if (!mvErr) {
+          await supabase.from("organizations").update({ logo_path: newPath }).eq("id", orgRow.id);
+        }
+      }
+      await refresh();
+      toast.success(locale === "ar" ? "تم إنشاء المؤسسة" : "Organization created");
+      navigate({ to: "/app/dashboard" });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) return <div className="grid min-h-[60vh] place-items-center"><Loader2 className="size-6 animate-spin text-gold"/></div>;
