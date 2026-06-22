@@ -15,6 +15,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppResearchRouteImport } from './routes/app.research'
+import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
+import { Route as AppFinancialsRouteImport } from './routes/app.financials'
 import { Route as AppEducationRouteImport } from './routes/app.education'
 import { Route as AppDraftingRouteImport } from './routes/app.drafting'
 import { Route as AppDocumentsRouteImport } from './routes/app.documents'
@@ -23,7 +25,6 @@ import { Route as AppCourtroomRouteImport } from './routes/app.courtroom'
 import { Route as AppClientsRouteImport } from './routes/app.clients'
 import { Route as AppCasesRouteImport } from './routes/app.cases'
 import { Route as AppCalendarRouteImport } from './routes/app.calendar'
-import { Route as AppBillingRouteImport } from './routes/app.billing'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 
 const AuthRoute = AuthRouteImport.update({
@@ -54,6 +55,16 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppResearchRoute = AppResearchRouteImport.update({
   id: '/research',
   path: '/research',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOnboardingRoute = AppOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFinancialsRoute = AppFinancialsRouteImport.update({
+  id: '/financials',
+  path: '/financials',
   getParentRoute: () => AppRoute,
 } as any)
 const AppEducationRoute = AppEducationRouteImport.update({
@@ -96,11 +107,6 @@ const AppCalendarRoute = AppCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AppRoute,
 } as any)
-const AppBillingRoute = AppBillingRouteImport.update({
-  id: '/billing',
-  path: '/billing',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -112,7 +118,6 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/app/analytics': typeof AppAnalyticsRoute
-  '/app/billing': typeof AppBillingRoute
   '/app/calendar': typeof AppCalendarRoute
   '/app/cases': typeof AppCasesRoute
   '/app/clients': typeof AppClientsRoute
@@ -121,6 +126,8 @@ export interface FileRoutesByFullPath {
   '/app/documents': typeof AppDocumentsRoute
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
+  '/app/financials': typeof AppFinancialsRoute
+  '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
@@ -129,7 +136,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/app/analytics': typeof AppAnalyticsRoute
-  '/app/billing': typeof AppBillingRoute
   '/app/calendar': typeof AppCalendarRoute
   '/app/cases': typeof AppCasesRoute
   '/app/clients': typeof AppClientsRoute
@@ -138,6 +144,8 @@ export interface FileRoutesByTo {
   '/app/documents': typeof AppDocumentsRoute
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
+  '/app/financials': typeof AppFinancialsRoute
+  '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app': typeof AppIndexRoute
@@ -148,7 +156,6 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/app/analytics': typeof AppAnalyticsRoute
-  '/app/billing': typeof AppBillingRoute
   '/app/calendar': typeof AppCalendarRoute
   '/app/cases': typeof AppCasesRoute
   '/app/clients': typeof AppClientsRoute
@@ -157,6 +164,8 @@ export interface FileRoutesById {
   '/app/documents': typeof AppDocumentsRoute
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
+  '/app/financials': typeof AppFinancialsRoute
+  '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
@@ -168,7 +177,6 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/app/analytics'
-    | '/app/billing'
     | '/app/calendar'
     | '/app/cases'
     | '/app/clients'
@@ -177,6 +185,8 @@ export interface FileRouteTypes {
     | '/app/documents'
     | '/app/drafting'
     | '/app/education'
+    | '/app/financials'
+    | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
     | '/app/'
@@ -185,7 +195,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/app/analytics'
-    | '/app/billing'
     | '/app/calendar'
     | '/app/cases'
     | '/app/clients'
@@ -194,6 +203,8 @@ export interface FileRouteTypes {
     | '/app/documents'
     | '/app/drafting'
     | '/app/education'
+    | '/app/financials'
+    | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
     | '/app'
@@ -203,7 +214,6 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/app/analytics'
-    | '/app/billing'
     | '/app/calendar'
     | '/app/cases'
     | '/app/clients'
@@ -212,6 +222,8 @@ export interface FileRouteTypes {
     | '/app/documents'
     | '/app/drafting'
     | '/app/education'
+    | '/app/financials'
+    | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
     | '/app/'
@@ -265,6 +277,20 @@ declare module '@tanstack/react-router' {
       path: '/research'
       fullPath: '/app/research'
       preLoaderRoute: typeof AppResearchRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/onboarding': {
+      id: '/app/onboarding'
+      path: '/onboarding'
+      fullPath: '/app/onboarding'
+      preLoaderRoute: typeof AppOnboardingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/financials': {
+      id: '/app/financials'
+      path: '/financials'
+      fullPath: '/app/financials'
+      preLoaderRoute: typeof AppFinancialsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/education': {
@@ -323,13 +349,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCalendarRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/billing': {
-      id: '/app/billing'
-      path: '/billing'
-      fullPath: '/app/billing'
-      preLoaderRoute: typeof AppBillingRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/app/analytics': {
       id: '/app/analytics'
       path: '/analytics'
@@ -342,7 +361,6 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
-  AppBillingRoute: typeof AppBillingRoute
   AppCalendarRoute: typeof AppCalendarRoute
   AppCasesRoute: typeof AppCasesRoute
   AppClientsRoute: typeof AppClientsRoute
@@ -351,6 +369,8 @@ interface AppRouteChildren {
   AppDocumentsRoute: typeof AppDocumentsRoute
   AppDraftingRoute: typeof AppDraftingRoute
   AppEducationRoute: typeof AppEducationRoute
+  AppFinancialsRoute: typeof AppFinancialsRoute
+  AppOnboardingRoute: typeof AppOnboardingRoute
   AppResearchRoute: typeof AppResearchRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -358,7 +378,6 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
-  AppBillingRoute: AppBillingRoute,
   AppCalendarRoute: AppCalendarRoute,
   AppCasesRoute: AppCasesRoute,
   AppClientsRoute: AppClientsRoute,
@@ -367,6 +386,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppDocumentsRoute: AppDocumentsRoute,
   AppDraftingRoute: AppDraftingRoute,
   AppEducationRoute: AppEducationRoute,
+  AppFinancialsRoute: AppFinancialsRoute,
+  AppOnboardingRoute: AppOnboardingRoute,
   AppResearchRoute: AppResearchRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
@@ -382,13 +403,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

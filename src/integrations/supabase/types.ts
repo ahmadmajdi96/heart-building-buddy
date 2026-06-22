@@ -408,6 +408,250 @@ export type Database = {
           },
         ]
       }
+      organization_members: {
+        Row: {
+          created_at: string
+          id: string
+          invited_email: string | null
+          org_id: string
+          role: Database["public"]["Enums"]["org_role"]
+          status: Database["public"]["Enums"]["member_status"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_email?: string | null
+          org_id: string
+          role?: Database["public"]["Enums"]["org_role"]
+          status?: Database["public"]["Enums"]["member_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_email?: string | null
+          org_id?: string
+          role?: Database["public"]["Enums"]["org_role"]
+          status?: Database["public"]["Enums"]["member_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          address: string | null
+          created_at: string
+          created_by: string
+          currency: string
+          default_tax_rate: number
+          display_name: string | null
+          email: string | null
+          id: string
+          invoice_prefix: string
+          legal_name: string
+          logo_path: string | null
+          phone: string | null
+          quote_prefix: string
+          tax_id: string | null
+          type: Database["public"]["Enums"]["org_type"]
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          created_by: string
+          currency?: string
+          default_tax_rate?: number
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          invoice_prefix?: string
+          legal_name: string
+          logo_path?: string | null
+          phone?: string | null
+          quote_prefix?: string
+          tax_id?: string | null
+          type: Database["public"]["Enums"]["org_type"]
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          created_by?: string
+          currency?: string
+          default_tax_rate?: number
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          invoice_prefix?: string
+          legal_name?: string
+          logo_path?: string | null
+          phone?: string | null
+          quote_prefix?: string
+          tax_id?: string | null
+          type?: Database["public"]["Enums"]["org_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payment_schedules: {
+        Row: {
+          amount: number
+          client_id: string | null
+          client_name: string
+          created_at: string
+          created_by: string
+          currency: string
+          description: string | null
+          due_date: string
+          id: string
+          invoice_id: string | null
+          org_id: string
+          reminder_sent_at: string | null
+          status: Database["public"]["Enums"]["schedule_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          client_id?: string | null
+          client_name: string
+          created_at?: string
+          created_by: string
+          currency?: string
+          description?: string | null
+          due_date: string
+          id?: string
+          invoice_id?: string | null
+          org_id: string
+          reminder_sent_at?: string | null
+          status?: Database["public"]["Enums"]["schedule_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string | null
+          client_name?: string
+          created_at?: string
+          created_by?: string
+          currency?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          invoice_id?: string | null
+          org_id?: string
+          reminder_sent_at?: string | null
+          status?: Database["public"]["Enums"]["schedule_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_schedules_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_schedules_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "tax_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_schedules_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          client_id: string | null
+          client_name: string
+          created_at: string
+          created_by: string
+          currency: string
+          id: string
+          invoice_id: string | null
+          method: Database["public"]["Enums"]["payment_method"]
+          notes: string | null
+          org_id: string
+          paid_at: string
+          reference: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          client_id?: string | null
+          client_name: string
+          created_at?: string
+          created_by: string
+          currency?: string
+          id?: string
+          invoice_id?: string | null
+          method?: Database["public"]["Enums"]["payment_method"]
+          notes?: string | null
+          org_id: string
+          paid_at?: string
+          reference?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string | null
+          client_name?: string
+          created_at?: string
+          created_by?: string
+          currency?: string
+          id?: string
+          invoice_id?: string | null
+          method?: Database["public"]["Enums"]["payment_method"]
+          notes?: string | null
+          org_id?: string
+          paid_at?: string
+          reference?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "tax_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -435,15 +679,248 @@ export type Database = {
         }
         Relationships: []
       }
+      quotes: {
+        Row: {
+          case_id: string | null
+          client_id: string | null
+          client_name: string
+          created_at: string
+          created_by: string
+          currency: string
+          id: string
+          issue_date: string
+          items: Json
+          notes: string | null
+          number: string
+          org_id: string
+          status: Database["public"]["Enums"]["quote_status"]
+          subtotal: number
+          tax_amount: number
+          tax_rate: number
+          total: number
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          case_id?: string | null
+          client_id?: string | null
+          client_name: string
+          created_at?: string
+          created_by: string
+          currency?: string
+          id?: string
+          issue_date?: string
+          items?: Json
+          notes?: string | null
+          number: string
+          org_id: string
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          case_id?: string | null
+          client_id?: string | null
+          client_name?: string
+          created_at?: string
+          created_by?: string
+          currency?: string
+          id?: string
+          issue_date?: string
+          items?: Json
+          notes?: string | null
+          number?: string
+          org_id?: string
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tax_invoices: {
+        Row: {
+          amount_paid: number
+          case_id: string | null
+          client_id: string | null
+          client_name: string
+          created_at: string
+          created_by: string
+          currency: string
+          due_date: string | null
+          id: string
+          issue_date: string
+          items: Json
+          notes: string | null
+          number: string
+          org_id: string
+          quote_id: string | null
+          status: Database["public"]["Enums"]["invoice_status"]
+          subtotal: number
+          tax_amount: number
+          tax_rate: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number
+          case_id?: string | null
+          client_id?: string | null
+          client_name: string
+          created_at?: string
+          created_by: string
+          currency?: string
+          due_date?: string | null
+          id?: string
+          issue_date?: string
+          items?: Json
+          notes?: string | null
+          number: string
+          org_id: string
+          quote_id?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number
+          case_id?: string | null
+          client_id?: string | null
+          client_name?: string
+          created_at?: string
+          created_by?: string
+          currency?: string
+          due_date?: string | null
+          id?: string
+          issue_date?: string
+          items?: Json
+          notes?: string | null
+          number?: string
+          org_id?: string
+          quote_id?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_invoices_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_invoices_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_invoices_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_user_org: { Args: never; Returns: string }
+      has_org_role: {
+        Args: {
+          _org_id: string
+          _roles: Database["public"]["Enums"]["org_role"][]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_org_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      next_doc_number: {
+        Args: { _kind: string; _org_id: string }
+        Returns: string
+      }
+      org_role_of: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: Database["public"]["Enums"]["org_role"]
+      }
     }
     Enums: {
-      [_ in never]: never
+      invoice_status:
+        | "draft"
+        | "issued"
+        | "partial"
+        | "paid"
+        | "overdue"
+        | "void"
+      member_status: "active" | "invited" | "disabled"
+      org_role:
+        | "owner"
+        | "partner"
+        | "associate"
+        | "paralegal"
+        | "accountant"
+        | "assistant"
+      org_type: "solo" | "firm"
+      payment_method: "cash" | "bank_transfer" | "card" | "cheque" | "other"
+      quote_status:
+        | "draft"
+        | "sent"
+        | "accepted"
+        | "rejected"
+        | "expired"
+        | "converted"
+      schedule_status: "upcoming" | "due" | "paid" | "overdue" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -570,6 +1047,28 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      invoice_status: ["draft", "issued", "partial", "paid", "overdue", "void"],
+      member_status: ["active", "invited", "disabled"],
+      org_role: [
+        "owner",
+        "partner",
+        "associate",
+        "paralegal",
+        "accountant",
+        "assistant",
+      ],
+      org_type: ["solo", "firm"],
+      payment_method: ["cash", "bank_transfer", "card", "cheque", "other"],
+      quote_status: [
+        "draft",
+        "sent",
+        "accepted",
+        "rejected",
+        "expired",
+        "converted",
+      ],
+      schedule_status: ["upcoming", "due", "paid", "overdue", "cancelled"],
+    },
   },
 } as const
