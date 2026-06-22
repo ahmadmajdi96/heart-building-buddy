@@ -16,6 +16,7 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppResearchRouteImport } from './routes/app.research'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
+import { Route as AppFinancialsRouteImport } from './routes/app.financials'
 import { Route as AppEducationRouteImport } from './routes/app.education'
 import { Route as AppDraftingRouteImport } from './routes/app.drafting'
 import { Route as AppDocumentsRouteImport } from './routes/app.documents'
@@ -60,6 +61,11 @@ const AppResearchRoute = AppResearchRouteImport.update({
 const AppOnboardingRoute = AppOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFinancialsRoute = AppFinancialsRouteImport.update({
+  id: '/financials',
+  path: '/financials',
   getParentRoute: () => AppRoute,
 } as any)
 const AppEducationRoute = AppEducationRouteImport.update({
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/app/documents': typeof AppDocumentsRoute
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
+  '/app/financials': typeof AppFinancialsRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/app/documents': typeof AppDocumentsRoute
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
+  '/app/financials': typeof AppFinancialsRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/app/documents': typeof AppDocumentsRoute
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
+  '/app/financials': typeof AppFinancialsRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/app/documents'
     | '/app/drafting'
     | '/app/education'
+    | '/app/financials'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/app/documents'
     | '/app/drafting'
     | '/app/education'
+    | '/app/financials'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/app/documents'
     | '/app/drafting'
     | '/app/education'
+    | '/app/financials'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
@@ -284,6 +296,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/app/onboarding'
       preLoaderRoute: typeof AppOnboardingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/financials': {
+      id: '/app/financials'
+      path: '/financials'
+      fullPath: '/app/financials'
+      preLoaderRoute: typeof AppFinancialsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/education': {
@@ -370,6 +389,7 @@ interface AppRouteChildren {
   AppDocumentsRoute: typeof AppDocumentsRoute
   AppDraftingRoute: typeof AppDraftingRoute
   AppEducationRoute: typeof AppEducationRoute
+  AppFinancialsRoute: typeof AppFinancialsRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppResearchRoute: typeof AppResearchRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -387,6 +407,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDocumentsRoute: AppDocumentsRoute,
   AppDraftingRoute: AppDraftingRoute,
   AppEducationRoute: AppEducationRoute,
+  AppFinancialsRoute: AppFinancialsRoute,
   AppOnboardingRoute: AppOnboardingRoute,
   AppResearchRoute: AppResearchRoute,
   AppSettingsRoute: AppSettingsRoute,
