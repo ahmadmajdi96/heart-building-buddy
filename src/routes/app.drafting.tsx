@@ -31,6 +31,7 @@ function DraftingPage() {
   const save = useServerFn(saveDraft);
   const list = useServerFn(listDrafts);
   const del = useServerFn(deleteDraft);
+  const getOne = useServerFn(getDraft);
   const listTpl = useServerFn(listTemplateDocuments);
 
   const [prompt, setPrompt] = useState("");
