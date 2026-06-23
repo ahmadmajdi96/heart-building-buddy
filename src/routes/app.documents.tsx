@@ -11,7 +11,7 @@ import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { extractTextFromFile, validateDocFile, ALLOWED_DOC_EXT, MAX_DOC_BYTES } from "@/lib/extract-text";
-import { FileText, Upload, Download, Trash2, Loader2, Search, BookMarked } from "lucide-react";
+import { FileText, Upload, Download, Trash2, Loader2, Search, BookMarked, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/documents")({ component: DocsPage });
