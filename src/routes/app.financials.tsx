@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useOrg } from "@/lib/org-context";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Loader2, Trash2, FileText, Eye, X } from "lucide-react";
+import { Plus, Loader2, Trash2, FileText, Eye, X, Search } from "lucide-react";
 import { toast } from "sonner";
 import { DocumentHeader, DocumentPreview } from "@/components/financials/document-preview";
 
@@ -20,6 +20,31 @@ export const Route = createFileRoute("/app/financials")({ component: FinancialsP
 
 type Item = { description: string; quantity: number; unit_price: number };
 type Quote = any; type Invoice = any; type Payment = any; type Schedule = any;
+
+function TableFilter({ q, setQ, status, setStatus, statuses, placeholder, locale }: {
+  q: string; setQ: (v: string) => void;
+  status?: string; setStatus?: (v: string) => void;
+  statuses?: string[];
+  placeholder: string; locale: "ar" | "en";
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="relative w-56">
+        <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={placeholder} className="h-9 ps-9" />
+      </div>
+      {statuses && setStatus && (
+        <div className="flex flex-wrap gap-1.5">
+          {statuses.map((s) => (
+            <Button key={s} size="sm" variant={status === s ? "default" : "ghost"} onClick={() => setStatus(s)} className="capitalize">
+              {s === "all" ? (locale === "ar" ? "الكل" : "All") : s}
+            </Button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function FinancialsPage() {
   const { locale } = useI18n();
@@ -81,6 +106,8 @@ function PaymentsTab() {
   const [rows, setRows] = useState<Payment[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [method, setMethod] = useState<string>("all");
 
   async function load() {
     if (!org) return;
@@ -89,10 +116,19 @@ function PaymentsTab() {
   }
   useEffect(() => { load(); }, [org?.id]);
 
+  const methods = useMemo(() => ["all", ...Array.from(new Set(rows.map((r) => r.method).filter(Boolean)))], [rows]);
+  const filtered = useMemo(() => rows.filter((r) => {
+    if (method !== "all" && r.method !== method) return false;
+    if (!q.trim()) return true;
+    const s = q.toLowerCase();
+    return (r.client_name ?? "").toLowerCase().includes(s) || (r.reference ?? "").toLowerCase().includes(s);
+  }), [rows, q, method]);
+
   return (
     <Card className="overflow-hidden">
-      <div className="flex items-center justify-between border-b p-4">
-        <div className="text-sm font-semibold">{locale === "ar" ? "سجل المدفوعات" : "Payment log"}</div>
+      <div className="flex flex-wrap items-center gap-3 border-b p-4">
+        <div className="text-sm font-semibold mr-auto">{locale === "ar" ? "سجل المدفوعات" : "Payment log"} <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span></div>
+        <TableFilter q={q} setQ={setQ} status={method} setStatus={setMethod} statuses={methods} placeholder={locale === "ar" ? "ابحث بالعميل/المرجع…" : "Search client / reference…"} locale={locale as any} />
         {can("edit_financials") && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button size="sm" variant="gold"><Plus className="size-4"/>{locale === "ar" ? "تسجيل دفعة" : "Record payment"}</Button></DialogTrigger>
@@ -100,13 +136,13 @@ function PaymentsTab() {
           </Dialog>
         )}
       </div>
-      {loading ? <Loading/> : rows.length === 0 ? <Empty msg={locale === "ar" ? "لا توجد مدفوعات بعد." : "No payments yet."}/> : (
+      {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={locale === "ar" ? "لا نتائج." : "No matches."}/> : (
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
             <tr><Th>{locale === "ar" ? "التاريخ" : "Date"}</Th><Th>{locale === "ar" ? "العميل" : "Client"}</Th><Th>{locale === "ar" ? "المرجع" : "Reference"}</Th><Th>{locale === "ar" ? "الطريقة" : "Method"}</Th><Th className="text-end">{locale === "ar" ? "المبلغ" : "Amount"}</Th></tr>
           </thead>
           <tbody className="divide-y">
-            {rows.map((r) => (
+            {filtered.map((r) => (
               <tr key={r.id} className="hover:bg-secondary/40">
                 <Td>{r.paid_at}</Td><Td className="font-medium">{r.client_name}</Td><Td className="text-muted-foreground">{r.reference || "—"}</Td><Td><span className="capitalize">{r.method.replace("_"," ")}</span></Td>
                 <Td className="text-end font-mono tabular-nums">{fmt(r.amount, r.currency)}</Td>
@@ -199,6 +235,8 @@ function SchedulesTab() {
   const [rows, setRows] = useState<Schedule[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState("all");
 
   async function load() {
     if (!org) return;
@@ -217,10 +255,19 @@ function SchedulesTab() {
     load();
   }
 
+  const statuses = useMemo(() => ["all", ...Array.from(new Set(rows.map((r) => r.status).filter(Boolean)))], [rows]);
+  const filtered = useMemo(() => rows.filter((r) => {
+    if (status !== "all" && r.status !== status) return false;
+    if (!q.trim()) return true;
+    const s = q.toLowerCase();
+    return (r.client_name ?? "").toLowerCase().includes(s) || (r.description ?? "").toLowerCase().includes(s);
+  }), [rows, q, status]);
+
   return (
     <Card className="overflow-hidden">
-      <div className="flex items-center justify-between border-b p-4">
-        <div className="text-sm font-semibold">{locale === "ar" ? "جدولة المدفوعات" : "Payment schedule"}</div>
+      <div className="flex flex-wrap items-center gap-3 border-b p-4">
+        <div className="text-sm font-semibold mr-auto">{locale === "ar" ? "جدولة المدفوعات" : "Payment schedule"} <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span></div>
+        <TableFilter q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses} placeholder={locale === "ar" ? "ابحث…" : "Search…"} locale={locale as any} />
         {can("edit_financials") && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button size="sm" variant="gold"><Plus className="size-4"/>{locale === "ar" ? "إضافة قسط" : "New installment"}</Button></DialogTrigger>
@@ -228,13 +275,13 @@ function SchedulesTab() {
           </Dialog>
         )}
       </div>
-      {loading ? <Loading/> : rows.length === 0 ? <Empty msg={locale === "ar" ? "لا توجد أقساط مجدولة." : "No scheduled installments."}/> : (
+      {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={locale === "ar" ? "لا نتائج." : "No matches."}/> : (
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
             <tr><Th>{locale === "ar" ? "الاستحقاق" : "Due"}</Th><Th>{locale === "ar" ? "العميل" : "Client"}</Th><Th>{locale === "ar" ? "الوصف" : "Description"}</Th><Th className="text-end">{locale === "ar" ? "المبلغ" : "Amount"}</Th><Th>{locale === "ar" ? "الحالة" : "Status"}</Th><Th></Th></tr>
           </thead>
           <tbody className="divide-y">
-            {rows.map((r) => (
+            {filtered.map((r) => (
               <tr key={r.id} className="hover:bg-secondary/40">
                 <Td>{r.due_date}</Td><Td className="font-medium">{r.client_name}</Td><Td className="text-muted-foreground">{r.description || "—"}</Td>
                 <Td className="text-end font-mono tabular-nums">{fmt(r.amount, r.currency)}</Td>
@@ -296,6 +343,8 @@ function QuotesTab() {
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState("all");
 
   async function load() {
     if (!org) return;
@@ -304,18 +353,18 @@ function QuotesTab() {
   }
   useEffect(() => { load(); }, [org?.id]);
 
-  async function convert(q: Quote) {
+  async function convert(qte: Quote) {
     if (!org) return;
     const { data: sess } = await supabase.auth.getSession();
     const { data: numRes } = await supabase.rpc("next_doc_number", { _org_id: org.id, _kind: "invoice" });
     const { error } = await supabase.from("tax_invoices").insert({
       org_id: org.id, created_by: sess.session!.user.id, number: numRes as string,
-      quote_id: q.id, client_id: q.client_id, client_name: q.client_name, case_id: q.case_id,
-      currency: q.currency, tax_rate: q.tax_rate, subtotal: q.subtotal, tax_amount: q.tax_amount, total: q.total,
-      items: q.items, notes: q.notes, status: "issued",
+      quote_id: qte.id, client_id: qte.client_id, client_name: qte.client_name, case_id: qte.case_id,
+      currency: qte.currency, tax_rate: qte.tax_rate, subtotal: qte.subtotal, tax_amount: qte.tax_amount, total: qte.total,
+      items: qte.items, notes: qte.notes, status: "issued",
     });
     if (error) { toast.error(error.message); return; }
-    await supabase.from("quotes").update({ status: "converted" }).eq("id", q.id);
+    await supabase.from("quotes").update({ status: "converted" }).eq("id", qte.id);
     toast.success(locale === "ar" ? "تم التحويل إلى فاتورة" : "Converted to invoice");
     load();
   }
@@ -324,11 +373,20 @@ function QuotesTab() {
     await supabase.from("quotes").delete().eq("id", id); load();
   }
 
+  const statuses = useMemo(() => ["all", ...Array.from(new Set(rows.map((r) => r.status).filter(Boolean)))], [rows]);
+  const filtered = useMemo(() => rows.filter((r) => {
+    if (status !== "all" && r.status !== status) return false;
+    if (!q.trim()) return true;
+    const s = q.toLowerCase();
+    return (r.client_name ?? "").toLowerCase().includes(s) || (r.number ?? "").toLowerCase().includes(s);
+  }), [rows, q, status]);
+
   return (
     <>
       <Card className="overflow-hidden">
-        <div className="flex items-center justify-between border-b p-4">
-          <div className="text-sm font-semibold">{locale === "ar" ? "عروض الأسعار" : "Quotes"}</div>
+        <div className="flex flex-wrap items-center gap-3 border-b p-4">
+          <div className="text-sm font-semibold mr-auto">{locale === "ar" ? "عروض الأسعار" : "Quotes"} <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span></div>
+          <TableFilter q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses} placeholder={locale === "ar" ? "ابحث برقم/عميل…" : "Search by #/client…"} locale={locale as any} />
           {can("edit_financials") && (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild><Button size="sm" variant="gold"><Plus className="size-4"/>{locale === "ar" ? "عرض سعر جديد" : "New quote"}</Button></DialogTrigger>
@@ -336,13 +394,13 @@ function QuotesTab() {
             </Dialog>
           )}
         </div>
-        {loading ? <Loading/> : rows.length === 0 ? <Empty msg={locale === "ar" ? "لا توجد عروض أسعار." : "No quotes yet."}/> : (
+        {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={locale === "ar" ? "لا نتائج." : "No matches."}/> : (
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
               <tr><Th>#</Th><Th>{locale === "ar" ? "العميل" : "Client"}</Th><Th>{locale === "ar" ? "الإصدار" : "Issued"}</Th><Th>{locale === "ar" ? "حتى" : "Valid until"}</Th><Th className="text-end">{locale === "ar" ? "الإجمالي" : "Total"}</Th><Th>{locale === "ar" ? "الحالة" : "Status"}</Th><Th></Th></tr>
             </thead>
             <tbody className="divide-y">
-              {rows.map((r) => (
+              {filtered.map((r) => (
                 <tr key={r.id} className="hover:bg-secondary/40">
                   <Td className="font-mono text-xs">{r.number}</Td><Td className="font-medium">{r.client_name}</Td>
                   <Td>{r.issue_date}</Td><Td className="text-muted-foreground">{r.valid_until || "—"}</Td>
@@ -372,6 +430,8 @@ function InvoicesTab() {
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState("all");
 
   async function load() {
     if (!org) return;
@@ -382,11 +442,20 @@ function InvoicesTab() {
 
   async function remove(id: string) { if (!confirm("Delete?")) return; await supabase.from("tax_invoices").delete().eq("id", id); load(); }
 
+  const statuses = useMemo(() => ["all", ...Array.from(new Set(rows.map((r) => r.status).filter(Boolean)))], [rows]);
+  const filtered = useMemo(() => rows.filter((r) => {
+    if (status !== "all" && r.status !== status) return false;
+    if (!q.trim()) return true;
+    const s = q.toLowerCase();
+    return (r.client_name ?? "").toLowerCase().includes(s) || (r.number ?? "").toLowerCase().includes(s);
+  }), [rows, q, status]);
+
   return (
     <>
       <Card className="overflow-hidden">
-        <div className="flex items-center justify-between border-b p-4">
-          <div className="text-sm font-semibold">{locale === "ar" ? "الفواتير الضريبية" : "Tax invoices"}</div>
+        <div className="flex flex-wrap items-center gap-3 border-b p-4">
+          <div className="text-sm font-semibold mr-auto">{locale === "ar" ? "الفواتير الضريبية" : "Tax invoices"} <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span></div>
+          <TableFilter q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses} placeholder={locale === "ar" ? "ابحث برقم/عميل…" : "Search by #/client…"} locale={locale as any} />
           {can("edit_financials") && (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild><Button size="sm" variant="gold"><Plus className="size-4"/>{locale === "ar" ? "فاتورة جديدة" : "New invoice"}</Button></DialogTrigger>
@@ -394,13 +463,13 @@ function InvoicesTab() {
             </Dialog>
           )}
         </div>
-        {loading ? <Loading/> : rows.length === 0 ? <Empty msg={locale === "ar" ? "لا توجد فواتير." : "No invoices yet."}/> : (
+        {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={locale === "ar" ? "لا نتائج." : "No matches."}/> : (
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
               <tr><Th>#</Th><Th>{locale === "ar" ? "العميل" : "Client"}</Th><Th>{locale === "ar" ? "الإصدار" : "Issued"}</Th><Th>{locale === "ar" ? "الاستحقاق" : "Due"}</Th><Th className="text-end">{locale === "ar" ? "الإجمالي" : "Total"}</Th><Th className="text-end">{locale === "ar" ? "المدفوع" : "Paid"}</Th><Th>{locale === "ar" ? "الحالة" : "Status"}</Th><Th></Th></tr>
             </thead>
             <tbody className="divide-y">
-              {rows.map((r) => (
+              {filtered.map((r) => (
                 <tr key={r.id} className="hover:bg-secondary/40">
                   <Td className="font-mono text-xs">{r.number}</Td><Td className="font-medium">{r.client_name}</Td>
                   <Td>{r.issue_date}</Td><Td className="text-muted-foreground">{r.due_date || "—"}</Td>

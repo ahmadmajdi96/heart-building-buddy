@@ -4,14 +4,15 @@ import { useI18n, type TKey } from "@/lib/i18n";
 import { BrandMark } from "@/components/brand-mark";
 import { LangToggle } from "@/components/lang-toggle";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { OrgProvider, useOrg, type Permission } from "@/lib/org-context";
 import {
   LayoutDashboard, Briefcase, FileText, Search, Sparkles, CalendarDays,
   Receipt, GraduationCap, BarChart3, Building2, Settings, Bell,
-  ArrowLeft, Gavel, LogOut, Loader2, Mic, Video,
+  ArrowLeft, Gavel, LogOut, Loader2, Mic, Video, Menu, ChevronDown, MoreHorizontal,
 } from "lucide-react";
 
 export const Route = createFileRoute("/app")({
@@ -36,6 +37,9 @@ const navItems: NavItem[] = [
   { to: "/app/analytics", key: "m_analytics", icon: BarChart3, perm: "view_financials" },
 ];
 
+// Primary items shown in the top bar; the rest fall into "More".
+const PRIMARY_COUNT = 7;
+
 function AppLayout() {
   const { t } = useI18n();
   const { pathname } = useLocation();
@@ -43,6 +47,7 @@ function AppLayout() {
   const { org, loading: orgLoading, can } = useOrg();
   const [checking, setChecking] = useState(true);
   const [userEmail, setUserEmail] = useState("");
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -58,7 +63,6 @@ function AppLayout() {
     return () => { mounted = false; sub.subscription.unsubscribe(); };
   }, [navigate]);
 
-  // Redirect to onboarding once we know there's no org
   useEffect(() => {
     if (checking || orgLoading) return;
     if (!org && pathname !== "/app/onboarding") navigate({ to: "/app/onboarding" });
@@ -71,76 +75,153 @@ function AppLayout() {
   }
 
   const visibleNav = navItems.filter((i) => !i.perm || !org || can(i.perm));
+  const primary = visibleNav.slice(0, PRIMARY_COUNT);
+  const overflow = visibleNav.slice(PRIMARY_COUNT);
+  const isActive = (to: string) => pathname === to || (to !== "/app/dashboard" && pathname.startsWith(to));
 
   return (
     <div className="min-h-screen bg-secondary/30">
-      <div className="flex min-h-screen">
-        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-e border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex">
-          <div className="border-b border-sidebar-border p-5">
-            <Link to="/app/dashboard"><BrandMark tone="dark" /></Link>
-          </div>
-          <nav className="flex-1 overflow-y-auto p-3">
-            <ul className="space-y-0.5">
-              {visibleNav.map((item) => {
-                const active = pathname === item.to || (item.to !== "/app/dashboard" && pathname.startsWith(item.to));
-                const Icon = item.icon;
-                return (
-                  <li key={item.to}>
-                    <Link to={item.to} className={[
-                      "group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                      active ? "bg-gold/15 text-gold ring-1 ring-gold/25"
-                        : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                    ].join(" ")}>
-                      <Icon className="size-4" /><span>{t(item.key)}</span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-            <div className="my-4 h-px bg-sidebar-border" />
-            <Link to="/app/settings" className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground">
-              <Settings className="size-4" />{t("m_settings")}
-            </Link>
+      {/* Top brand bar */}
+      <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+        <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-3 px-4 md:px-6">
+          {/* Mobile menu */}
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Menu">
+                <Menu className="size-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 p-0">
+              <SheetHeader className="border-b p-5">
+                <SheetTitle><BrandMark /></SheetTitle>
+              </SheetHeader>
+              <nav className="p-3">
+                <ul className="space-y-0.5">
+                  {visibleNav.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <li key={item.to}>
+                        <Link
+                          to={item.to}
+                          onClick={() => setMobileOpen(false)}
+                          className={[
+                            "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium",
+                            isActive(item.to)
+                              ? "bg-gold/15 text-gold ring-1 ring-gold/30"
+                              : "text-foreground/75 hover:bg-secondary",
+                          ].join(" ")}
+                        >
+                          <Icon className="size-4" /><span>{t(item.key)}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className="my-3 h-px bg-border" />
+                <Link to="/app/settings" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-foreground/75 hover:bg-secondary">
+                  <Settings className="size-4" />{t("m_settings")}
+                </Link>
+              </nav>
+            </SheetContent>
+          </Sheet>
+
+          <Link to="/app/dashboard" className="flex items-center gap-2 shrink-0">
+            <BrandMark />
+          </Link>
+
+          <div className="h-7 w-px bg-border hidden lg:block mx-1" />
+
+          {/* Primary nav (desktop) */}
+          <nav className="hidden lg:flex items-center gap-1 min-w-0 flex-1 overflow-x-auto scrollbar-none">
+            {primary.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.to);
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={[
+                    "group relative flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium whitespace-nowrap transition-colors",
+                    active
+                      ? "text-foreground bg-gold/12 ring-1 ring-gold/30"
+                      : "text-foreground/65 hover:text-foreground hover:bg-secondary",
+                  ].join(" ")}
+                >
+                  <Icon className="size-4 opacity-80 group-hover:opacity-100" />
+                  <span>{t(item.key)}</span>
+                </Link>
+              );
+            })}
+            {overflow.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="rounded-full gap-1.5 text-foreground/65 hover:text-foreground">
+                    <MoreHorizontal className="size-4" />
+                    <span>{t("brand") && "More"}</span>
+                    <ChevronDown className="size-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {overflow.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <DropdownMenuItem key={item.to} asChild>
+                        <Link to={item.to} className="flex items-center gap-2">
+                          <Icon className="size-4 opacity-70" /> {t(item.key)}
+                        </Link>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </nav>
 
-          {org && (
-            <div className="border-t border-sidebar-border p-4">
-              <div className="rounded-lg bg-sidebar-accent/60 p-3 text-xs text-sidebar-foreground/70">
-                <div className="font-semibold text-sidebar-foreground truncate">{org.display_name || org.legal_name}</div>
-                <div className="mt-1 capitalize">{org.type === "firm" ? (t("brand") && "Law firm") : "Solo lawyer"}</div>
-              </div>
-            </div>
-          )}
-        </aside>
-
-        <main className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-background/85 px-4 backdrop-blur md:px-6">
-            <div className="relative max-w-md flex-1">
-              <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder={t("app_search")} className="h-10 ps-9 bg-secondary/60 border-transparent focus-visible:bg-background" />
-            </div>
-            <div className="ms-auto flex items-center gap-2">
-              <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex">
-                <Link to="/"><ArrowLeft className="size-4" />{t("app_back_site")}</Link>
-              </Button>
-              <LangToggle />
-              <Button variant="ghost" size="icon" aria-label={t("app_notifications")} className="relative">
-                <Bell className="size-4" />
-                <span className="absolute end-2 top-2 size-1.5 rounded-full bg-destructive" />
-              </Button>
-              <Button size="sm" variant="ghost" className="gap-1.5" onClick={signOut}>
-                <LogOut className="size-4" /> Sign out
-              </Button>
-              <Avatar className="size-9 ring-2 ring-border">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">{(userEmail[0] ?? "L").toUpperCase()}</AvatarFallback>
-              </Avatar>
-            </div>
-          </header>
-          <div className="flex-1 p-4 md:p-8">
-            <Outlet />
+          {/* Right actions */}
+          <div className="ms-auto flex items-center gap-1.5">
+            <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex text-foreground/70">
+              <Link to="/"><ArrowLeft className="size-4" />{t("app_back_site")}</Link>
+            </Button>
+            <LangToggle />
+            <Button variant="ghost" size="icon" aria-label={t("app_notifications")} className="relative">
+              <Bell className="size-4" />
+              <span className="absolute end-2.5 top-2.5 size-1.5 rounded-full bg-destructive" />
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 rounded-full p-1 pr-2 ring-1 ring-transparent transition hover:ring-border focus:outline-none focus-visible:ring-gold/40">
+                  <Avatar className="size-8">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">{(userEmail[0] ?? "L").toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <ChevronDown className="size-3.5 text-muted-foreground hidden md:block" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {org && (
+                  <>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="text-sm font-semibold truncate">{org.display_name || org.legal_name}</div>
+                      <div className="text-xs text-muted-foreground truncate">{userEmail}</div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem asChild>
+                  <Link to="/app/settings" className="flex items-center gap-2"><Settings className="size-4" />{t("m_settings")}</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
+                  <LogOut className="size-4" /> Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-        </main>
-      </div>
+        </div>
+        <div className="h-px bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
+      </header>
+
+      <main className="mx-auto max-w-[1600px] p-4 md:p-8">
+        <Outlet />
+      </main>
     </div>
   );
 }
