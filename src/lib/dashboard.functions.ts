@@ -25,7 +25,7 @@ export const getDashboardStats = createServerFn({ method: "GET" })
       supabase.from("payments").select("amount,paid_at").gte("paid_at", startMonth),
       supabase.from("payments").select("amount,paid_at").gte("paid_at", startYear),
       supabase.from("drafts").select("id", { count: "exact", head: true }),
-      supabase.from("meetings").select("id,status,started_at").order("created_at", { ascending: false }).limit(50),
+      supabase.from("meetings").select("id,started_at,ended_at").order("created_at", { ascending: false }).limit(50),
       supabase.from("live_sessions").select("id", { count: "exact", head: true }),
       supabase.from("clients").select("id,name,email,created_at").order("created_at", { ascending: false }).limit(5),
       supabase.from("documents").select("id,name,created_at,case_id").order("created_at", { ascending: false }).limit(5),
@@ -46,7 +46,7 @@ export const getDashboardStats = createServerFn({ method: "GET" })
     const invoicePaidCount = (allInvoices.data ?? []).filter((i) => i.status === "paid").length;
 
     const meetingsArr = meetings.data ?? [];
-    const liveMeetings = meetingsArr.filter((m) => m.status === "live").length;
+    const liveMeetings = meetingsArr.filter((m) => !m.ended_at).length;
 
     // Monthly revenue trend (last 6 months)
     const trend: { month: string; amount: number }[] = [];
@@ -112,17 +112,16 @@ export const getTeamPerformance = createServerFn({ method: "GET" })
       }
     }
 
-    // Cases per assigned attorney (created_by)
-    const { data: casesAll } = await supabase
-      .from("cases").select("id, created_by, status");
-
+    // Cases per owner
+    const { data: casesAll } = await supabase.from("cases").select("id, owner_id, status");
     const stats: Record<string, { cases: number; active: number }> = {};
     for (const c of casesAll ?? []) {
-      const u = c.created_by as string | null;
+      const u = (c as any).owner_id as string | null;
       if (!u) continue;
       stats[u] = stats[u] || { cases: 0, active: 0 };
       stats[u].cases += 1;
-      if (c.status === "open" || c.status === "pending") stats[u].active += 1;
+      const s = (c as any).status;
+      if (s === "open" || s === "pending") stats[u].active += 1;
     }
 
     return {
