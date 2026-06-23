@@ -235,6 +235,8 @@ function SchedulesTab() {
   const [rows, setRows] = useState<Schedule[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState("all");
 
   async function load() {
     if (!org) return;
@@ -253,10 +255,19 @@ function SchedulesTab() {
     load();
   }
 
+  const statuses = useMemo(() => ["all", ...Array.from(new Set(rows.map((r) => r.status).filter(Boolean)))], [rows]);
+  const filtered = useMemo(() => rows.filter((r) => {
+    if (status !== "all" && r.status !== status) return false;
+    if (!q.trim()) return true;
+    const s = q.toLowerCase();
+    return (r.client_name ?? "").toLowerCase().includes(s) || (r.description ?? "").toLowerCase().includes(s);
+  }), [rows, q, status]);
+
   return (
     <Card className="overflow-hidden">
-      <div className="flex items-center justify-between border-b p-4">
-        <div className="text-sm font-semibold">{locale === "ar" ? "جدولة المدفوعات" : "Payment schedule"}</div>
+      <div className="flex flex-wrap items-center gap-3 border-b p-4">
+        <div className="text-sm font-semibold mr-auto">{locale === "ar" ? "جدولة المدفوعات" : "Payment schedule"} <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span></div>
+        <TableFilter q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses} placeholder={locale === "ar" ? "ابحث…" : "Search…"} locale={locale as any} />
         {can("edit_financials") && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button size="sm" variant="gold"><Plus className="size-4"/>{locale === "ar" ? "إضافة قسط" : "New installment"}</Button></DialogTrigger>
@@ -264,13 +275,13 @@ function SchedulesTab() {
           </Dialog>
         )}
       </div>
-      {loading ? <Loading/> : rows.length === 0 ? <Empty msg={locale === "ar" ? "لا توجد أقساط مجدولة." : "No scheduled installments."}/> : (
+      {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={locale === "ar" ? "لا نتائج." : "No matches."}/> : (
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
             <tr><Th>{locale === "ar" ? "الاستحقاق" : "Due"}</Th><Th>{locale === "ar" ? "العميل" : "Client"}</Th><Th>{locale === "ar" ? "الوصف" : "Description"}</Th><Th className="text-end">{locale === "ar" ? "المبلغ" : "Amount"}</Th><Th>{locale === "ar" ? "الحالة" : "Status"}</Th><Th></Th></tr>
           </thead>
           <tbody className="divide-y">
-            {rows.map((r) => (
+            {filtered.map((r) => (
               <tr key={r.id} className="hover:bg-secondary/40">
                 <Td>{r.due_date}</Td><Td className="font-medium">{r.client_name}</Td><Td className="text-muted-foreground">{r.description || "—"}</Td>
                 <Td className="text-end font-mono tabular-nums">{fmt(r.amount, r.currency)}</Td>
