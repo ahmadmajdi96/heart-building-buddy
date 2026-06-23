@@ -343,6 +343,8 @@ function QuotesTab() {
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState("all");
 
   async function load() {
     if (!org) return;
@@ -351,18 +353,18 @@ function QuotesTab() {
   }
   useEffect(() => { load(); }, [org?.id]);
 
-  async function convert(q: Quote) {
+  async function convert(qte: Quote) {
     if (!org) return;
     const { data: sess } = await supabase.auth.getSession();
     const { data: numRes } = await supabase.rpc("next_doc_number", { _org_id: org.id, _kind: "invoice" });
     const { error } = await supabase.from("tax_invoices").insert({
       org_id: org.id, created_by: sess.session!.user.id, number: numRes as string,
-      quote_id: q.id, client_id: q.client_id, client_name: q.client_name, case_id: q.case_id,
-      currency: q.currency, tax_rate: q.tax_rate, subtotal: q.subtotal, tax_amount: q.tax_amount, total: q.total,
-      items: q.items, notes: q.notes, status: "issued",
+      quote_id: qte.id, client_id: qte.client_id, client_name: qte.client_name, case_id: qte.case_id,
+      currency: qte.currency, tax_rate: qte.tax_rate, subtotal: qte.subtotal, tax_amount: qte.tax_amount, total: qte.total,
+      items: qte.items, notes: qte.notes, status: "issued",
     });
     if (error) { toast.error(error.message); return; }
-    await supabase.from("quotes").update({ status: "converted" }).eq("id", q.id);
+    await supabase.from("quotes").update({ status: "converted" }).eq("id", qte.id);
     toast.success(locale === "ar" ? "تم التحويل إلى فاتورة" : "Converted to invoice");
     load();
   }
@@ -371,11 +373,20 @@ function QuotesTab() {
     await supabase.from("quotes").delete().eq("id", id); load();
   }
 
+  const statuses = useMemo(() => ["all", ...Array.from(new Set(rows.map((r) => r.status).filter(Boolean)))], [rows]);
+  const filtered = useMemo(() => rows.filter((r) => {
+    if (status !== "all" && r.status !== status) return false;
+    if (!q.trim()) return true;
+    const s = q.toLowerCase();
+    return (r.client_name ?? "").toLowerCase().includes(s) || (r.number ?? "").toLowerCase().includes(s);
+  }), [rows, q, status]);
+
   return (
     <>
       <Card className="overflow-hidden">
-        <div className="flex items-center justify-between border-b p-4">
-          <div className="text-sm font-semibold">{locale === "ar" ? "عروض الأسعار" : "Quotes"}</div>
+        <div className="flex flex-wrap items-center gap-3 border-b p-4">
+          <div className="text-sm font-semibold mr-auto">{locale === "ar" ? "عروض الأسعار" : "Quotes"} <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span></div>
+          <TableFilter q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses} placeholder={locale === "ar" ? "ابحث برقم/عميل…" : "Search by #/client…"} locale={locale as any} />
           {can("edit_financials") && (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild><Button size="sm" variant="gold"><Plus className="size-4"/>{locale === "ar" ? "عرض سعر جديد" : "New quote"}</Button></DialogTrigger>
@@ -383,13 +394,13 @@ function QuotesTab() {
             </Dialog>
           )}
         </div>
-        {loading ? <Loading/> : rows.length === 0 ? <Empty msg={locale === "ar" ? "لا توجد عروض أسعار." : "No quotes yet."}/> : (
+        {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={locale === "ar" ? "لا نتائج." : "No matches."}/> : (
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
               <tr><Th>#</Th><Th>{locale === "ar" ? "العميل" : "Client"}</Th><Th>{locale === "ar" ? "الإصدار" : "Issued"}</Th><Th>{locale === "ar" ? "حتى" : "Valid until"}</Th><Th className="text-end">{locale === "ar" ? "الإجمالي" : "Total"}</Th><Th>{locale === "ar" ? "الحالة" : "Status"}</Th><Th></Th></tr>
             </thead>
             <tbody className="divide-y">
-              {rows.map((r) => (
+              {filtered.map((r) => (
                 <tr key={r.id} className="hover:bg-secondary/40">
                   <Td className="font-mono text-xs">{r.number}</Td><Td className="font-medium">{r.client_name}</Td>
                   <Td>{r.issue_date}</Td><Td className="text-muted-foreground">{r.valid_until || "—"}</Td>
