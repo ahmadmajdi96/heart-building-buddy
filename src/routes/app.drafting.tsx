@@ -136,7 +136,24 @@ function DraftingPage() {
 
   async function removeDraft(id: string) {
     if (!confirm(locale === "ar" ? "حذف المسودة؟" : "Delete draft?")) return;
-    try { await del({ data: { id } }); refresh(); } catch (e) { toast.error((e as Error).message); }
+    try {
+      await del({ data: { id } });
+      if (currentId === id) { setCurrentId(null); editor?.commands.setContent(""); setTitle(""); }
+      refresh();
+    } catch (e) { toast.error((e as Error).message); }
+  }
+
+  async function openDraft(id: string) {
+    try {
+      const row: any = await getOne({ data: { id } });
+      editor?.commands.setContent(row.content || "");
+      setTitle(row.title || "");
+      setCurrentId(row.id);
+      const v = row.variables || {};
+      const entries = Object.entries(v).map(([key, value]) => ({ key, value: String(value) }));
+      if (entries.length) setVariables(entries);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (e) { toast.error((e as Error).message); }
   }
 
   const groupedTpls = useMemo(() => templates, [templates]);
