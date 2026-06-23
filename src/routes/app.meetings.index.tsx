@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useI18n } from "@/lib/i18n";
 import { PageHeader } from "@/components/app/primitives";
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { createMeeting, listMeetings, deleteMeeting } from "@/lib/meetings.functions";
 import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
-import { Video, Plus, Trash2, Copy, ArrowRight, Loader2 } from "lucide-react";
+import { Video, Plus, Trash2, Copy, ArrowRight, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/meetings/")({ component: MeetingsPage });
@@ -37,6 +37,16 @@ function MeetingsPage() {
   const [clientId, setClientId] = useState("none");
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [q, setQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "live" | "ended">("all");
+
+  const filtered = useMemo(() => items.filter((m) => {
+    if (statusFilter === "live" && m.ended_at) return false;
+    if (statusFilter === "ended" && !m.ended_at) return false;
+    if (!q.trim()) return true;
+    return m.title.toLowerCase().includes(q.toLowerCase());
+  }), [items, q, statusFilter]);
+
 
   async function refresh() {
     setLoading(true);
@@ -114,19 +124,37 @@ function MeetingsPage() {
       </div>
 
       <div className="card-elev rounded-xl border bg-card">
-        <div className="border-b px-5 py-3 text-sm font-semibold">
-          {locale === "ar" ? "اجتماعاتي" : "My meetings"}
+        <div className="flex flex-wrap items-center gap-3 border-b px-5 py-3">
+          <div className="text-sm font-semibold mr-auto">
+            {locale === "ar" ? "اجتماعاتي" : "My meetings"}
+            <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{items.length})</span>
+          </div>
+          <div className="relative w-full max-w-xs">
+            <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={locale === "ar" ? "ابحث بالعنوان…" : "Search by title…"} className="h-9 ps-9" />
+          </div>
+          <div className="flex gap-1.5">
+            {(["all","live","ended"] as const).map((s) => (
+              <Button key={s} size="sm" variant={statusFilter === s ? "default" : "ghost"} onClick={() => setStatusFilter(s)}>
+                {locale === "ar"
+                  ? (s === "all" ? "الكل" : s === "live" ? "مباشر" : "منتهٍ")
+                  : (s === "all" ? "All" : s === "live" ? "Live" : "Ended")}
+              </Button>
+            ))}
+          </div>
         </div>
         {loading ? (
           <div className="grid place-items-center py-12"><Loader2 className="size-5 animate-spin text-gold" /></div>
-        ) : items.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="grid place-items-center py-12 text-sm text-muted-foreground">
             <Video className="mb-2 size-8 text-gold/40" />
-            {locale === "ar" ? "لا توجد اجتماعات بعد." : "No meetings yet."}
+            {items.length === 0
+              ? (locale === "ar" ? "لا توجد اجتماعات بعد." : "No meetings yet.")
+              : (locale === "ar" ? "لا نتائج تطابق البحث." : "No matches.")}
           </div>
         ) : (
           <ul className="divide-y">
-            {items.map((m) => (
+            {filtered.map((m) => (
               <li key={m.id} className="flex items-center gap-3 px-5 py-3">
                 <Video className="size-4 text-gold" />
                 <div className="min-w-0 flex-1">
