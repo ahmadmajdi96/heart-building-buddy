@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { useI18n } from "@/lib/i18n";
 import { useOrg, roleLabel, type OrgRole } from "@/lib/org-context";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { LogoPicker } from "@/components/logo-picker";
+import { listTeamMembers, inviteTeamMember, removeTeamMember, updateTeamMemberRole } from "@/lib/team.functions";
 
 export const Route = createFileRoute("/app/settings")({ component: SettingsPage });
 
@@ -109,26 +111,29 @@ function OrgTab({ editable }: { editable: boolean }) {
 
 function MembersTab({ editable }: { editable: boolean }) {
   const { locale } = useI18n();
-  const { org, userId } = useOrg();
+  const { userId } = useOrg();
+  const listFn = useServerFn(listTeamMembers);
+  const removeFn = useServerFn(removeTeamMember);
+  const updateFn = useServerFn(updateTeamMemberRole);
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
 
   async function load() {
-    if (!org) return;
-    const { data } = await supabase.from("organization_members").select("*").eq("org_id", org.id).order("created_at", { ascending: true });
-    setMembers(data ?? []); setLoading(false);
+    try { setMembers(await listFn()); }
+    catch (e) { toast.error((e as Error).message); }
+    finally { setLoading(false); }
   }
-  useEffect(() => { load(); }, [org?.id]);
+  useEffect(() => { load(); }, []);
 
   async function changeRole(id: string, role: string) {
-    const { error } = await supabase.from("organization_members").update({ role: role as any }).eq("id", id);
-    if (error) toast.error(error.message); else { toast.success(locale === "ar" ? "تم التحديث" : "Updated"); load(); }
+    try { await updateFn({ data: { id, role: role as any } }); toast.success(locale === "ar" ? "تم التحديث" : "Updated"); load(); }
+    catch (e) { toast.error((e as Error).message); }
   }
   async function remove(id: string) {
     if (!confirm(locale === "ar" ? "إزالة العضو؟" : "Remove member?")) return;
-    const { error } = await supabase.from("organization_members").delete().eq("id", id);
-    if (error) toast.error(error.message); else load();
+    try { await removeFn({ data: { id } }); load(); }
+    catch (e) { toast.error((e as Error).message); }
   }
 
   const roles: OrgRole[] = ["owner","partner","associate","paralegal","accountant","assistant"];
@@ -152,7 +157,10 @@ function MembersTab({ editable }: { editable: boolean }) {
           <tbody className="divide-y">
             {members.map((m) => (
               <tr key={m.id}>
-                <td className="px-5 py-3">{m.user_id === userId ? (locale === "ar" ? "أنت" : "You") : (m.invited_email || m.user_id?.slice(0,8))}</td>
+                <td className="px-5 py-3">
+                  <div className="font-medium">{m.user_id === userId ? (locale === "ar" ? "أنت" : "You") : (m.name || m.email || "—")}</div>
+                  {m.email && m.name && <div className="text-xs text-muted-foreground">{m.email}</div>}
+                </td>
                 <td className="px-5 py-3">
                   {editable && m.user_id !== userId ? (
                     <Select value={m.role} onValueChange={(v) => changeRole(m.id, v)}>
@@ -169,7 +177,9 @@ function MembersTab({ editable }: { editable: boolean }) {
         </table>
       )}
       <div className="border-t bg-muted/30 p-3 text-xs text-muted-foreground">
-        {locale === "ar" ? "ملاحظة: الدعوة تُسجّل البريد فقط؛ سيتم ربط الحساب عند تسجيل العضو بنفس البريد." : "Note: invites store the email; the membership links when the invitee signs up with the same email."}
+        {locale === "ar"
+          ? "ندعو العضو بإرسال رابط دخول إلى بريده. عند الدخول لأول مرة سيختار كلمة المرور الخاصة به."
+          : "Inviting sends a sign-in link to the member's email. On first login they choose their own password."}
       </div>
     </Card>
   );
@@ -177,19 +187,19 @@ function MembersTab({ editable }: { editable: boolean }) {
 
 function InviteDialog({ onSaved, onClose }: { onSaved: () => void; onClose: () => void }) {
   const { locale } = useI18n();
-  const { org } = useOrg();
+  const inviteFn = useServerFn(inviteTeamMember);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<OrgRole>("associate");
   const [saving, setSaving] = useState(false);
 
   async function save() {
-    if (!org) return;
     setSaving(true);
-    const { error } = await supabase.from("organization_members").insert({
-      org_id: org.id, invited_email: email.toLowerCase(), role, status: "invited",
-    });
-    if (error) { toast.error(error.message); setSaving(false); return; }
-    toast.success(locale === "ar" ? "تمت الدعوة" : "Invited"); onSaved();
+    try {
+      await inviteFn({ data: { email, role, redirectTo: window.location.origin + "/set-password" } });
+      toast.success(locale === "ar" ? "تمت الدعوة — تم إرسال رابط البريد." : "Invited — sign-in link sent.");
+      onSaved();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setSaving(false); }
   }
 
   const roles: OrgRole[] = ["partner","associate","paralegal","accountant","assistant"];
@@ -207,7 +217,7 @@ function InviteDialog({ onSaved, onClose }: { onSaved: () => void; onClose: () =
       </div>
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>{locale === "ar" ? "إلغاء" : "Cancel"}</Button>
-        <Button variant="gold" onClick={save} disabled={saving || !email}>{saving && <Loader2 className="size-4 animate-spin"/>}{locale === "ar" ? "إرسال" : "Send"}</Button>
+        <Button variant="gold" onClick={save} disabled={saving || !email}>{saving && <Loader2 className="size-4 animate-spin"/>}{locale === "ar" ? "إرسال الدعوة" : "Send invite"}</Button>
       </DialogFooter>
     </DialogContent>
   );
