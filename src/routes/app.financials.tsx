@@ -106,6 +106,8 @@ function PaymentsTab() {
   const [rows, setRows] = useState<Payment[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [method, setMethod] = useState<string>("all");
 
   async function load() {
     if (!org) return;
@@ -113,6 +115,14 @@ function PaymentsTab() {
     setRows(data ?? []); setLoading(false);
   }
   useEffect(() => { load(); }, [org?.id]);
+
+  const methods = useMemo(() => ["all", ...Array.from(new Set(rows.map((r) => r.method).filter(Boolean)))], [rows]);
+  const filtered = useMemo(() => rows.filter((r) => {
+    if (method !== "all" && r.method !== method) return false;
+    if (!q.trim()) return true;
+    const s = q.toLowerCase();
+    return (r.client_name ?? "").toLowerCase().includes(s) || (r.reference ?? "").toLowerCase().includes(s);
+  }), [rows, q, method]);
 
   return (
     <Card className="overflow-hidden">
