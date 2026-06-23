@@ -1,22 +1,18 @@
 # syntax=docker/dockerfile:1.7
 
-FROM oven/bun:1.2 AS build
+FROM oven/bun:1.2 AS base
 WORKDIR /app
 
+# Install dependencies
 COPY package.json bun.lock* bunfig.toml ./
 RUN bun install --frozen-lockfile || bun install
 
+# Copy source
 COPY . .
-RUN bun run build
-
-FROM node:20-alpine AS runtime
-WORKDIR /app
-
-COPY --from=build /app/.output ./.output
 
 EXPOSE 5555
 
 ENV HOST=0.0.0.0
 ENV PORT=5555
 
-CMD ["node", ".output/server/index.mjs"]
+CMD ["bun", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5555"]
