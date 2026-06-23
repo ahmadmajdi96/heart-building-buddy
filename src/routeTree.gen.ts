@@ -16,6 +16,7 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppResearchRouteImport } from './routes/app.research'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
+import { Route as AppMeetingsRouteImport } from './routes/app.meetings'
 import { Route as AppLiveSessionsRouteImport } from './routes/app.live-sessions'
 import { Route as AppFinancialsRouteImport } from './routes/app.financials'
 import { Route as AppEducationRouteImport } from './routes/app.education'
@@ -63,6 +64,11 @@ const AppResearchRoute = AppResearchRouteImport.update({
 const AppOnboardingRoute = AppOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMeetingsRoute = AppMeetingsRouteImport.update({
+  id: '/meetings',
+  path: '/meetings',
   getParentRoute: () => AppRoute,
 } as any)
 const AppLiveSessionsRoute = AppLiveSessionsRouteImport.update({
@@ -146,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
   '/app/live-sessions': typeof AppLiveSessionsRoute
+  '/app/meetings': typeof AppMeetingsRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
@@ -167,6 +174,7 @@ export interface FileRoutesByTo {
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
   '/app/live-sessions': typeof AppLiveSessionsRoute
+  '/app/meetings': typeof AppMeetingsRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
@@ -190,6 +198,7 @@ export interface FileRoutesById {
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
   '/app/live-sessions': typeof AppLiveSessionsRoute
+  '/app/meetings': typeof AppMeetingsRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
@@ -214,6 +223,7 @@ export interface FileRouteTypes {
     | '/app/education'
     | '/app/financials'
     | '/app/live-sessions'
+    | '/app/meetings'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
@@ -235,6 +245,7 @@ export interface FileRouteTypes {
     | '/app/education'
     | '/app/financials'
     | '/app/live-sessions'
+    | '/app/meetings'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
@@ -257,6 +268,7 @@ export interface FileRouteTypes {
     | '/app/education'
     | '/app/financials'
     | '/app/live-sessions'
+    | '/app/meetings'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
@@ -322,6 +334,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/app/onboarding'
       preLoaderRoute: typeof AppOnboardingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/meetings': {
+      id: '/app/meetings'
+      path: '/meetings'
+      fullPath: '/app/meetings'
+      preLoaderRoute: typeof AppMeetingsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/live-sessions': {
@@ -429,6 +448,7 @@ interface AppRouteChildren {
   AppEducationRoute: typeof AppEducationRoute
   AppFinancialsRoute: typeof AppFinancialsRoute
   AppLiveSessionsRoute: typeof AppLiveSessionsRoute
+  AppMeetingsRoute: typeof AppMeetingsRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppResearchRoute: typeof AppResearchRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -448,6 +468,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppEducationRoute: AppEducationRoute,
   AppFinancialsRoute: AppFinancialsRoute,
   AppLiveSessionsRoute: AppLiveSessionsRoute,
+  AppMeetingsRoute: AppMeetingsRoute,
   AppOnboardingRoute: AppOnboardingRoute,
   AppResearchRoute: AppResearchRoute,
   AppSettingsRoute: AppSettingsRoute,
