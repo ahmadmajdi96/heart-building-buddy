@@ -4,15 +4,16 @@ import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
+
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { generateCase, courtroomTurn, saveSimulation, listSimulations, deleteSimulation } from "@/lib/courtroom.functions";
+import { courtroomTurn, saveSimulation, listSimulations, deleteSimulation, getSimulation } from "@/lib/courtroom.functions";
+import { extractTextFromFile } from "@/lib/extract-text";
 import { useServerFn } from "@tanstack/react-start";
 import { MarkdownView } from "@/lib/markdown";
-import { Gavel, Scale, Upload, Sparkles, Loader2, RefreshCw, Send, User as UserIcon, FileText, History, Trash2 } from "lucide-react";
+import { Gavel, Scale, Upload, Loader2, RefreshCw, Send, User as UserIcon, FileText, History, Trash2, Play, X } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/courtroom")({
@@ -75,9 +76,8 @@ function CourtroomPage() {
   const tt = (k: keyof typeof L) => L[k][locale];
 
   const [role, setRole] = useState<Role>("defendant");
-  const [mode, setMode] = useState<"generate" | "upload">("generate");
-  const [hint, setHint] = useState("");
-  const [practice, setPractice] = useState("");
+  const [files, setFiles] = useState<{ name: string; text: string; size: number }[]>([]);
+  const [extracting, setExtracting] = useState(false);
   const [pasted, setPasted] = useState("");
   const [caseBrief, setCaseBrief] = useState<CaseBrief | null>(null);
   const [busy, setBusy] = useState<null | "case" | "turn" | "start">(null);
@@ -130,36 +130,56 @@ function CourtroomPage() {
     }
   }, [caseBrief, started]);
 
-  async function handleGenerate() {
-    setBusy("case"); setError(null);
-    setCaseBrief(null);
+  async function handleFiles(fileList: FileList | File[]) {
+    const arr = Array.from(fileList);
+    setExtracting(true);
+    setError(null);
     try {
-      const c = await generateCase({ data: { locale, hint: hint || undefined, practiceArea: practice || undefined } });
-      setCaseBrief(c as CaseBrief);
+      const extracted: { name: string; text: string; size: number }[] = [];
+      for (const f of arr) {
+        const text = await extractTextFromFile(f);
+        if (!text.trim()) {
+          toast.warning(`${f.name}: ${locale === "ar" ? "تعذّر استخراج النص" : "could not extract text"}`);
+          continue;
+        }
+        extracted.push({ name: f.name, text, size: f.size });
+      }
+      if (extracted.length) {
+        const merged = [...files, ...extracted];
+        setFiles(merged);
+        buildBriefFromDocs(merged, pasted);
+      }
     } catch (e) {
       setError((e as Error).message);
-    } finally { setBusy(null); }
+    } finally {
+      setExtracting(false);
+    }
   }
 
-  async function handleFile(file: File) {
-    const text = await file.text();
-    setPasted(text);
-    buildBriefFromText(text, file.name);
+  function removeFile(idx: number) {
+    const next = files.filter((_, i) => i !== idx);
+    setFiles(next);
+    if (next.length || pasted.trim()) buildBriefFromDocs(next, pasted);
+    else setCaseBrief(null);
   }
 
-  function buildBriefFromText(text: string, name = "Uploaded document") {
-    const trimmed = text.slice(0, 6000);
+  function buildBriefFromDocs(docs: { name: string; text: string }[], extra: string) {
+    const blocks: string[] = [];
+    for (const d of docs) blocks.push(`=== ${d.name} ===\n${d.text}`);
+    if (extra.trim()) blocks.push(`=== ${locale === "ar" ? "ملاحظات إضافية" : "Additional notes"} ===\n${extra.trim()}`);
+    const combined = blocks.join("\n\n").slice(0, 60_000);
+    const title = docs[0]?.name?.replace(/\.[^.]+$/, "") ?? (locale === "ar" ? "قضية مرفوعة" : "Uploaded case");
     setCaseBrief({
-      title: name,
+      title,
       jurisdiction: locale === "ar" ? "غير محدد" : "Unspecified",
       court: locale === "ar" ? "محكمة عامة" : "General Court",
       caseNumber: "—",
-      summary: trimmed.slice(0, 400),
-      facts: trimmed,
+      summary: combined.slice(0, 400),
+      facts: combined,
       charges: [],
       claimantName: locale === "ar" ? "الطرف الأول" : "Party A",
       defendantName: locale === "ar" ? "الطرف الثاني" : "Party B",
-      evidence: [],
+      evidence: docs.map((d) => d.name),
     });
   }
 
@@ -203,15 +223,26 @@ function CourtroomPage() {
 
   function reset() {
     setStarted(false); setHistory([]); setVerdict(false); setCaseBrief(null);
-    setPasted(""); setHint(""); setPractice(""); setInput("");
+    setPasted(""); setFiles([]); setInput("");
     setSimId(null);
   }
 
+  const getSim = useServerFn(getSimulation);
   async function loadSim(id: string) {
-    const sim = pastSims.find((s) => s.id === id);
-    if (!sim) return;
-    // Just refresh and let user pick; full restore would need the scenario/transcript
-    toast.info("Loading past simulation...");
+    setError(null);
+    try {
+      const sim = await getSim({ data: { id } }) as any;
+      if (!sim) return;
+      setSimId(sim.id);
+      setCaseBrief(sim.scenario as CaseBrief);
+      const tr = (sim.transcript ?? []) as Msg[];
+      setHistory(tr);
+      setVerdict(!!sim.verdict?.reached);
+      setStarted(tr.length > 0);
+      toast.success(locale === "ar" ? "تم تحميل المحاكمة" : "Simulation loaded");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   }
 
   async function removeSim(id: string) {
@@ -258,61 +289,65 @@ function CourtroomPage() {
           </RadioGroup>
         </Card>
 
-        {/* Step 2: case */}
+        {/* Step 2: upload documents */}
         <Card className="p-6">
-          <h2 className="mb-4 text-lg font-semibold">2. {tt("step_case")}</h2>
-          <div className="mb-4 flex gap-2">
-            <Button variant={mode === "generate" ? "gold" : "outline"} size="sm" onClick={() => setMode("generate")}>
-              <Sparkles className="size-4" /> {tt("tab_generate")}
-            </Button>
-            <Button variant={mode === "upload" ? "gold" : "outline"} size="sm" onClick={() => setMode("upload")}>
-              <Upload className="size-4" /> {tt("tab_upload")}
-            </Button>
-          </div>
+          <h2 className="mb-4 text-lg font-semibold">
+            2. {locale === "ar" ? "ارفع مستندات القضية" : "Upload case documents"}
+          </h2>
+          <p className="mb-4 text-sm text-muted-foreground">
+            {locale === "ar"
+              ? "ارفع ملفاً واحداً أو أكثر (PDF، DOCX، CSV، TXT). سيتم إرسالها إلى الذكاء الاصطناعي لتشغيل المحاكمة."
+              : "Upload one or more files (PDF, DOCX, CSV, TXT). They will be sent to the AI to run the hearing."}
+          </p>
 
-          {mode === "generate" ? (
-            <div className="space-y-3">
-              <Input placeholder={tt("practice")} value={practice} onChange={(e) => setPractice(e.target.value)} />
-              <Textarea placeholder={tt("hint")} value={hint} onChange={(e) => setHint(e.target.value)} rows={2} />
-              <div className="flex gap-2">
-                <Button onClick={handleGenerate} disabled={busy === "case"} variant="gold">
-                  {busy === "case" ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
-                  {caseBrief ? tt("regenerate") : tt("generate")}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-6 text-sm text-muted-foreground hover:bg-secondary/40">
-                <Upload className="size-4" />
-                <span>{tt("upload_btn")} (.txt, .md)</span>
-                <input
-                  type="file"
-                  accept=".txt,.md,text/plain,text/markdown"
-                  className="hidden"
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-                />
-              </label>
-              <Textarea
-                placeholder={tt("paste_ph")}
-                value={pasted}
-                onChange={(e) => setPasted(e.target.value)}
-                rows={6}
-              />
-              {pasted && (
-                <Button variant="outline" size="sm" onClick={() => buildBriefFromText(pasted)}>
-                  <FileText className="size-4" /> {locale === "ar" ? "استخدم هذا النص" : "Use this text"}
-                </Button>
-              )}
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed p-8 text-sm text-muted-foreground hover:bg-secondary/40">
+            <Upload className="size-5 text-gold" />
+            <span className="font-medium text-foreground">
+              {locale === "ar" ? "اختر ملفات" : "Choose files"}
+            </span>
+            <span className="text-xs">PDF · DOCX · CSV · TXT</span>
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.docx,.csv,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,text/plain,text/markdown"
+              className="hidden"
+              onChange={(e) => { const fs = e.target.files; if (fs && fs.length) handleFiles(fs); (e.target as HTMLInputElement).value = ""; }}
+            />
+          </label>
+
+          {extracting && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" /> {locale === "ar" ? "جارٍ استخراج النص…" : "Extracting text…"}
             </div>
           )}
 
-          {busy === "case" && !caseBrief && (
-            <div className="mt-6 flex items-center gap-3 rounded-md border border-gold/30 bg-gold/5 p-4 text-sm">
-              <Loader2 className="size-4 animate-spin text-gold" />
-              <span>{locale === "ar" ? "جارٍ توليد القضية بواسطة الذكاء الاصطناعي…" : "Generating your case with AI…"}</span>
-            </div>
+          {files.length > 0 && (
+            <ul className="mt-4 space-y-2">
+              {files.map((f, i) => (
+                <li key={i} className="flex items-center justify-between rounded border px-3 py-2 text-sm">
+                  <div className="flex items-center gap-2 truncate">
+                    <FileText className="size-4 text-gold shrink-0" />
+                    <span className="truncate">{f.name}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {(f.size / 1024).toFixed(0)} KB · {f.text.length.toLocaleString()} {locale === "ar" ? "حرف" : "chars"}
+                    </span>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => removeFile(i)}>
+                    <X className="size-4" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
           )}
+
+          <Textarea
+            placeholder={locale === "ar" ? "ملاحظات إضافية أو سياق (اختياري)…" : "Additional notes or context (optional)…"}
+            value={pasted}
+            onChange={(e) => { setPasted(e.target.value); if (files.length || e.target.value.trim()) buildBriefFromDocs(files, e.target.value); }}
+            rows={3}
+            className="mt-4"
+          />
+
 
           {caseBrief && (
             <div ref={briefRef}>
@@ -335,11 +370,14 @@ function CourtroomPage() {
             <h2 className="mb-4 text-lg font-semibold flex items-center gap-2"><History className="size-4 text-gold" />{locale === "ar" ? "محاكمات سابقة محفوظة" : "Saved past simulations"}</h2>
             <ul className="space-y-2">
               {pastSims.map((s) => (
-                <li key={s.id} className="flex items-center justify-between rounded border px-3 py-2 text-sm">
-                  <div>
-                    <div className="font-medium">{s.title ?? "(untitled)"}</div>
+                <li key={s.id} className="flex items-center justify-between gap-2 rounded border px-3 py-2 text-sm">
+                  <button type="button" onClick={() => loadSim(s.id)} className="min-w-0 flex-1 text-start hover:opacity-80">
+                    <div className="truncate font-medium">{s.title ?? "(untitled)"}</div>
                     <div className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleString()}</div>
-                  </div>
+                  </button>
+                  <Button variant="outline" size="sm" onClick={() => loadSim(s.id)}>
+                    <Play className="size-3.5" /> {locale === "ar" ? "فتح" : "Open"}
+                  </Button>
                   <Button variant="ghost" size="icon" onClick={() => removeSim(s.id)}><Trash2 className="size-4 text-destructive" /></Button>
                 </li>
               ))}
