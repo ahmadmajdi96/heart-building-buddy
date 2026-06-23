@@ -11,7 +11,7 @@ import { OrgProvider, useOrg, type Permission } from "@/lib/org-context";
 import {
   LayoutDashboard, Briefcase, FileText, Search, Sparkles, CalendarDays,
   Receipt, GraduationCap, BarChart3, Building2, Settings, Bell,
-  ArrowLeft, Gavel, LogOut, Loader2, Mic,
+  ArrowLeft, Gavel, LogOut, Loader2, Mic, Video,
 } from "lucide-react";
 
 export const Route = createFileRoute("/app")({
