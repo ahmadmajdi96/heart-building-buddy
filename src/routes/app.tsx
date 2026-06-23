@@ -91,7 +91,7 @@ function AppLayout() {
                 <Menu className="size-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="start" className="w-72 p-0">
+            <SheetContent side="left" className="w-72 p-0">
               <SheetHeader className="border-b p-5">
                 <SheetTitle><BrandMark /></SheetTitle>
               </SheetHeader>
