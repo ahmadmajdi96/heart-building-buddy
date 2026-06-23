@@ -163,6 +163,7 @@ function DocsPage() {
                 <div className="text-[11px] text-muted-foreground">{new Date(d.created_at).toLocaleDateString()}</div>
               </div>
               <div className="flex flex-col gap-1">
+                <Button variant="ghost" size="icon" onClick={() => openDoc(d.id)} title={locale === "ar" ? "فتح" : "Open"}><ExternalLink className="size-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => download(d.id)}><Download className="size-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => remove(d.id)}><Trash2 className="size-4 text-destructive" /></Button>
               </div>
