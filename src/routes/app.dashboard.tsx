@@ -25,13 +25,15 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const [d, t] = await Promise.all([stats(), team()]);
-        setData(d); setTeamData(t);
-      } catch (e) { toast.error((e as Error).message); }
-      finally { setLoading(false); }
-    })();
+    let cancelled = false;
+    stats()
+      .then((d) => { if (!cancelled) setData(d); })
+      .catch((e) => toast.error((e as Error).message))
+      .finally(() => { if (!cancelled) setLoading(false); });
+    team()
+      .then((t) => { if (!cancelled) setTeamData(t); })
+      .catch(() => { /* non-fatal */ });
+    return () => { cancelled = true; };
   }, []);
 
   const fmtMoney = (n: number) =>
