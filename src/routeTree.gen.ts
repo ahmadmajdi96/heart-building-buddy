@@ -16,7 +16,6 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppResearchRouteImport } from './routes/app.research'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
-import { Route as AppMeetingsRouteImport } from './routes/app.meetings'
 import { Route as AppLiveSessionsRouteImport } from './routes/app.live-sessions'
 import { Route as AppFinancialsRouteImport } from './routes/app.financials'
 import { Route as AppEducationRouteImport } from './routes/app.education'
@@ -27,6 +26,7 @@ import { Route as AppCourtroomRouteImport } from './routes/app.courtroom'
 import { Route as AppClientsRouteImport } from './routes/app.clients'
 import { Route as AppCalendarRouteImport } from './routes/app.calendar'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
+import { Route as AppMeetingsIndexRouteImport } from './routes/app.meetings.index'
 import { Route as AppCasesIndexRouteImport } from './routes/app.cases.index'
 import { Route as AppMeetingsIdRouteImport } from './routes/app.meetings.$id'
 import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
@@ -66,11 +66,6 @@ const AppResearchRoute = AppResearchRouteImport.update({
 const AppOnboardingRoute = AppOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppMeetingsRoute = AppMeetingsRouteImport.update({
-  id: '/meetings',
-  path: '/meetings',
   getParentRoute: () => AppRoute,
 } as any)
 const AppLiveSessionsRoute = AppLiveSessionsRouteImport.update({
@@ -123,15 +118,20 @@ const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMeetingsIndexRoute = AppMeetingsIndexRouteImport.update({
+  id: '/meetings/',
+  path: '/meetings/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCasesIndexRoute = AppCasesIndexRouteImport.update({
   id: '/cases/',
   path: '/cases/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMeetingsIdRoute = AppMeetingsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AppMeetingsRoute,
+  id: '/meetings/$id',
+  path: '/meetings/$id',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppCasesCaseIdRoute = AppCasesCaseIdRouteImport.update({
   id: '/cases/$caseId',
@@ -145,9 +145,9 @@ const ApiElevenlabsScribeTokenRoute =
     getParentRoute: () => rootRouteImport,
   } as any)
 const AppMeetingsJoinRoomRoute = AppMeetingsJoinRoomRouteImport.update({
-  id: '/join/$room',
-  path: '/join/$room',
-  getParentRoute: () => AppMeetingsRoute,
+  id: '/meetings/join/$room',
+  path: '/meetings/join/$room',
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -164,7 +164,6 @@ export interface FileRoutesByFullPath {
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
   '/app/live-sessions': typeof AppLiveSessionsRoute
-  '/app/meetings': typeof AppMeetingsRouteWithChildren
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
@@ -173,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
+  '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesByTo {
@@ -188,7 +188,6 @@ export interface FileRoutesByTo {
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
   '/app/live-sessions': typeof AppLiveSessionsRoute
-  '/app/meetings': typeof AppMeetingsRouteWithChildren
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
@@ -197,6 +196,7 @@ export interface FileRoutesByTo {
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases': typeof AppCasesIndexRoute
+  '/app/meetings': typeof AppMeetingsIndexRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesById {
@@ -214,7 +214,6 @@ export interface FileRoutesById {
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
   '/app/live-sessions': typeof AppLiveSessionsRoute
-  '/app/meetings': typeof AppMeetingsRouteWithChildren
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
@@ -223,6 +222,7 @@ export interface FileRoutesById {
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
+  '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRouteTypes {
@@ -241,7 +241,6 @@ export interface FileRouteTypes {
     | '/app/education'
     | '/app/financials'
     | '/app/live-sessions'
-    | '/app/meetings'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
@@ -250,6 +249,7 @@ export interface FileRouteTypes {
     | '/app/cases/$caseId'
     | '/app/meetings/$id'
     | '/app/cases/'
+    | '/app/meetings/'
     | '/app/meetings/join/$room'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -265,7 +265,6 @@ export interface FileRouteTypes {
     | '/app/education'
     | '/app/financials'
     | '/app/live-sessions'
-    | '/app/meetings'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
@@ -274,6 +273,7 @@ export interface FileRouteTypes {
     | '/app/cases/$caseId'
     | '/app/meetings/$id'
     | '/app/cases'
+    | '/app/meetings'
     | '/app/meetings/join/$room'
   id:
     | '__root__'
@@ -290,7 +290,6 @@ export interface FileRouteTypes {
     | '/app/education'
     | '/app/financials'
     | '/app/live-sessions'
-    | '/app/meetings'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
@@ -299,6 +298,7 @@ export interface FileRouteTypes {
     | '/app/cases/$caseId'
     | '/app/meetings/$id'
     | '/app/cases/'
+    | '/app/meetings/'
     | '/app/meetings/join/$room'
   fileRoutesById: FileRoutesById
 }
@@ -358,13 +358,6 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/app/onboarding'
       preLoaderRoute: typeof AppOnboardingRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/meetings': {
-      id: '/app/meetings'
-      path: '/meetings'
-      fullPath: '/app/meetings'
-      preLoaderRoute: typeof AppMeetingsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/live-sessions': {
@@ -437,6 +430,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAnalyticsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/meetings/': {
+      id: '/app/meetings/'
+      path: '/meetings'
+      fullPath: '/app/meetings/'
+      preLoaderRoute: typeof AppMeetingsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/cases/': {
       id: '/app/cases/'
       path: '/cases'
@@ -446,10 +446,10 @@ declare module '@tanstack/react-router' {
     }
     '/app/meetings/$id': {
       id: '/app/meetings/$id'
-      path: '/$id'
+      path: '/meetings/$id'
       fullPath: '/app/meetings/$id'
       preLoaderRoute: typeof AppMeetingsIdRouteImport
-      parentRoute: typeof AppMeetingsRoute
+      parentRoute: typeof AppRoute
     }
     '/app/cases/$caseId': {
       id: '/app/cases/$caseId'
@@ -467,27 +467,13 @@ declare module '@tanstack/react-router' {
     }
     '/app/meetings/join/$room': {
       id: '/app/meetings/join/$room'
-      path: '/join/$room'
+      path: '/meetings/join/$room'
       fullPath: '/app/meetings/join/$room'
       preLoaderRoute: typeof AppMeetingsJoinRoomRouteImport
-      parentRoute: typeof AppMeetingsRoute
+      parentRoute: typeof AppRoute
     }
   }
 }
-
-interface AppMeetingsRouteChildren {
-  AppMeetingsIdRoute: typeof AppMeetingsIdRoute
-  AppMeetingsJoinRoomRoute: typeof AppMeetingsJoinRoomRoute
-}
-
-const AppMeetingsRouteChildren: AppMeetingsRouteChildren = {
-  AppMeetingsIdRoute: AppMeetingsIdRoute,
-  AppMeetingsJoinRoomRoute: AppMeetingsJoinRoomRoute,
-}
-
-const AppMeetingsRouteWithChildren = AppMeetingsRoute._addFileChildren(
-  AppMeetingsRouteChildren,
-)
 
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
@@ -500,13 +486,15 @@ interface AppRouteChildren {
   AppEducationRoute: typeof AppEducationRoute
   AppFinancialsRoute: typeof AppFinancialsRoute
   AppLiveSessionsRoute: typeof AppLiveSessionsRoute
-  AppMeetingsRoute: typeof AppMeetingsRouteWithChildren
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppResearchRoute: typeof AppResearchRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppCasesCaseIdRoute: typeof AppCasesCaseIdRoute
+  AppMeetingsIdRoute: typeof AppMeetingsIdRoute
   AppCasesIndexRoute: typeof AppCasesIndexRoute
+  AppMeetingsIndexRoute: typeof AppMeetingsIndexRoute
+  AppMeetingsJoinRoomRoute: typeof AppMeetingsJoinRoomRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -520,13 +508,15 @@ const AppRouteChildren: AppRouteChildren = {
   AppEducationRoute: AppEducationRoute,
   AppFinancialsRoute: AppFinancialsRoute,
   AppLiveSessionsRoute: AppLiveSessionsRoute,
-  AppMeetingsRoute: AppMeetingsRouteWithChildren,
   AppOnboardingRoute: AppOnboardingRoute,
   AppResearchRoute: AppResearchRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
   AppCasesCaseIdRoute: AppCasesCaseIdRoute,
+  AppMeetingsIdRoute: AppMeetingsIdRoute,
   AppCasesIndexRoute: AppCasesIndexRoute,
+  AppMeetingsIndexRoute: AppMeetingsIndexRoute,
+  AppMeetingsJoinRoomRoute: AppMeetingsJoinRoomRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
