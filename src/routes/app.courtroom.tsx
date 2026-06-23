@@ -76,9 +76,8 @@ function CourtroomPage() {
   const tt = (k: keyof typeof L) => L[k][locale];
 
   const [role, setRole] = useState<Role>("defendant");
-  const [mode, setMode] = useState<"generate" | "upload">("generate");
-  const [hint, setHint] = useState("");
-  const [practice, setPractice] = useState("");
+  const [files, setFiles] = useState<{ name: string; text: string; size: number }[]>([]);
+  const [extracting, setExtracting] = useState(false);
   const [pasted, setPasted] = useState("");
   const [caseBrief, setCaseBrief] = useState<CaseBrief | null>(null);
   const [busy, setBusy] = useState<null | "case" | "turn" | "start">(null);
@@ -131,36 +130,56 @@ function CourtroomPage() {
     }
   }, [caseBrief, started]);
 
-  async function handleGenerate() {
-    setBusy("case"); setError(null);
-    setCaseBrief(null);
+  async function handleFiles(fileList: FileList | File[]) {
+    const arr = Array.from(fileList);
+    setExtracting(true);
+    setError(null);
     try {
-      const c = await generateCase({ data: { locale, hint: hint || undefined, practiceArea: practice || undefined } });
-      setCaseBrief(c as CaseBrief);
+      const extracted: { name: string; text: string; size: number }[] = [];
+      for (const f of arr) {
+        const text = await extractTextFromFile(f);
+        if (!text.trim()) {
+          toast.warning(`${f.name}: ${locale === "ar" ? "تعذّر استخراج النص" : "could not extract text"}`);
+          continue;
+        }
+        extracted.push({ name: f.name, text, size: f.size });
+      }
+      if (extracted.length) {
+        const merged = [...files, ...extracted];
+        setFiles(merged);
+        buildBriefFromDocs(merged, pasted);
+      }
     } catch (e) {
       setError((e as Error).message);
-    } finally { setBusy(null); }
+    } finally {
+      setExtracting(false);
+    }
   }
 
-  async function handleFile(file: File) {
-    const text = await file.text();
-    setPasted(text);
-    buildBriefFromText(text, file.name);
+  function removeFile(idx: number) {
+    const next = files.filter((_, i) => i !== idx);
+    setFiles(next);
+    if (next.length || pasted.trim()) buildBriefFromDocs(next, pasted);
+    else setCaseBrief(null);
   }
 
-  function buildBriefFromText(text: string, name = "Uploaded document") {
-    const trimmed = text.slice(0, 6000);
+  function buildBriefFromDocs(docs: { name: string; text: string }[], extra: string) {
+    const blocks: string[] = [];
+    for (const d of docs) blocks.push(`=== ${d.name} ===\n${d.text}`);
+    if (extra.trim()) blocks.push(`=== ${locale === "ar" ? "ملاحظات إضافية" : "Additional notes"} ===\n${extra.trim()}`);
+    const combined = blocks.join("\n\n").slice(0, 60_000);
+    const title = docs[0]?.name?.replace(/\.[^.]+$/, "") ?? (locale === "ar" ? "قضية مرفوعة" : "Uploaded case");
     setCaseBrief({
-      title: name,
+      title,
       jurisdiction: locale === "ar" ? "غير محدد" : "Unspecified",
       court: locale === "ar" ? "محكمة عامة" : "General Court",
       caseNumber: "—",
-      summary: trimmed.slice(0, 400),
-      facts: trimmed,
+      summary: combined.slice(0, 400),
+      facts: combined,
       charges: [],
       claimantName: locale === "ar" ? "الطرف الأول" : "Party A",
       defendantName: locale === "ar" ? "الطرف الثاني" : "Party B",
-      evidence: [],
+      evidence: docs.map((d) => d.name),
     });
   }
 
