@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Mic, Square, Loader2, Trash2, Languages } from "lucide-react";
+import { Mic, Square, Loader2, Trash2, Languages, Search } from "lucide-react";
 import {
   listLiveSessions,
   createLiveSession,
@@ -298,43 +298,75 @@ function LiveSessionsPage() {
       </Card>
 
       {/* Past sessions */}
-      <section className="space-y-3">
-        <h2 className="font-serif text-2xl text-onyx">
-          {isAr ? "الجلسات السابقة" : "Past sessions"}
-        </h2>
-        <div className="h-px w-16 bg-gold/40" />
-        {sessions.isLoading ? (
-          <Loader2 className="size-5 animate-spin text-muted-foreground" />
-        ) : (sessions.data ?? []).length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {isAr ? "لا توجد جلسات بعد." : "No sessions yet."}
-          </p>
-        ) : (
-          <div className="grid gap-3">
-            {(sessions.data ?? []).map((s) => (
-              <Card key={s.id} className="p-4 flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="font-medium text-onyx truncate">{s.title}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
-                    {new Date(s.started_at).toLocaleString(isAr ? "ar-JO" : "en-US")}
-                    {s.duration_seconds ? ` · ${Math.round(s.duration_seconds / 60)}m` : ""}
-                    {" · "}
-                    <Badge variant="outline" className="text-[10px]">{s.status}</Badge>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDelete(s.id)}
-                  aria-label="Delete"
-                >
-                  <Trash2 className="size-4 text-destructive" />
-                </Button>
-              </Card>
+      <PastSessions sessions={sessions.data ?? []} loading={sessions.isLoading} isAr={isAr} onDelete={handleDelete} />
+    </div>
+  );
+}
+
+function PastSessions({ sessions, loading, isAr, onDelete }: {
+  sessions: any[]; loading: boolean; isAr: boolean; onDelete: (id: string) => void;
+}) {
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState<string>("all");
+  const statuses = useMemo(() => {
+    const set = new Set<string>(); sessions.forEach((s) => s.status && set.add(s.status));
+    return ["all", ...Array.from(set)];
+  }, [sessions]);
+  const filtered = useMemo(() => sessions.filter((s) => {
+    if (status !== "all" && s.status !== status) return false;
+    if (!q.trim()) return true;
+    return (s.title ?? "").toLowerCase().includes(q.toLowerCase());
+  }), [sessions, q, status]);
+
+  return (
+    <section className="space-y-3">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="font-serif text-2xl text-onyx">{isAr ? "الجلسات السابقة" : "Past sessions"}</h2>
+          <div className="h-px w-16 bg-gold/40 mt-1" />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-56">
+            <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={isAr ? "ابحث…" : "Search…"} className="h-9 ps-9" />
+          </div>
+          <div className="flex gap-1.5">
+            {statuses.map((s) => (
+              <Button key={s} size="sm" variant={status === s ? "default" : "ghost"} onClick={() => setStatus(s)} className="capitalize">
+                {s === "all" ? (isAr ? "الكل" : "All") : s}
+              </Button>
             ))}
           </div>
-        )}
-      </section>
-    </div>
+        </div>
+      </div>
+      {loading ? (
+        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      ) : filtered.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          {sessions.length === 0
+            ? (isAr ? "لا توجد جلسات بعد." : "No sessions yet.")
+            : (isAr ? "لا نتائج تطابق البحث." : "No matches.")}
+        </p>
+      ) : (
+        <div className="grid gap-3">
+          {filtered.map((s) => (
+            <Card key={s.id} className="p-4 flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <div className="font-medium text-onyx truncate">{s.title}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {new Date(s.started_at).toLocaleString(isAr ? "ar-JO" : "en-US")}
+                  {s.duration_seconds ? ` · ${Math.round(s.duration_seconds / 60)}m` : ""}
+                  {" · "}
+                  <Badge variant="outline" className="text-[10px]">{s.status}</Badge>
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => onDelete(s.id)} aria-label="Delete">
+                <Trash2 className="size-4 text-destructive" />
+              </Button>
+            </Card>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
