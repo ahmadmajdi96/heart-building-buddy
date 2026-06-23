@@ -16,7 +16,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import {
   Sparkles, FileText, Wand2, RefreshCw, Loader2, Plus, X, Save, Trash2,
-  Bold, Italic, List, ListOrdered, Heading2, FileDown,
+  Bold, Italic, List, ListOrdered, Heading2, FileDown, FolderOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 
