@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getMeeting, saveMeetingTranscript } from "@/lib/meetings.functions";
 import { useScribe } from "@elevenlabs/react";
+import { CommitStrategy } from "@elevenlabs/client";
 import { ArrowLeft, Copy, Mic, MicOff, Loader2, Save, PhoneOff } from "lucide-react";
 import { toast } from "sonner";
 
