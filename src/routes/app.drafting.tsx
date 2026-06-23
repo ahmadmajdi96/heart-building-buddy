@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { generateDraft, saveDraft, listDrafts, deleteDraft } from "@/lib/drafting.functions";
+import { generateDraft, saveDraft, listDrafts, deleteDraft, getDraft } from "@/lib/drafting.functions";
 import { listTemplateDocuments } from "@/lib/documents.functions";
 import { useOrg } from "@/lib/org-context";
 import { exportDraftPdf, exportDraftDocx } from "@/lib/draft-export";
