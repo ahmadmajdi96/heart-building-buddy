@@ -23,15 +23,18 @@ function DashboardPage() {
   const [data, setData] = useState<Awaited<ReturnType<typeof getDashboardStats>> | null>(null);
   const [teamData, setTeamData] = useState<Awaited<ReturnType<typeof getTeamPerformance>> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const [d, t] = await Promise.all([stats(), team()]);
-        setData(d); setTeamData(t);
-      } catch (e) { toast.error((e as Error).message); }
-      finally { setLoading(false); }
-    })();
+    let cancelled = false;
+    stats()
+      .then((d) => { if (!cancelled) { setData(d); setError(null); } })
+      .catch((e) => { if (!cancelled) setError((e as Error).message); toast.error((e as Error).message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    team()
+      .then((t) => { if (!cancelled) setTeamData(t); })
+      .catch(() => { /* non-fatal */ });
+    return () => { cancelled = true; };
   }, []);
 
   const fmtMoney = (n: number) =>
@@ -41,8 +44,18 @@ function DashboardPage() {
       maximumFractionDigits: 0,
     }).format(n);
 
-  if (loading || !data) {
+  if (loading) {
     return <div className="grid place-items-center p-20"><Loader2 className="size-6 animate-spin text-gold" /></div>;
+  }
+  if (!data) {
+    return (
+      <div className="grid place-items-center p-20 text-center">
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">{error || (locale === "ar" ? "تعذّر تحميل البيانات" : "Failed to load dashboard data")}</p>
+          <Button size="sm" onClick={() => window.location.reload()}>{locale === "ar" ? "إعادة المحاولة" : "Retry"}</Button>
+        </div>
+      </div>
+    );
   }
 
   const c = data.counts;

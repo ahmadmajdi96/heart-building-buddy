@@ -97,19 +97,25 @@ export const getTeamPerformance = createServerFn({ method: "GET" })
       .order("created_at", { ascending: true });
 
     const userIds = (members ?? []).map((m: any) => m.user_id).filter(Boolean);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const nameMap: Record<string, string | null> = {};
     const emailMap: Record<string, string | null> = {};
     if (userIds.length) {
-      const { data: profs } = await supabaseAdmin.from("profiles").select("id, full_name").in("id", userIds);
-      for (const p of profs ?? []) nameMap[p.id] = p.full_name;
-      for (const uid of userIds) {
-        try {
-          const { data } = await supabaseAdmin.auth.admin.getUserById(uid);
-          if (data?.user) emailMap[uid] = data.user.email ?? null;
-        } catch { /* ignore */ }
-      }
+      try {
+        const { data: profs } = await supabase.from("profiles").select("id, full_name").in("id", userIds);
+        for (const p of profs ?? []) nameMap[p.id] = p.full_name;
+      } catch { /* ignore */ }
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const lookups = await Promise.allSettled(
+          userIds.map((uid) => supabaseAdmin.auth.admin.getUserById(uid))
+        );
+        lookups.forEach((r, i) => {
+          if (r.status === "fulfilled" && r.value.data?.user) {
+            emailMap[userIds[i]] = r.value.data.user.email ?? null;
+          }
+        });
+      } catch { /* ignore */ }
     }
 
     // Cases per owner
