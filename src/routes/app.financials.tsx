@@ -126,8 +126,9 @@ function PaymentsTab() {
 
   return (
     <Card className="overflow-hidden">
-      <div className="flex items-center justify-between border-b p-4">
-        <div className="text-sm font-semibold">{locale === "ar" ? "سجل المدفوعات" : "Payment log"}</div>
+      <div className="flex flex-wrap items-center gap-3 border-b p-4">
+        <div className="text-sm font-semibold mr-auto">{locale === "ar" ? "سجل المدفوعات" : "Payment log"} <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span></div>
+        <TableFilter q={q} setQ={setQ} status={method} setStatus={setMethod} statuses={methods} placeholder={locale === "ar" ? "ابحث بالعميل/المرجع…" : "Search client / reference…"} locale={locale as any} />
         {can("edit_financials") && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button size="sm" variant="gold"><Plus className="size-4"/>{locale === "ar" ? "تسجيل دفعة" : "Record payment"}</Button></DialogTrigger>
@@ -135,13 +136,13 @@ function PaymentsTab() {
           </Dialog>
         )}
       </div>
-      {loading ? <Loading/> : rows.length === 0 ? <Empty msg={locale === "ar" ? "لا توجد مدفوعات بعد." : "No payments yet."}/> : (
+      {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={locale === "ar" ? "لا نتائج." : "No matches."}/> : (
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
             <tr><Th>{locale === "ar" ? "التاريخ" : "Date"}</Th><Th>{locale === "ar" ? "العميل" : "Client"}</Th><Th>{locale === "ar" ? "المرجع" : "Reference"}</Th><Th>{locale === "ar" ? "الطريقة" : "Method"}</Th><Th className="text-end">{locale === "ar" ? "المبلغ" : "Amount"}</Th></tr>
           </thead>
           <tbody className="divide-y">
-            {rows.map((r) => (
+            {filtered.map((r) => (
               <tr key={r.id} className="hover:bg-secondary/40">
                 <Td>{r.paid_at}</Td><Td className="font-medium">{r.client_name}</Td><Td className="text-muted-foreground">{r.reference || "—"}</Td><Td><span className="capitalize">{r.method.replace("_"," ")}</span></Td>
                 <Td className="text-end font-mono tabular-nums">{fmt(r.amount, r.currency)}</Td>
