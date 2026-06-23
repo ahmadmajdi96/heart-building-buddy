@@ -29,6 +29,7 @@ const navItems: NavItem[] = [
   { to: "/app/calendar", key: "m_calendar", icon: CalendarDays },
   { to: "/app/courtroom", key: "m_courtroom", icon: Gavel },
   { to: "/app/live-sessions", key: "m_live_sessions", icon: Mic },
+  { to: "/app/meetings", key: "m_meetings", icon: Video },
   { to: "/app/financials", key: "m_financials", icon: Receipt, perm: "view_financials" },
   { to: "/app/clients", key: "m_clients", icon: Building2, perm: "view_clients" },
   { to: "/app/education", key: "m_education", icon: GraduationCap },
