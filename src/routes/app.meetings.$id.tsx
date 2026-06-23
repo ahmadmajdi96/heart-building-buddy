@@ -43,7 +43,7 @@ function MeetingRoom() {
 
   const scribe = useScribe({
     modelId: "scribe_v2_realtime",
-    commitStrategy: "vad",
+    commitStrategy: CommitStrategy.VAD,
     onPartialTranscript: (d: any) => setPartial(d?.text ?? ""),
     onCommittedTranscriptWithTimestamps: (d: any) => {
       const words = (d?.words ?? []) as { text: string; speaker?: string }[];
