@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useI18n } from "@/lib/i18n";
@@ -22,6 +22,7 @@ type Meeting = {
 
 function MeetingsPage() {
   const { locale } = useI18n();
+  const navigate = useNavigate();
   const list = useServerFn(listMeetings);
   const create = useServerFn(createMeeting);
   const del = useServerFn(deleteMeeting);
@@ -58,7 +59,7 @@ function MeetingsPage() {
         client_id: clientId === "none" ? null : clientId,
       }});
       setTitle(""); setCaseId("none"); setClientId("none");
-      window.location.assign(`/app/meetings/${row.id}`);
+      navigate({ to: "/app/meetings/$id", params: { id: row.id } });
     } catch (e) { toast.error((e as Error).message); }
     finally { setCreating(false); }
   }
@@ -138,11 +139,9 @@ function MeetingsPage() {
                 <Button size="sm" variant="ghost" onClick={() => copyLink(m.room_name)} title={locale === "ar" ? "نسخ الرابط" : "Copy invite link"}>
                   <Copy className="size-4" />
                 </Button>
-                <Link to="/app/meetings/$id" params={{ id: m.id }}>
-                  <Button size="sm" variant="outline">
-                    {locale === "ar" ? "فتح" : "Open"} <ArrowRight className="size-3.5" />
-                  </Button>
-                </Link>
+                <Button size="sm" variant="outline" onClick={() => navigate({ to: "/app/meetings/$id", params: { id: m.id } })}>
+                  {locale === "ar" ? "فتح" : "Open"} <ArrowRight className="size-3.5" />
+                </Button>
                 <Button size="sm" variant="ghost" onClick={() => remove(m.id)}>
                   <Trash2 className="size-4 text-destructive" />
                 </Button>
