@@ -22,7 +22,7 @@ type Meeting = {
 
 function MeetingsPage() {
   const { locale } = useI18n();
-  const navigate = useNavigate({ from: "/app/meetings" });
+  const navigate = useNavigate();
   const list = useServerFn(listMeetings);
   const create = useServerFn(createMeeting);
   const del = useServerFn(deleteMeeting);
