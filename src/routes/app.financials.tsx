@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import { useOrg } from "@/lib/org-context";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Loader2, Trash2, FileText, Eye, X } from "lucide-react";
+import { Plus, Loader2, Trash2, FileText, Eye, X, Search } from "lucide-react";
 import { toast } from "sonner";
 import { DocumentHeader, DocumentPreview } from "@/components/financials/document-preview";
 
