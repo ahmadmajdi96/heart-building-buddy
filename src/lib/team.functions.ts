@@ -29,22 +29,31 @@ export const listTeamMembers = createServerFn({ method: "GET" })
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userIds = (rows ?? []).map((r: any) => r.user_id).filter(Boolean);
     const profilesMap: Record<string, { full_name: string | null; email: string | null }> = {};
     if (userIds.length) {
-      const { data: profs } = await supabaseAdmin
-        .from("profiles")
-        .select("id, full_name")
-        .in("id", userIds);
-      for (const p of profs ?? []) profilesMap[p.id] = { full_name: p.full_name, email: null };
-      // fetch emails via admin
-      for (const uid of userIds) {
-        try {
-          const { data } = await supabaseAdmin.auth.admin.getUserById(uid);
-          if (data?.user) profilesMap[uid] = { full_name: profilesMap[uid]?.full_name ?? null, email: data.user.email ?? null };
-        } catch { /* ignore */ }
-      }
+      try {
+        const { data: profs } = await context.supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", userIds);
+        for (const p of profs ?? []) profilesMap[p.id] = { full_name: p.full_name, email: null };
+      } catch { /* ignore */ }
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const results = await Promise.allSettled(
+          userIds.map((uid: string) => supabaseAdmin.auth.admin.getUserById(uid))
+        );
+        results.forEach((res, i) => {
+          const uid = userIds[i];
+          if (res.status === "fulfilled" && res.value.data?.user) {
+            profilesMap[uid] = {
+              full_name: profilesMap[uid]?.full_name ?? null,
+              email: res.value.data.user.email ?? null,
+            };
+          }
+        });
+      } catch { /* ignore */ }
     }
 
     return (rows ?? []).map((r: any) => ({
