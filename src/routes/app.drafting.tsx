@@ -116,7 +116,8 @@ function DraftingPage() {
     try {
       const varsMap: Record<string, string> = {};
       variables.forEach((v) => { if (v.key.trim()) varsMap[v.key.trim()] = v.value; });
-      await save({ data: { title, variables: varsMap, content: html } });
+      const saved: any = await save({ data: { id: currentId ?? undefined, title, variables: varsMap, content: html } });
+      if (saved?.id) setCurrentId(saved.id);
       toast.success(locale === "ar" ? "تم الحفظ" : "Draft saved");
       refresh();
     } catch (e) { toast.error((e as Error).message); }
