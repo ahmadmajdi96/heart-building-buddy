@@ -556,6 +556,69 @@ export type Database = {
           },
         ]
       }
+      meetings: {
+        Row: {
+          case_id: string | null
+          client_id: string | null
+          created_at: string
+          ended_at: string | null
+          id: string
+          owner_id: string
+          participants: Json | null
+          room_name: string
+          started_at: string
+          title: string
+          transcript: string | null
+          turns: Json | null
+          updated_at: string
+        }
+        Insert: {
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          owner_id: string
+          participants?: Json | null
+          room_name: string
+          started_at?: string
+          title?: string
+          transcript?: string | null
+          turns?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          owner_id?: string
+          participants?: Json | null
+          room_name?: string
+          started_at?: string
+          title?: string
+          transcript?: string | null
+          turns?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetings_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meetings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string

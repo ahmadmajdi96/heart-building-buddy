@@ -16,6 +16,7 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppResearchRouteImport } from './routes/app.research'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
+import { Route as AppMeetingsRouteImport } from './routes/app.meetings'
 import { Route as AppLiveSessionsRouteImport } from './routes/app.live-sessions'
 import { Route as AppFinancialsRouteImport } from './routes/app.financials'
 import { Route as AppEducationRouteImport } from './routes/app.education'
@@ -27,8 +28,10 @@ import { Route as AppClientsRouteImport } from './routes/app.clients'
 import { Route as AppCalendarRouteImport } from './routes/app.calendar'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppCasesIndexRouteImport } from './routes/app.cases.index'
+import { Route as AppMeetingsIdRouteImport } from './routes/app.meetings.$id'
 import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
 import { Route as ApiElevenlabsScribeTokenRouteImport } from './routes/api.elevenlabs.scribe-token'
+import { Route as AppMeetingsJoinRoomRouteImport } from './routes/app.meetings.join.$room'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -63,6 +66,11 @@ const AppResearchRoute = AppResearchRouteImport.update({
 const AppOnboardingRoute = AppOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMeetingsRoute = AppMeetingsRouteImport.update({
+  id: '/meetings',
+  path: '/meetings',
   getParentRoute: () => AppRoute,
 } as any)
 const AppLiveSessionsRoute = AppLiveSessionsRouteImport.update({
@@ -120,6 +128,11 @@ const AppCasesIndexRoute = AppCasesIndexRouteImport.update({
   path: '/cases/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMeetingsIdRoute = AppMeetingsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppMeetingsRoute,
+} as any)
 const AppCasesCaseIdRoute = AppCasesCaseIdRouteImport.update({
   id: '/cases/$caseId',
   path: '/cases/$caseId',
@@ -131,6 +144,11 @@ const ApiElevenlabsScribeTokenRoute =
     path: '/api/elevenlabs/scribe-token',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AppMeetingsJoinRoomRoute = AppMeetingsJoinRoomRouteImport.update({
+  id: '/join/$room',
+  path: '/join/$room',
+  getParentRoute: () => AppMeetingsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -146,13 +164,16 @@ export interface FileRoutesByFullPath {
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
   '/app/live-sessions': typeof AppLiveSessionsRoute
+  '/app/meetings': typeof AppMeetingsRouteWithChildren
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
+  '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
+  '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -167,13 +188,16 @@ export interface FileRoutesByTo {
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
   '/app/live-sessions': typeof AppLiveSessionsRoute
+  '/app/meetings': typeof AppMeetingsRouteWithChildren
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
+  '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases': typeof AppCasesIndexRoute
+  '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -190,13 +214,16 @@ export interface FileRoutesById {
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
   '/app/live-sessions': typeof AppLiveSessionsRoute
+  '/app/meetings': typeof AppMeetingsRouteWithChildren
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
+  '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
+  '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -214,13 +241,16 @@ export interface FileRouteTypes {
     | '/app/education'
     | '/app/financials'
     | '/app/live-sessions'
+    | '/app/meetings'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
     | '/app/'
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
+    | '/app/meetings/$id'
     | '/app/cases/'
+    | '/app/meetings/join/$room'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -235,13 +265,16 @@ export interface FileRouteTypes {
     | '/app/education'
     | '/app/financials'
     | '/app/live-sessions'
+    | '/app/meetings'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
     | '/app'
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
+    | '/app/meetings/$id'
     | '/app/cases'
+    | '/app/meetings/join/$room'
   id:
     | '__root__'
     | '/'
@@ -257,13 +290,16 @@ export interface FileRouteTypes {
     | '/app/education'
     | '/app/financials'
     | '/app/live-sessions'
+    | '/app/meetings'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
     | '/app/'
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
+    | '/app/meetings/$id'
     | '/app/cases/'
+    | '/app/meetings/join/$room'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -322,6 +358,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/app/onboarding'
       preLoaderRoute: typeof AppOnboardingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/meetings': {
+      id: '/app/meetings'
+      path: '/meetings'
+      fullPath: '/app/meetings'
+      preLoaderRoute: typeof AppMeetingsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/live-sessions': {
@@ -401,6 +444,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCasesIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/meetings/$id': {
+      id: '/app/meetings/$id'
+      path: '/$id'
+      fullPath: '/app/meetings/$id'
+      preLoaderRoute: typeof AppMeetingsIdRouteImport
+      parentRoute: typeof AppMeetingsRoute
+    }
     '/app/cases/$caseId': {
       id: '/app/cases/$caseId'
       path: '/cases/$caseId'
@@ -415,8 +465,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiElevenlabsScribeTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/meetings/join/$room': {
+      id: '/app/meetings/join/$room'
+      path: '/join/$room'
+      fullPath: '/app/meetings/join/$room'
+      preLoaderRoute: typeof AppMeetingsJoinRoomRouteImport
+      parentRoute: typeof AppMeetingsRoute
+    }
   }
 }
+
+interface AppMeetingsRouteChildren {
+  AppMeetingsIdRoute: typeof AppMeetingsIdRoute
+  AppMeetingsJoinRoomRoute: typeof AppMeetingsJoinRoomRoute
+}
+
+const AppMeetingsRouteChildren: AppMeetingsRouteChildren = {
+  AppMeetingsIdRoute: AppMeetingsIdRoute,
+  AppMeetingsJoinRoomRoute: AppMeetingsJoinRoomRoute,
+}
+
+const AppMeetingsRouteWithChildren = AppMeetingsRoute._addFileChildren(
+  AppMeetingsRouteChildren,
+)
 
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
@@ -429,6 +500,7 @@ interface AppRouteChildren {
   AppEducationRoute: typeof AppEducationRoute
   AppFinancialsRoute: typeof AppFinancialsRoute
   AppLiveSessionsRoute: typeof AppLiveSessionsRoute
+  AppMeetingsRoute: typeof AppMeetingsRouteWithChildren
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppResearchRoute: typeof AppResearchRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -448,6 +520,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppEducationRoute: AppEducationRoute,
   AppFinancialsRoute: AppFinancialsRoute,
   AppLiveSessionsRoute: AppLiveSessionsRoute,
+  AppMeetingsRoute: AppMeetingsRouteWithChildren,
   AppOnboardingRoute: AppOnboardingRoute,
   AppResearchRoute: AppResearchRoute,
   AppSettingsRoute: AppSettingsRoute,
