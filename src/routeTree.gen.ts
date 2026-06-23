@@ -31,6 +31,7 @@ import { Route as AppCasesIndexRouteImport } from './routes/app.cases.index'
 import { Route as AppMeetingsIdRouteImport } from './routes/app.meetings.$id'
 import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
 import { Route as ApiElevenlabsScribeTokenRouteImport } from './routes/api.elevenlabs.scribe-token'
+import { Route as AppMeetingsJoinRoomRouteImport } from './routes/app.meetings.join.$room'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -143,6 +144,11 @@ const ApiElevenlabsScribeTokenRoute =
     path: '/api/elevenlabs/scribe-token',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AppMeetingsJoinRoomRoute = AppMeetingsJoinRoomRouteImport.update({
+  id: '/join/$room',
+  path: '/join/$room',
+  getParentRoute: () => AppMeetingsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
+  '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -190,6 +197,7 @@ export interface FileRoutesByTo {
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases': typeof AppCasesIndexRoute
+  '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
+  '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -241,6 +250,7 @@ export interface FileRouteTypes {
     | '/app/cases/$caseId'
     | '/app/meetings/$id'
     | '/app/cases/'
+    | '/app/meetings/join/$room'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -264,6 +274,7 @@ export interface FileRouteTypes {
     | '/app/cases/$caseId'
     | '/app/meetings/$id'
     | '/app/cases'
+    | '/app/meetings/join/$room'
   id:
     | '__root__'
     | '/'
@@ -288,6 +299,7 @@ export interface FileRouteTypes {
     | '/app/cases/$caseId'
     | '/app/meetings/$id'
     | '/app/cases/'
+    | '/app/meetings/join/$room'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -453,15 +465,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiElevenlabsScribeTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/meetings/join/$room': {
+      id: '/app/meetings/join/$room'
+      path: '/join/$room'
+      fullPath: '/app/meetings/join/$room'
+      preLoaderRoute: typeof AppMeetingsJoinRoomRouteImport
+      parentRoute: typeof AppMeetingsRoute
+    }
   }
 }
 
 interface AppMeetingsRouteChildren {
   AppMeetingsIdRoute: typeof AppMeetingsIdRoute
+  AppMeetingsJoinRoomRoute: typeof AppMeetingsJoinRoomRoute
 }
 
 const AppMeetingsRouteChildren: AppMeetingsRouteChildren = {
   AppMeetingsIdRoute: AppMeetingsIdRoute,
+  AppMeetingsJoinRoomRoute: AppMeetingsJoinRoomRoute,
 }
 
 const AppMeetingsRouteWithChildren = AppMeetingsRoute._addFileChildren(
