@@ -179,9 +179,6 @@ function AppLayout() {
 
           {/* Right actions */}
           <div className="ms-auto flex items-center gap-1.5">
-            <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex text-foreground/70">
-              <Link to="/"><ArrowLeft className="size-4" />{t("app_back_site")}</Link>
-            </Button>
             <LangToggle />
             <Button variant="ghost" size="icon" aria-label={t("app_notifications")} className="relative">
               <Bell className="size-4" />
