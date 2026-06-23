@@ -28,6 +28,7 @@ import { Route as AppClientsRouteImport } from './routes/app.clients'
 import { Route as AppCalendarRouteImport } from './routes/app.calendar'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppCasesIndexRouteImport } from './routes/app.cases.index'
+import { Route as AppMeetingsIdRouteImport } from './routes/app.meetings.$id'
 import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
 import { Route as ApiElevenlabsScribeTokenRouteImport } from './routes/api.elevenlabs.scribe-token'
 
@@ -126,6 +127,11 @@ const AppCasesIndexRoute = AppCasesIndexRouteImport.update({
   path: '/cases/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMeetingsIdRoute = AppMeetingsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppMeetingsRoute,
+} as any)
 const AppCasesCaseIdRoute = AppCasesCaseIdRouteImport.update({
   id: '/cases/$caseId',
   path: '/cases/$caseId',
@@ -152,13 +158,14 @@ export interface FileRoutesByFullPath {
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
   '/app/live-sessions': typeof AppLiveSessionsRoute
-  '/app/meetings': typeof AppMeetingsRoute
+  '/app/meetings': typeof AppMeetingsRouteWithChildren
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
+  '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -174,13 +181,14 @@ export interface FileRoutesByTo {
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
   '/app/live-sessions': typeof AppLiveSessionsRoute
-  '/app/meetings': typeof AppMeetingsRoute
+  '/app/meetings': typeof AppMeetingsRouteWithChildren
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
+  '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases': typeof AppCasesIndexRoute
 }
 export interface FileRoutesById {
@@ -198,13 +206,14 @@ export interface FileRoutesById {
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
   '/app/live-sessions': typeof AppLiveSessionsRoute
-  '/app/meetings': typeof AppMeetingsRoute
+  '/app/meetings': typeof AppMeetingsRouteWithChildren
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
+  '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
 }
 export interface FileRouteTypes {
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
+    | '/app/meetings/$id'
     | '/app/cases/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
+    | '/app/meetings/$id'
     | '/app/cases'
   id:
     | '__root__'
@@ -275,6 +286,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
+    | '/app/meetings/$id'
     | '/app/cases/'
   fileRoutesById: FileRoutesById
 }
@@ -420,6 +432,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCasesIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/meetings/$id': {
+      id: '/app/meetings/$id'
+      path: '/$id'
+      fullPath: '/app/meetings/$id'
+      preLoaderRoute: typeof AppMeetingsIdRouteImport
+      parentRoute: typeof AppMeetingsRoute
+    }
     '/app/cases/$caseId': {
       id: '/app/cases/$caseId'
       path: '/cases/$caseId'
@@ -437,6 +456,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppMeetingsRouteChildren {
+  AppMeetingsIdRoute: typeof AppMeetingsIdRoute
+}
+
+const AppMeetingsRouteChildren: AppMeetingsRouteChildren = {
+  AppMeetingsIdRoute: AppMeetingsIdRoute,
+}
+
+const AppMeetingsRouteWithChildren = AppMeetingsRoute._addFileChildren(
+  AppMeetingsRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppCalendarRoute: typeof AppCalendarRoute
@@ -448,7 +479,7 @@ interface AppRouteChildren {
   AppEducationRoute: typeof AppEducationRoute
   AppFinancialsRoute: typeof AppFinancialsRoute
   AppLiveSessionsRoute: typeof AppLiveSessionsRoute
-  AppMeetingsRoute: typeof AppMeetingsRoute
+  AppMeetingsRoute: typeof AppMeetingsRouteWithChildren
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppResearchRoute: typeof AppResearchRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -468,7 +499,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppEducationRoute: AppEducationRoute,
   AppFinancialsRoute: AppFinancialsRoute,
   AppLiveSessionsRoute: AppLiveSessionsRoute,
-  AppMeetingsRoute: AppMeetingsRoute,
+  AppMeetingsRoute: AppMeetingsRouteWithChildren,
   AppOnboardingRoute: AppOnboardingRoute,
   AppResearchRoute: AppResearchRoute,
   AppSettingsRoute: AppSettingsRoute,
