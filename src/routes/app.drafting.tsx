@@ -295,8 +295,15 @@ function DraftingPage() {
           <div className="mb-3 text-sm font-semibold">{locale === "ar" ? "مسودات محفوظة" : "Saved drafts"}</div>
           <ul className="grid gap-1.5 md:grid-cols-2 lg:grid-cols-3">
             {drafts.map((d) => (
-              <li key={d.id} className="flex items-center justify-between rounded border px-3 py-2 text-xs">
-                <span className="min-w-0 flex-1 truncate">{d.title}</span>
+              <li key={d.id} className={`group flex items-center gap-1 rounded border px-3 py-2 text-xs transition hover:border-gold/50 hover:bg-gold/5 ${currentId === d.id ? "border-gold bg-gold/5" : ""}`}>
+                <button
+                  onClick={() => openDraft(d.id)}
+                  className="flex min-w-0 flex-1 items-center gap-2 text-start"
+                  title={locale === "ar" ? "فتح" : "Open"}
+                >
+                  <FolderOpen className="size-3.5 shrink-0 text-gold/70" />
+                  <span className="min-w-0 flex-1 truncate">{d.title}</span>
+                </button>
                 <Button variant="ghost" size="icon" onClick={() => removeDraft(d.id)}>
                   <Trash2 className="size-3.5 text-destructive" />
                 </Button>
