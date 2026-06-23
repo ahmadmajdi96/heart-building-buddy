@@ -42,6 +42,7 @@ function DraftingPage() {
   const [drafts, setDrafts] = useState<{ id: string; title: string; updated_at: string }[]>([]);
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [currentId, setCurrentId] = useState<string | null>(null);
 
   const editor = useEditor({
     extensions: [
