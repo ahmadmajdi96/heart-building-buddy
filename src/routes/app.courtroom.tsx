@@ -370,11 +370,14 @@ function CourtroomPage() {
             <h2 className="mb-4 text-lg font-semibold flex items-center gap-2"><History className="size-4 text-gold" />{locale === "ar" ? "محاكمات سابقة محفوظة" : "Saved past simulations"}</h2>
             <ul className="space-y-2">
               {pastSims.map((s) => (
-                <li key={s.id} className="flex items-center justify-between rounded border px-3 py-2 text-sm">
-                  <div>
-                    <div className="font-medium">{s.title ?? "(untitled)"}</div>
+                <li key={s.id} className="flex items-center justify-between gap-2 rounded border px-3 py-2 text-sm">
+                  <button type="button" onClick={() => loadSim(s.id)} className="min-w-0 flex-1 text-start hover:opacity-80">
+                    <div className="truncate font-medium">{s.title ?? "(untitled)"}</div>
                     <div className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleString()}</div>
-                  </div>
+                  </button>
+                  <Button variant="outline" size="sm" onClick={() => loadSim(s.id)}>
+                    <Play className="size-3.5" /> {locale === "ar" ? "فتح" : "Open"}
+                  </Button>
                   <Button variant="ghost" size="icon" onClick={() => removeSim(s.id)}><Trash2 className="size-4 text-destructive" /></Button>
                 </li>
               ))}
