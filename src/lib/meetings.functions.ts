@@ -66,13 +66,15 @@ export const saveMeetingTranscript = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> = {
-      transcript: data.transcript,
-      turns: data.turns,
-    };
+    const patch: {
+      transcript: string;
+      turns: unknown[];
+      participants?: unknown[];
+      ended_at?: string;
+    } = { transcript: data.transcript, turns: data.turns };
     if (data.participants) patch.participants = data.participants;
     if (data.finalize) patch.ended_at = new Date().toISOString();
-    const { error } = await context.supabase.from("meetings").update(patch).eq("id", data.id);
+    const { error } = await context.supabase.from("meetings").update(patch as never).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
