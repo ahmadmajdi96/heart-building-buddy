@@ -21,6 +21,31 @@ export const Route = createFileRoute("/app/financials")({ component: FinancialsP
 type Item = { description: string; quantity: number; unit_price: number };
 type Quote = any; type Invoice = any; type Payment = any; type Schedule = any;
 
+function TableFilter({ q, setQ, status, setStatus, statuses, placeholder, locale }: {
+  q: string; setQ: (v: string) => void;
+  status?: string; setStatus?: (v: string) => void;
+  statuses?: string[];
+  placeholder: string; locale: "ar" | "en";
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="relative w-56">
+        <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={placeholder} className="h-9 ps-9" />
+      </div>
+      {statuses && setStatus && (
+        <div className="flex flex-wrap gap-1.5">
+          {statuses.map((s) => (
+            <Button key={s} size="sm" variant={status === s ? "default" : "ghost"} onClick={() => setStatus(s)} className="capitalize">
+              {s === "all" ? (locale === "ar" ? "الكل" : "All") : s}
+            </Button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FinancialsPage() {
   const { locale } = useI18n();
   const navigate = useNavigate();
