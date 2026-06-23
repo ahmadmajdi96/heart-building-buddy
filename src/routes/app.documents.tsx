@@ -11,7 +11,7 @@ import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { extractTextFromFile, validateDocFile, ALLOWED_DOC_EXT, MAX_DOC_BYTES } from "@/lib/extract-text";
-import { FileText, Upload, Download, Trash2, Loader2, Search, BookMarked } from "lucide-react";
+import { FileText, Upload, Download, Trash2, Loader2, Search, BookMarked, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/documents")({ component: DocsPage });
@@ -87,6 +87,10 @@ function DocsPage() {
     try { const { url, name } = await signed({ data: { id } }); const a = document.createElement("a"); a.href = url; a.download = name; a.click(); }
     catch (e) { toast.error((e as Error).message); }
   }
+  async function openDoc(id: string) {
+    try { const { url } = await signed({ data: { id } }); window.open(url, "_blank", "noopener,noreferrer"); }
+    catch (e) { toast.error((e as Error).message); }
+  }
   async function remove(id: string) {
     if (!confirm(locale === "ar" ? "حذف المستند؟" : "Delete document?")) return;
     try { await del({ data: { id } }); refresh(); } catch (e) { toast.error((e as Error).message); }
@@ -159,6 +163,7 @@ function DocsPage() {
                 <div className="text-[11px] text-muted-foreground">{new Date(d.created_at).toLocaleDateString()}</div>
               </div>
               <div className="flex flex-col gap-1">
+                <Button variant="ghost" size="icon" onClick={() => openDoc(d.id)} title={locale === "ar" ? "فتح" : "Open"}><ExternalLink className="size-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => download(d.id)}><Download className="size-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => remove(d.id)}><Trash2 className="size-4 text-destructive" /></Button>
               </div>

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { generateDraft, saveDraft, listDrafts, deleteDraft } from "@/lib/drafting.functions";
+import { generateDraft, saveDraft, listDrafts, deleteDraft, getDraft } from "@/lib/drafting.functions";
 import { listTemplateDocuments } from "@/lib/documents.functions";
 import { useOrg } from "@/lib/org-context";
 import { exportDraftPdf, exportDraftDocx } from "@/lib/draft-export";
@@ -16,7 +16,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import {
   Sparkles, FileText, Wand2, RefreshCw, Loader2, Plus, X, Save, Trash2,
-  Bold, Italic, List, ListOrdered, Heading2, FileDown,
+  Bold, Italic, List, ListOrdered, Heading2, FileDown, FolderOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,6 +31,7 @@ function DraftingPage() {
   const save = useServerFn(saveDraft);
   const list = useServerFn(listDrafts);
   const del = useServerFn(deleteDraft);
+  const getOne = useServerFn(getDraft);
   const listTpl = useServerFn(listTemplateDocuments);
 
   const [prompt, setPrompt] = useState("");
@@ -41,6 +42,7 @@ function DraftingPage() {
   const [drafts, setDrafts] = useState<{ id: string; title: string; updated_at: string }[]>([]);
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [currentId, setCurrentId] = useState<string | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -114,7 +116,8 @@ function DraftingPage() {
     try {
       const varsMap: Record<string, string> = {};
       variables.forEach((v) => { if (v.key.trim()) varsMap[v.key.trim()] = v.value; });
-      await save({ data: { title, variables: varsMap, content: html } });
+      const saved: any = await save({ data: { id: currentId ?? undefined, title, variables: varsMap, content: html } });
+      if (saved?.id) setCurrentId(saved.id);
       toast.success(locale === "ar" ? "تم الحفظ" : "Draft saved");
       refresh();
     } catch (e) { toast.error((e as Error).message); }
@@ -134,7 +137,24 @@ function DraftingPage() {
 
   async function removeDraft(id: string) {
     if (!confirm(locale === "ar" ? "حذف المسودة؟" : "Delete draft?")) return;
-    try { await del({ data: { id } }); refresh(); } catch (e) { toast.error((e as Error).message); }
+    try {
+      await del({ data: { id } });
+      if (currentId === id) { setCurrentId(null); editor?.commands.setContent(""); setTitle(""); }
+      refresh();
+    } catch (e) { toast.error((e as Error).message); }
+  }
+
+  async function openDraft(id: string) {
+    try {
+      const row: any = await getOne({ data: { id } });
+      editor?.commands.setContent(row.content || "");
+      setTitle(row.title || "");
+      setCurrentId(row.id);
+      const v = row.variables || {};
+      const entries = Object.entries(v).map(([key, value]) => ({ key, value: String(value) }));
+      if (entries.length) setVariables(entries);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (e) { toast.error((e as Error).message); }
   }
 
   const groupedTpls = useMemo(() => templates, [templates]);
@@ -275,8 +295,15 @@ function DraftingPage() {
           <div className="mb-3 text-sm font-semibold">{locale === "ar" ? "مسودات محفوظة" : "Saved drafts"}</div>
           <ul className="grid gap-1.5 md:grid-cols-2 lg:grid-cols-3">
             {drafts.map((d) => (
-              <li key={d.id} className="flex items-center justify-between rounded border px-3 py-2 text-xs">
-                <span className="min-w-0 flex-1 truncate">{d.title}</span>
+              <li key={d.id} className={`group flex items-center gap-1 rounded border px-3 py-2 text-xs transition hover:border-gold/50 hover:bg-gold/5 ${currentId === d.id ? "border-gold bg-gold/5" : ""}`}>
+                <button
+                  onClick={() => openDraft(d.id)}
+                  className="flex min-w-0 flex-1 items-center gap-2 text-start"
+                  title={locale === "ar" ? "فتح" : "Open"}
+                >
+                  <FolderOpen className="size-3.5 shrink-0 text-gold/70" />
+                  <span className="min-w-0 flex-1 truncate">{d.title}</span>
+                </button>
                 <Button variant="ghost" size="icon" onClick={() => removeDraft(d.id)}>
                   <Trash2 className="size-3.5 text-destructive" />
                 </Button>
