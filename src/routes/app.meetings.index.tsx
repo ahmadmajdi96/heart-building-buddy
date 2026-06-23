@@ -12,7 +12,7 @@ import { listClients } from "@/lib/clients.functions";
 import { Video, Plus, Trash2, Copy, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/app/meetings/")({ component: MeetingsPage });
+export const Route = createFileRoute("/app/meetings")({ component: MeetingsPage });
 
 type Meeting = {
   id: string; title: string; room_name: string;
