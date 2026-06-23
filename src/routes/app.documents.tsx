@@ -87,6 +87,10 @@ function DocsPage() {
     try { const { url, name } = await signed({ data: { id } }); const a = document.createElement("a"); a.href = url; a.download = name; a.click(); }
     catch (e) { toast.error((e as Error).message); }
   }
+  async function openDoc(id: string) {
+    try { const { url } = await signed({ data: { id } }); window.open(url, "_blank", "noopener,noreferrer"); }
+    catch (e) { toast.error((e as Error).message); }
+  }
   async function remove(id: string) {
     if (!confirm(locale === "ar" ? "حذف المستند؟" : "Delete document?")) return;
     try { await del({ data: { id } }); refresh(); } catch (e) { toast.error((e as Error).message); }
