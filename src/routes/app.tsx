@@ -13,6 +13,7 @@ import {
   LayoutDashboard, Briefcase, FileText, Search, Sparkles, CalendarDays,
   Receipt, GraduationCap, BarChart3, Building2, Settings, Bell, Clock,
   ArrowLeft, Gavel, LogOut, Loader2, Mic, Video, Menu, ChevronDown, MoreHorizontal,
+  AlertTriangle, History,
 } from "lucide-react";
 
 export const Route = createFileRoute("/app")({
