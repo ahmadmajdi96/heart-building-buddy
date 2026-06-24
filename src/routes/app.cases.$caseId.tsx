@@ -96,20 +96,27 @@ function CaseProfilePage() {
 
 function OverviewTab({ data }: { data: NonNullable<Awaited<ReturnType<typeof getCase>>> }) {
   const { locale } = useI18n();
-  const c = data.case!;
+  const c = data.case! as any;
   const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
-    <div className="grid grid-cols-[140px_1fr] gap-3 py-2 border-b last:border-b-0">
+    <div className="grid grid-cols-[160px_1fr] gap-3 py-2 border-b last:border-b-0">
       <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className="text-sm">{value || "—"}</div>
     </div>
   );
+  const billableHours = data.timeEntries.filter((t: any) => t.billable).reduce((s: number, t: any) => s + Number(t.duration_seconds || 0), 0) / 3600;
+  const invoicedTotal = data.invoices.reduce((s: number, i: any) => s + Number(i.total || 0), 0);
+  const paidTotal = data.invoices.reduce((s: number, i: any) => s + Number(i.amount_paid || 0), 0);
   return (
     <div className="grid gap-6 md:grid-cols-3">
       <div className="card-elev rounded-xl border bg-card p-5 md:col-span-2">
         <h3 className="font-serif text-lg mb-3">{locale === "ar" ? "تفاصيل القضية" : "Case details"}</h3>
         <Row label={locale === "ar" ? "الرقم" : "Reference"} value={c.case_number} />
         <Row label={locale === "ar" ? "المحكمة" : "Court"} value={c.court} />
+        <Row label={locale === "ar" ? "القاعة" : "Court room"} value={c.court_room} />
         <Row label={locale === "ar" ? "الاختصاص" : "Jurisdiction"} value={c.jurisdiction} />
+        <Row label={locale === "ar" ? "القاضي" : "Judge"} value={c.judge} />
+        <Row label={locale === "ar" ? "الطرف المعارض" : "Opposing party"} value={c.opposing_party} />
+        <Row label={locale === "ar" ? "محامي الخصم" : "Opposing counsel"} value={c.opposing_counsel} />
         <Row label={locale === "ar" ? "الأولوية" : "Priority"} value={c.priority} />
         <Row label={locale === "ar" ? "تاريخ الفتح" : "Opened"} value={c.opened_at ? new Date(c.opened_at).toLocaleDateString() : null} />
         <Row label={locale === "ar" ? "الموكل" : "Client"} value={c.clients?.name} />
@@ -121,11 +128,54 @@ function OverviewTab({ data }: { data: NonNullable<Awaited<ReturnType<typeof get
           <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "الجلسات" : "Sessions"}</span><span className="font-medium">{data.appointments.length}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "المستندات" : "Documents"}</span><span className="font-medium">{data.documents.length}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "الأحداث" : "Events"}</span><span className="font-medium">{data.events.length}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "ساعات قابلة للفوترة" : "Billable hours"}</span><span className="font-medium">{billableHours.toFixed(1)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "إجمالي مفوتر" : "Invoiced"}</span><span className="font-medium">{invoicedTotal.toFixed(2)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "مدفوع" : "Paid"}</span><span className="font-medium text-emerald-600">{paidTotal.toFixed(2)}</span></div>
+          <div className="flex justify-between border-t pt-2"><span className="text-muted-foreground">{locale === "ar" ? "ربحية تقديرية" : "Estimated profit"}</span><span className="font-medium">{(paidTotal - 0).toFixed(2)}</span></div>
         </div>
       </div>
     </div>
   );
 }
+
+function InvoicesTab({ data }: { data: NonNullable<Awaited<ReturnType<typeof getCase>>> }) {
+  const { locale } = useI18n();
+  const invoices = data.invoices ?? [];
+  if (invoices.length === 0) {
+    return <div className="card-elev rounded-xl border bg-card p-12 text-center text-sm text-muted-foreground">
+      {locale === "ar" ? "لا توجد فواتير لهذه القضية بعد. أنشئ واحدة من صفحة الماليات أو من تتبع الوقت." : "No invoices yet for this matter. Create one from Financials or from Time tracking."}
+    </div>;
+  }
+  return (
+    <div className="card-elev rounded-xl border bg-card overflow-hidden">
+      <table className="w-full text-sm">
+        <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
+          <tr>
+            <th className="px-5 py-3 text-start font-medium">#</th>
+            <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "الإصدار" : "Issued"}</th>
+            <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "الاستحقاق" : "Due"}</th>
+            <th className="px-5 py-3 text-end font-medium">{locale === "ar" ? "الإجمالي" : "Total"}</th>
+            <th className="px-5 py-3 text-end font-medium">{locale === "ar" ? "المدفوع" : "Paid"}</th>
+            <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "الحالة" : "Status"}</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y">
+          {invoices.map((iv: any) => (
+            <tr key={iv.id} className="hover:bg-secondary/40">
+              <td className="px-5 py-3 font-mono text-xs">{iv.number}</td>
+              <td className="px-5 py-3">{iv.issue_date}</td>
+              <td className={`px-5 py-3 ${iv.status === "overdue" ? "text-destructive font-semibold" : "text-muted-foreground"}`}>{iv.due_date || "—"}</td>
+              <td className="px-5 py-3 text-end font-mono">{Number(iv.total).toFixed(2)} {iv.currency}</td>
+              <td className="px-5 py-3 text-end font-mono">{Number(iv.amount_paid).toFixed(2)} {iv.currency}</td>
+              <td className="px-5 py-3"><StatusBadge status={iv.status} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 
 function SessionsTab({ caseId, data, onChange }: { caseId: string; data: NonNullable<Awaited<ReturnType<typeof getCase>>>; onChange: () => void }) {
   const { locale } = useI18n();
