@@ -124,6 +124,44 @@ export type Database = {
           },
         ]
       }
+      case_members: {
+        Row: {
+          added_by: string | null
+          case_id: string
+          created_at: string
+          id: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          case_id: string
+          created_at?: string
+          id?: string
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          added_by?: string | null
+          case_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_members_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_notes: {
         Row: {
           body: string
@@ -1173,6 +1211,14 @@ export type Database = {
           _roles: Database["public"]["Enums"]["org_role"][]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_case_member: {
+        Args: { _case_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_case_owner: {
+        Args: { _case_id: string; _user_id: string }
         Returns: boolean
       }
       is_org_member: {
