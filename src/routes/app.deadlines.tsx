@@ -230,7 +230,11 @@ function Tile({ label, value, icon, color }: { label: string; value: number; ico
   );
 }
 
-function Group({ title, tone, items, kindLabel, kindMeta, ar, muted, onEdit, onDone, onDel }: any) {
+function Group({ title, tone, items, kindLabel, kindMeta, ar, muted, onEdit, onDone, onDel }: {
+  title: string; tone: "destructive" | "gold" | "primary" | "muted"; items: any[];
+  kindLabel: (k: string) => string; kindMeta: (k: string) => { icon: any }; ar: boolean; muted?: boolean;
+  onEdit: (r: any) => void; onDone: (id: string) => void; onDel: (id: string) => void;
+}) {
   const dot: Record<string, string> = {
     destructive: "bg-destructive", gold: "bg-gold", primary: "bg-primary", muted: "bg-muted-foreground/50",
   };

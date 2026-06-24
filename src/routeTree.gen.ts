@@ -23,6 +23,7 @@ import { Route as AppFinancialsRouteImport } from './routes/app.financials'
 import { Route as AppEducationRouteImport } from './routes/app.education'
 import { Route as AppDraftingRouteImport } from './routes/app.drafting'
 import { Route as AppDocumentsRouteImport } from './routes/app.documents'
+import { Route as AppDeadlinesRouteImport } from './routes/app.deadlines'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppCourtroomRouteImport } from './routes/app.courtroom'
 import { Route as AppClientsRouteImport } from './routes/app.clients'
@@ -105,6 +106,11 @@ const AppDocumentsRoute = AppDocumentsRouteImport.update({
   path: '/documents',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDeadlinesRoute = AppDeadlinesRouteImport.update({
+  id: '/deadlines',
+  path: '/deadlines',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -172,6 +178,7 @@ export interface FileRoutesByFullPath {
   '/app/clients': typeof AppClientsRoute
   '/app/courtroom': typeof AppCourtroomRoute
   '/app/dashboard': typeof AppDashboardRoute
+  '/app/deadlines': typeof AppDeadlinesRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
@@ -198,6 +205,7 @@ export interface FileRoutesByTo {
   '/app/clients': typeof AppClientsRoute
   '/app/courtroom': typeof AppCourtroomRoute
   '/app/dashboard': typeof AppDashboardRoute
+  '/app/deadlines': typeof AppDeadlinesRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
@@ -226,6 +234,7 @@ export interface FileRoutesById {
   '/app/clients': typeof AppClientsRoute
   '/app/courtroom': typeof AppCourtroomRoute
   '/app/dashboard': typeof AppDashboardRoute
+  '/app/deadlines': typeof AppDeadlinesRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
@@ -255,6 +264,7 @@ export interface FileRouteTypes {
     | '/app/clients'
     | '/app/courtroom'
     | '/app/dashboard'
+    | '/app/deadlines'
     | '/app/documents'
     | '/app/drafting'
     | '/app/education'
@@ -281,6 +291,7 @@ export interface FileRouteTypes {
     | '/app/clients'
     | '/app/courtroom'
     | '/app/dashboard'
+    | '/app/deadlines'
     | '/app/documents'
     | '/app/drafting'
     | '/app/education'
@@ -308,6 +319,7 @@ export interface FileRouteTypes {
     | '/app/clients'
     | '/app/courtroom'
     | '/app/dashboard'
+    | '/app/deadlines'
     | '/app/documents'
     | '/app/drafting'
     | '/app/education'
@@ -434,6 +446,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDocumentsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/deadlines': {
+      id: '/app/deadlines'
+      path: '/deadlines'
+      fullPath: '/app/deadlines'
+      preLoaderRoute: typeof AppDeadlinesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/dashboard': {
       id: '/app/dashboard'
       path: '/dashboard'
@@ -520,6 +539,7 @@ interface AppRouteChildren {
   AppClientsRoute: typeof AppClientsRoute
   AppCourtroomRoute: typeof AppCourtroomRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppDeadlinesRoute: typeof AppDeadlinesRoute
   AppDocumentsRoute: typeof AppDocumentsRoute
   AppDraftingRoute: typeof AppDraftingRoute
   AppEducationRoute: typeof AppEducationRoute
@@ -543,6 +563,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppClientsRoute: AppClientsRoute,
   AppCourtroomRoute: AppCourtroomRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppDeadlinesRoute: AppDeadlinesRoute,
   AppDocumentsRoute: AppDocumentsRoute,
   AppDraftingRoute: AppDraftingRoute,
   AppEducationRoute: AppEducationRoute,
