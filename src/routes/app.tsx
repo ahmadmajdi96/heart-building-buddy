@@ -38,6 +38,7 @@ const navItems: NavItem[] = [
   { to: "/app/clients", key: "m_clients", icon: Building2, perm: "view_clients" },
   { to: "/app/education", key: "m_education", icon: GraduationCap },
   { to: "/app/analytics", key: "m_analytics", icon: BarChart3, perm: "view_financials" },
+  { to: "/app/activity", key: "m_activity", icon: History, perm: "manage_members" },
 ];
 
 // Primary items shown in the top bar; the rest fall into "More".

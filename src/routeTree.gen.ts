@@ -29,6 +29,7 @@ import { Route as AppCourtroomRouteImport } from './routes/app.courtroom'
 import { Route as AppClientsRouteImport } from './routes/app.clients'
 import { Route as AppCalendarRouteImport } from './routes/app.calendar'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
+import { Route as AppActivityRouteImport } from './routes/app.activity'
 import { Route as AppMeetingsIndexRouteImport } from './routes/app.meetings.index'
 import { Route as AppCasesIndexRouteImport } from './routes/app.cases.index'
 import { Route as AppMeetingsIdRouteImport } from './routes/app.meetings.$id'
@@ -136,6 +137,11 @@ const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AppRoute,
 } as any)
+const AppActivityRoute = AppActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMeetingsIndexRoute = AppMeetingsIndexRouteImport.update({
   id: '/meetings/',
   path: '/meetings/',
@@ -173,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/set-password': typeof SetPasswordRoute
+  '/app/activity': typeof AppActivityRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/calendar': typeof AppCalendarRoute
   '/app/clients': typeof AppClientsRoute
@@ -200,6 +207,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/set-password': typeof SetPasswordRoute
+  '/app/activity': typeof AppActivityRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/calendar': typeof AppCalendarRoute
   '/app/clients': typeof AppClientsRoute
@@ -229,6 +237,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/set-password': typeof SetPasswordRoute
+  '/app/activity': typeof AppActivityRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/calendar': typeof AppCalendarRoute
   '/app/clients': typeof AppClientsRoute
@@ -259,6 +268,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/set-password'
+    | '/app/activity'
     | '/app/analytics'
     | '/app/calendar'
     | '/app/clients'
@@ -286,6 +296,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/set-password'
+    | '/app/activity'
     | '/app/analytics'
     | '/app/calendar'
     | '/app/clients'
@@ -314,6 +325,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/set-password'
+    | '/app/activity'
     | '/app/analytics'
     | '/app/calendar'
     | '/app/clients'
@@ -488,6 +500,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAnalyticsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/activity': {
+      id: '/app/activity'
+      path: '/activity'
+      fullPath: '/app/activity'
+      preLoaderRoute: typeof AppActivityRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/meetings/': {
       id: '/app/meetings/'
       path: '/meetings'
@@ -534,6 +553,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppActivityRoute: typeof AppActivityRoute
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppCalendarRoute: typeof AppCalendarRoute
   AppClientsRoute: typeof AppClientsRoute
@@ -558,6 +578,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppActivityRoute: AppActivityRoute,
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppCalendarRoute: AppCalendarRoute,
   AppClientsRoute: AppClientsRoute,
