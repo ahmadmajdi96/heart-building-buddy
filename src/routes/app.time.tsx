@@ -12,12 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   listTimeEntries, saveTimeEntry, deleteTimeEntry,
-  startTimer, stopTimer, getRunningTimer,
+  startTimer, stopTimer, getRunningTimer, exportTimeEntriesCsv,
 } from "@/lib/time-entries.functions";
 import { createInvoiceFromTime } from "@/lib/invoicing.functions";
 import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
-import { Plus, Loader2, Pencil, Trash2, Play, Square, Clock, Search, Receipt } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, Play, Square, Clock, Search, Receipt, Download } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/time")({ component: TimePage });
