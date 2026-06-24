@@ -428,6 +428,8 @@ function QuotesTab() {
 function InvoicesTab() {
   const { locale } = useI18n();
   const { org, can } = useOrg();
+  const sweep = useServerFn(sweepOverdueInvoices);
+  const setStatusFn = useServerFn(setInvoiceStatus);
   const [rows, setRows] = useState<Invoice[]>([]);
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<Invoice | null>(null);
@@ -437,26 +439,40 @@ function InvoicesTab() {
 
   async function load() {
     if (!org) return;
+    try { await sweep(); } catch { /* non-fatal */ }
     const { data } = await supabase.from("tax_invoices").select("*").eq("org_id", org.id).order("created_at", { ascending: false });
     setRows(data ?? []); setLoading(false);
   }
   useEffect(() => { load(); }, [org?.id]);
 
   async function remove(id: string) { if (!confirm("Delete?")) return; await supabase.from("tax_invoices").delete().eq("id", id); load(); }
+  async function changeStatus(id: string, next: "issued" | "void" | "paid") {
+    try { await setStatusFn({ data: { id, status: next } }); toast.success(locale === "ar" ? "تم التحديث" : "Updated"); load(); }
+    catch (e) { toast.error((e as Error).message); }
+  }
 
-  const statuses = useMemo(() => ["all", ...Array.from(new Set(rows.map((r) => r.status).filter(Boolean)))], [rows]);
+  const statuses = useMemo(() => ["all", "draft", "issued", "partial", "paid", "overdue", "void"], []);
   const filtered = useMemo(() => rows.filter((r) => {
     if (status !== "all" && r.status !== status) return false;
     if (!q.trim()) return true;
     const s = q.toLowerCase();
     return (r.client_name ?? "").toLowerCase().includes(s) || (r.number ?? "").toLowerCase().includes(s);
   }), [rows, q, status]);
+  const overdueCount = rows.filter((r) => r.status === "overdue").length;
 
   return (
     <>
       <Card className="overflow-hidden">
         <div className="flex flex-wrap items-center gap-3 border-b p-4">
-          <div className="text-sm font-semibold mr-auto">{locale === "ar" ? "الفواتير الضريبية" : "Tax invoices"} <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span></div>
+          <div className="text-sm font-semibold mr-auto">
+            {locale === "ar" ? "الفواتير الضريبية" : "Tax invoices"}
+            <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span>
+            {overdueCount > 0 && (
+              <button onClick={() => setStatus("overdue")} className="ms-3 inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive hover:bg-destructive/20">
+                <XCircle className="size-3" /> {overdueCount} {locale === "ar" ? "متأخرة" : "overdue"}
+              </button>
+            )}
+          </div>
           <TableFilter q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses} placeholder={locale === "ar" ? "ابحث برقم/عميل…" : "Search by #/client…"} locale={locale as any} />
           {can("edit_financials") && (
             <Dialog open={open} onOpenChange={setOpen}>
@@ -474,12 +490,22 @@ function InvoicesTab() {
               {filtered.map((r) => (
                 <tr key={r.id} className="hover:bg-secondary/40">
                   <Td className="font-mono text-xs">{r.number}</Td><Td className="font-medium">{r.client_name}</Td>
-                  <Td>{r.issue_date}</Td><Td className="text-muted-foreground">{r.due_date || "—"}</Td>
+                  <Td>{r.issue_date}</Td>
+                  <Td className={r.status === "overdue" ? "text-destructive font-semibold" : "text-muted-foreground"}>{r.due_date || "—"}</Td>
                   <Td className="text-end font-mono tabular-nums">{fmt(r.total, r.currency)}</Td>
                   <Td className="text-end font-mono tabular-nums">{fmt(r.amount_paid, r.currency)}</Td>
                   <Td><StatusBadge status={r.status}/></Td>
-                  <Td className="text-end">
-                    <Button size="icon" variant="ghost" onClick={() => setPreview(r)}><Eye className="size-4"/></Button>
+                  <Td className="text-end whitespace-nowrap">
+                    <Button size="icon" variant="ghost" onClick={() => setPreview(r)} title="Preview"><Eye className="size-4"/></Button>
+                    {can("edit_financials") && r.status === "draft" && (
+                      <Button size="icon" variant="ghost" onClick={() => changeStatus(r.id, "issued")} title={locale === "ar" ? "إرسال" : "Send"}><Send className="size-4 text-primary" /></Button>
+                    )}
+                    {can("edit_financials") && (r.status === "issued" || r.status === "overdue" || r.status === "partial") && (
+                      <Button size="icon" variant="ghost" onClick={() => changeStatus(r.id, "paid")} title={locale === "ar" ? "مدفوع" : "Paid"}><CheckCircle2 className="size-4 text-emerald-600" /></Button>
+                    )}
+                    {can("edit_financials") && r.status !== "void" && r.status !== "paid" && (
+                      <Button size="icon" variant="ghost" onClick={() => changeStatus(r.id, "void")} title={locale === "ar" ? "إلغاء" : "Cancel"}><XCircle className="size-4 text-amber-600" /></Button>
+                    )}
                     {can("delete_financials") && <Button size="icon" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="size-4 text-destructive"/></Button>}
                   </Td>
                 </tr>
@@ -492,6 +518,7 @@ function InvoicesTab() {
     </>
   );
 }
+
 
 // ---------- Shared doc form (quote + invoice) ----------
 function DocFormDialog({ kind, onSaved, onClose }: { kind: "quote" | "invoice"; onSaved: () => void; onClose: () => void }) {
