@@ -61,6 +61,7 @@ function CaseProfilePage() {
           <TabsTrigger value="overview" className="gap-1.5"><ClipboardList className="size-3.5" />{locale === "ar" ? "نظرة عامة" : "Overview"}</TabsTrigger>
           <TabsTrigger value="sessions" className="gap-1.5"><CalIcon className="size-3.5" />{locale === "ar" ? "الجلسات" : "Sessions"}</TabsTrigger>
           <TabsTrigger value="documents" className="gap-1.5"><FileText className="size-3.5" />{locale === "ar" ? "المستندات" : "Documents"}</TabsTrigger>
+          <TabsTrigger value="invoices" className="gap-1.5"><Receipt className="size-3.5" />{locale === "ar" ? "الفواتير" : "Invoices"}</TabsTrigger>
           <TabsTrigger value="parties" className="gap-1.5"><Users className="size-3.5" />{locale === "ar" ? "الأطراف" : "Parties"}</TabsTrigger>
           <TabsTrigger value="team" className="gap-1.5"><UserPlus className="size-3.5" />{locale === "ar" ? "الفريق" : "Team"}</TabsTrigger>
           <TabsTrigger value="notes" className="gap-1.5"><StickyNote className="size-3.5" />{locale === "ar" ? "الملاحظات" : "Notes"}</TabsTrigger>
@@ -75,6 +76,9 @@ function CaseProfilePage() {
         <TabsContent value="documents" className="mt-6">
           <DocumentsTab caseId={caseId} docs={data.documents} onChange={refresh} />
         </TabsContent>
+        <TabsContent value="invoices" className="mt-6">
+          <InvoicesTab data={data} />
+        </TabsContent>
         <TabsContent value="parties" className="mt-6">
           <PartiesTab caseId={caseId} />
         </TabsContent>
@@ -88,6 +92,7 @@ function CaseProfilePage() {
     </div>
   );
 }
+
 
 function OverviewTab({ data }: { data: NonNullable<Awaited<ReturnType<typeof getCase>>> }) {
   const { locale } = useI18n();
