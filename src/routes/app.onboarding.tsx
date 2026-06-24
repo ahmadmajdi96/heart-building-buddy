@@ -70,6 +70,8 @@ function OnboardingPage() {
         email: form.email || sess.session!.user.email, phone: form.phone, address: form.address,
         tax_id: form.tax_id, logo_path: form.logo_path || null, currency: form.currency,
         default_tax_rate: Number(form.default_tax_rate) || 0, created_by: uid,
+        country: form.country || null,
+        preferred_language: form.preferred_language || "en",
       };
       const { error: oErr } = await supabase.from("organizations").insert(orgPayload);
       if (oErr) {
