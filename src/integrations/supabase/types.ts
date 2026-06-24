@@ -300,13 +300,18 @@ export type Database = {
           case_number: string | null
           client_id: string | null
           court: string | null
+          court_room: string | null
           created_at: string
           description: string | null
           id: string
+          judge: string | null
           jurisdiction: string | null
           opened_at: string
+          opposing_counsel: string | null
+          opposing_party: string | null
           owner_id: string
           priority: string | null
+          responsible_lawyer: string | null
           status: string
           title: string
           updated_at: string
@@ -315,13 +320,18 @@ export type Database = {
           case_number?: string | null
           client_id?: string | null
           court?: string | null
+          court_room?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          judge?: string | null
           jurisdiction?: string | null
           opened_at?: string
+          opposing_counsel?: string | null
+          opposing_party?: string | null
           owner_id: string
           priority?: string | null
+          responsible_lawyer?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -330,13 +340,18 @@ export type Database = {
           case_number?: string | null
           client_id?: string | null
           court?: string | null
+          court_room?: string | null
           created_at?: string
           description?: string | null
           id?: string
+          judge?: string | null
           jurisdiction?: string | null
           opened_at?: string
+          opposing_counsel?: string | null
+          opposing_party?: string | null
           owner_id?: string
           priority?: string | null
+          responsible_lawyer?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -396,6 +411,7 @@ export type Database = {
         Row: {
           address: string | null
           company: string | null
+          country: string | null
           created_at: string
           email: string | null
           id: string
@@ -404,11 +420,15 @@ export type Database = {
           notes: string | null
           owner_id: string
           phone: string | null
+          status: string
+          tax_id: string | null
+          type: string
           updated_at: string
         }
         Insert: {
           address?: string | null
           company?: string | null
+          country?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -417,11 +437,15 @@ export type Database = {
           notes?: string | null
           owner_id: string
           phone?: string | null
+          status?: string
+          tax_id?: string | null
+          type?: string
           updated_at?: string
         }
         Update: {
           address?: string | null
           company?: string | null
+          country?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -430,6 +454,9 @@ export type Database = {
           notes?: string | null
           owner_id?: string
           phone?: string | null
+          status?: string
+          tax_id?: string | null
+          type?: string
           updated_at?: string
         }
         Relationships: []
@@ -971,6 +998,7 @@ export type Database = {
       organizations: {
         Row: {
           address: string | null
+          country: string | null
           created_at: string
           created_by: string
           currency: string
@@ -982,6 +1010,7 @@ export type Database = {
           legal_name: string
           logo_path: string | null
           phone: string | null
+          preferred_language: string
           quote_prefix: string
           tax_id: string | null
           type: Database["public"]["Enums"]["org_type"]
@@ -989,6 +1018,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          country?: string | null
           created_at?: string
           created_by: string
           currency?: string
@@ -1000,6 +1030,7 @@ export type Database = {
           legal_name: string
           logo_path?: string | null
           phone?: string | null
+          preferred_language?: string
           quote_prefix?: string
           tax_id?: string | null
           type: Database["public"]["Enums"]["org_type"]
@@ -1007,6 +1038,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          country?: string | null
           created_at?: string
           created_by?: string
           currency?: string
@@ -1018,6 +1050,7 @@ export type Database = {
           legal_name?: string
           logo_path?: string | null
           phone?: string | null
+          preferred_language?: string
           quote_prefix?: string
           tax_id?: string | null
           type?: Database["public"]["Enums"]["org_type"]
@@ -1495,6 +1528,7 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      mark_invoices_overdue: { Args: never; Returns: undefined }
       next_doc_number: {
         Args: { _kind: string; _org_id: string }
         Returns: string
