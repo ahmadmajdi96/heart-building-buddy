@@ -236,7 +236,7 @@ function SessionsTab({ caseId, data, onChange }: { caseId: string; data: NonNull
                   {e.scheduled_at && <div className="text-xs text-muted-foreground mt-1">{new Date(e.scheduled_at).toLocaleString()}</div>}
                   {e.body && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{e.body}</p>}
                 </div>
-                <Button variant="ghost" size="icon" onClick={async () => { await delEv({ data: { id: e.id } }); onChange(); }}><Trash2 className="size-4 text-destructive" /></Button>
+                <Button variant="ghost" size="icon" onClick={async () => { if (!confirm(locale === "ar" ? "حذف الجلسة؟" : "Delete session?")) return; try { await delEv({ data: { id: e.id } }); toast.success(locale === "ar" ? "تم الحذف" : "Deleted"); onChange(); } catch (err) { toast.error((err as Error).message); } }}><Trash2 className="size-4 text-destructive" /></Button>
               </li>
             ))}
           </ul>
