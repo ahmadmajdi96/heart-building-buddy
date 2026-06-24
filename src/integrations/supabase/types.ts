@@ -1079,6 +1079,88 @@ export type Database = {
           },
         ]
       }
+      time_entries: {
+        Row: {
+          activity_type: string
+          billable: boolean
+          case_id: string | null
+          client_id: string | null
+          created_at: string
+          currency: string
+          description: string
+          duration_seconds: number
+          ended_at: string | null
+          hourly_rate: number | null
+          id: string
+          invoice_id: string | null
+          is_running: boolean
+          owner_id: string
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          activity_type?: string
+          billable?: boolean
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          currency?: string
+          description?: string
+          duration_seconds?: number
+          ended_at?: string | null
+          hourly_rate?: number | null
+          id?: string
+          invoice_id?: string | null
+          is_running?: boolean
+          owner_id: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          activity_type?: string
+          billable?: boolean
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          currency?: string
+          description?: string
+          duration_seconds?: number
+          ended_at?: string | null
+          hourly_rate?: number | null
+          id?: string
+          invoice_id?: string | null
+          is_running?: boolean
+          owner_id?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "tax_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

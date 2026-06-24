@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { OrgProvider, useOrg, type Permission } from "@/lib/org-context";
 import {
   LayoutDashboard, Briefcase, FileText, Search, Sparkles, CalendarDays,
-  Receipt, GraduationCap, BarChart3, Building2, Settings, Bell,
+  Receipt, GraduationCap, BarChart3, Building2, Settings, Bell, Clock,
   ArrowLeft, Gavel, LogOut, Loader2, Mic, Video, Menu, ChevronDown, MoreHorizontal,
 } from "lucide-react";
 
@@ -25,6 +25,7 @@ const navItems: NavItem[] = [
   { to: "/app/dashboard", key: "m_dashboard", icon: LayoutDashboard },
   { to: "/app/cases", key: "m_cases", icon: Briefcase, perm: "view_cases" },
   { to: "/app/documents", key: "m_documents", icon: FileText, perm: "view_cases" },
+  { to: "/app/time", key: "m_time", icon: Clock, perm: "view_cases" },
   { to: "/app/research", key: "m_research", icon: Search },
   { to: "/app/drafting", key: "m_drafting", icon: Sparkles, perm: "edit_cases" },
   { to: "/app/calendar", key: "m_calendar", icon: CalendarDays },
