@@ -11,7 +11,8 @@ export const getDashboardStats = createServerFn({ method: "GET" })
     const startYear = new Date(now.getFullYear(), 0, 1).toISOString();
 
     // Auto-mark overdue invoices before any reads
-    await supabase.rpc("mark_invoices_overdue").catch(() => null);
+    try { await (supabase as any).rpc("mark_invoices_overdue"); } catch { /* non-fatal */ }
+
 
     const [
       casesRes, apptsAll, clientsRes, docsRes, recentCases, upcoming,
