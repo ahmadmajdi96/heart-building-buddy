@@ -48,6 +48,13 @@ function AuthPage() {
         });
         if (error) throw error;
         toast.success("Sign-in link sent. Check your email — open it on this device to set your password.");
+      } else if (mode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + "/set-password",
+        });
+        if (error) throw error;
+        toast.success("Password reset link sent. Check your email.");
+        setMode("signin");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
