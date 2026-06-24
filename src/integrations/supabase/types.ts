@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          case_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json | null
+          org_id: string | null
+          summary: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          case_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+          org_id?: string | null
+          summary?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          case_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+          org_id?: string | null
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           all_day: boolean
@@ -424,9 +478,85 @@ export type Database = {
           },
         ]
       }
+      deadlines: {
+        Row: {
+          assigned_to: string | null
+          case_id: string | null
+          completed_at: string | null
+          completed_by: string | null
+          court: string | null
+          created_at: string
+          description: string | null
+          due_at: string
+          id: string
+          kind: string
+          location: string | null
+          org_id: string | null
+          owner_id: string
+          reminder_days: number[]
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          case_id?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          court?: string | null
+          created_at?: string
+          description?: string | null
+          due_at: string
+          id?: string
+          kind?: string
+          location?: string | null
+          org_id?: string | null
+          owner_id: string
+          reminder_days?: number[]
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          case_id?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          court?: string | null
+          created_at?: string
+          description?: string | null
+          due_at?: string
+          id?: string
+          kind?: string
+          location?: string | null
+          org_id?: string | null
+          owner_id?: string
+          reminder_days?: number[]
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deadlines_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deadlines_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           case_id: string | null
+          category: string | null
           client_id: string | null
           created_at: string
           extracted_text: string | null
@@ -441,6 +571,7 @@ export type Database = {
         }
         Insert: {
           case_id?: string | null
+          category?: string | null
           client_id?: string | null
           created_at?: string
           extracted_text?: string | null
@@ -455,6 +586,7 @@ export type Database = {
         }
         Update: {
           case_id?: string | null
+          category?: string | null
           client_id?: string | null
           created_at?: string
           extracted_text?: string | null
