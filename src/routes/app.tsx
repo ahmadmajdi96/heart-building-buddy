@@ -68,6 +68,27 @@ function AppLayout() {
     return () => { mounted = false; sub.subscription.unsubscribe(); };
   }, [navigate]);
 
+  // Auto sign-out after 30 minutes of inactivity (US-029)
+  useEffect(() => {
+    const IDLE_MS = 30 * 60_000;
+    let timer: ReturnType<typeof setTimeout>;
+    const reset = () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        await supabase.auth.signOut();
+        navigate({ to: "/auth" });
+      }, IDLE_MS);
+    };
+    const events = ["mousemove", "keydown", "click", "scroll", "touchstart"];
+    events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => {
+      clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, reset));
+    };
+  }, [navigate]);
+
+
   useEffect(() => {
     if (checking || orgLoading) return;
     if (!org && pathname !== "/app/onboarding") navigate({ to: "/app/onboarding" });
