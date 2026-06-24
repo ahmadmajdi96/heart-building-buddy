@@ -451,7 +451,7 @@ function NotesTab({ caseId }: { caseId: string }) {
               <p className="text-sm whitespace-pre-wrap">{n.body}</p>
               <div className="mt-2 text-[11px] text-muted-foreground">{new Date(n.created_at).toLocaleString()}</div>
             </div>
-            <Button variant="ghost" size="icon" onClick={async () => { await del({ data: { id: n.id } }); refresh(); }}><Trash2 className="size-4 text-destructive" /></Button>
+            <Button variant="ghost" size="icon" onClick={async () => { if (!confirm(locale === "ar" ? "حذف الملاحظة؟" : "Delete note?")) return; try { await del({ data: { id: n.id } }); toast.success(locale === "ar" ? "تم الحذف" : "Deleted"); refresh(); } catch (e) { toast.error((e as Error).message); } }}><Trash2 className="size-4 text-destructive" /></Button>
           </li>
         ))}</ul>}
       </div>
