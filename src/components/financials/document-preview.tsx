@@ -3,7 +3,9 @@ import { useI18n } from "@/lib/i18n";
 import { useLogoUrl } from "@/lib/logo";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { Printer, Languages } from "lucide-react";
+import { useState } from "react";
+import { hijriDate, fmtNumber } from "@/lib/bilingual";
 
 export function DocumentHeader() {
   const { org } = useOrg();
@@ -32,49 +34,73 @@ export function DocumentHeader() {
   );
 }
 
+type Mode = "current" | "bilingual";
+
 export function DocumentPreview({ kind, doc, onClose }: { kind: "quote" | "invoice"; doc: any; onClose: () => void }) {
   const { locale } = useI18n();
   const items = (doc.items as any[]) ?? [];
+  const [mode, setMode] = useState<Mode>("current");
+
+  const L = (ar: string, en: string) => (mode === "bilingual" ? `${ar} / ${en}` : (locale === "ar" ? ar : en));
+  const num = (n: number) => fmtNumber(Number(n).toFixed(2), locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const issueGregorian = doc.issue_date ? new Date(doc.issue_date).toLocaleDateString(locale === "ar" ? "ar" : "en") : "";
+  const issueHijri = doc.issue_date ? hijriDate(doc.issue_date) : "";
 
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-end print:hidden">
-          <Button size="sm" variant="outline" onClick={() => window.print()}><Printer className="size-4"/>{locale === "ar" ? "طباعة" : "Print"}</Button>
+        <div className="flex justify-end gap-2 print:hidden">
+          <Button size="sm" variant="outline" onClick={() => setMode(mode === "bilingual" ? "current" : "bilingual")}>
+            <Languages className="size-4"/>{mode === "bilingual" ? L("لغة واحدة","Single language") : L("عرض ثنائي اللغة","Bilingual")}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => window.print()}><Printer className="size-4"/>{L("طباعة","Print")}</Button>
         </div>
         <div className="bg-card p-2 print:p-0">
           <DocumentHeader/>
           <div className="my-6 flex items-center justify-between">
             <div>
-              <div className="text-xs uppercase tracking-[0.28em] text-gold">{kind === "quote" ? (locale === "ar" ? "عرض سعر" : "Quote") : (locale === "ar" ? "فاتورة ضريبية" : "Tax Invoice")}</div>
+              <div className="text-xs uppercase tracking-[0.28em] text-gold">
+                {kind === "quote" ? L("عرض سعر","Quote") : L("فاتورة ضريبية","Tax Invoice")}
+              </div>
               <div className="mt-1 font-serif text-2xl">{doc.number}</div>
             </div>
             <div className="text-end text-sm">
-              <div className="text-muted-foreground">{locale === "ar" ? "الإصدار" : "Issued"}: {doc.issue_date}</div>
-              {kind === "quote" && doc.valid_until && <div className="text-muted-foreground">{locale === "ar" ? "صالح حتى" : "Valid until"}: {doc.valid_until}</div>}
-              {kind === "invoice" && doc.due_date && <div className="text-muted-foreground">{locale === "ar" ? "الاستحقاق" : "Due"}: {doc.due_date}</div>}
+              <div className="text-muted-foreground">{L("الإصدار","Issued")}: {issueGregorian}{issueHijri && ` · ${issueHijri}`}</div>
+              {kind === "quote" && doc.valid_until && <div className="text-muted-foreground">{L("صالح حتى","Valid until")}: {doc.valid_until}</div>}
+              {kind === "invoice" && doc.due_date && <div className="text-muted-foreground">{L("الاستحقاق","Due")}: {doc.due_date}</div>}
             </div>
           </div>
           <div className="mb-6">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">{locale === "ar" ? "إلى" : "Bill to"}</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">{L("إلى","Bill to")}</div>
             <div className="mt-1 font-medium">{doc.client_name}</div>
           </div>
           <table className="w-full text-sm">
             <thead className="border-y">
-              <tr><th className="py-2 text-start">{locale === "ar" ? "الوصف" : "Description"}</th><th className="py-2 text-end">{locale === "ar" ? "الكمية" : "Qty"}</th><th className="py-2 text-end">{locale === "ar" ? "السعر" : "Price"}</th><th className="py-2 text-end">{locale === "ar" ? "الإجمالي" : "Total"}</th></tr>
+              <tr>
+                <th className="py-2 text-start">{L("الوصف","Description")}</th>
+                <th className="py-2 text-end">{L("الكمية","Qty")}</th>
+                <th className="py-2 text-end">{L("السعر","Price")}</th>
+                <th className="py-2 text-end">{L("الإجمالي","Total")}</th>
+              </tr>
             </thead>
             <tbody className="divide-y">
               {items.map((it, i) => (
-                <tr key={i}><td className="py-2">{it.description}</td><td className="py-2 text-end">{it.quantity}</td><td className="py-2 text-end font-mono">{Number(it.unit_price).toFixed(2)}</td><td className="py-2 text-end font-mono">{(Number(it.quantity) * Number(it.unit_price)).toFixed(2)}</td></tr>
+                <tr key={i}>
+                  <td className="py-2">{it.description}</td>
+                  <td className="py-2 text-end">{fmtNumber(it.quantity, locale)}</td>
+                  <td className="py-2 text-end font-mono">{num(it.unit_price)}</td>
+                  <td className="py-2 text-end font-mono">{num(Number(it.quantity) * Number(it.unit_price))}</td>
+                </tr>
               ))}
             </tbody>
           </table>
           <div className="mt-4 ms-auto w-64 space-y-1 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "الإجمالي الفرعي" : "Subtotal"}</span><span className="font-mono">{Number(doc.subtotal).toFixed(2)} {doc.currency}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "الضريبة" : "Tax"} ({doc.tax_rate}%)</span><span className="font-mono">{Number(doc.tax_amount).toFixed(2)} {doc.currency}</span></div>
-            <div className="flex justify-between border-t pt-1 font-serif text-lg"><span>{locale === "ar" ? "الإجمالي" : "Total"}</span><span>{Number(doc.total).toFixed(2)} {doc.currency}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{L("الإجمالي الفرعي","Subtotal")}</span><span className="font-mono">{num(doc.subtotal)} {doc.currency}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{L("الضريبة","Tax")} ({fmtNumber(doc.tax_rate, locale)}%)</span><span className="font-mono">{num(doc.tax_amount)} {doc.currency}</span></div>
+            <div className="flex justify-between border-t pt-1 font-serif text-lg"><span>{L("الإجمالي","Total")}</span><span>{num(doc.total)} {doc.currency}</span></div>
           </div>
-          {doc.notes && <div className="mt-8 border-t pt-4 text-sm text-muted-foreground"><div className="mb-1 text-xs uppercase tracking-wider">{locale === "ar" ? "ملاحظات" : "Notes"}</div>{doc.notes}</div>}
+          {doc.notes && <div className="mt-8 border-t pt-4 text-sm text-muted-foreground"><div className="mb-1 text-xs uppercase tracking-wider">{L("ملاحظات","Notes")}</div>{doc.notes}</div>}
         </div>
       </DialogContent>
     </Dialog>
