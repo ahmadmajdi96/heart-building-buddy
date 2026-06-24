@@ -113,9 +113,7 @@ function OrgTab({ editable }: { editable: boolean }) {
   );
 }
 
-    </DialogContent>
-  );
-}
+
 
 function RegionTab() {
   const { locale } = useI18n();
