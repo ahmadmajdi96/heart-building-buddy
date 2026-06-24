@@ -58,14 +58,19 @@ function CasesPage() {
     try {
       await save({ data: {
         id: editing.id, title: editing.title!, case_number: editing.case_number ?? undefined,
-        court: editing.court ?? undefined, jurisdiction: editing.jurisdiction ?? undefined,
+        court: editing.court ?? undefined, court_room: editing.court_room ?? undefined,
+        jurisdiction: editing.jurisdiction ?? undefined,
         status: (editing.status ?? "open") as any, priority: (editing.priority ?? "medium") as any,
         description: editing.description ?? undefined, client_id: editing.client_id ?? null,
+        judge: editing.judge ?? undefined,
+        opposing_party: editing.opposing_party ?? undefined,
+        opposing_counsel: editing.opposing_counsel ?? undefined,
       }});
       setEditOpen(false); setEditing(null); refresh();
       toast.success(locale === "ar" ? "تم الحفظ" : "Saved");
     } catch (e) { toast.error((e as Error).message); }
   }
+
   async function remove(id: string) {
     if (!confirm(locale === "ar" ? "حذف هذه القضية؟" : "Delete this case?")) return;
     try { await del({ data: { id } }); refresh(); } catch (e) { toast.error((e as Error).message); }
