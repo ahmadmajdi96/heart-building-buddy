@@ -101,7 +101,7 @@ function AppLayout() {
     return <div className="min-h-screen grid place-items-center"><Loader2 className="size-6 animate-spin text-gold" /></div>;
   }
 
-  const visibleNav = navItems.filter((i) => !i.perm || !org || can(i.perm));
+  const visibleNav = navItems.filter((i) => (!i.perm || !org || can(i.perm)) && (!i.firmOnly || org?.type === "firm"));
   const primary = visibleNav.slice(0, PRIMARY_COUNT);
   const overflow = visibleNav.slice(PRIMARY_COUNT);
   const isActive = (to: string) => pathname === to || (to !== "/app/dashboard" && pathname.startsWith(to));
