@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as AppTimeRouteImport } from './routes/app.time'
+import { Route as AppTeamRouteImport } from './routes/app.team'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppResearchRouteImport } from './routes/app.research'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
@@ -71,6 +72,11 @@ const ShareTokenRoute = ShareTokenRouteImport.update({
 const AppTimeRoute = AppTimeRouteImport.update({
   id: '/time',
   path: '/time',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTeamRoute = AppTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -200,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/team': typeof AppTeamRoute
   '/app/time': typeof AppTimeRoute
   '/share/$token': typeof ShareTokenRoute
   '/app/': typeof AppIndexRoute
@@ -229,6 +236,7 @@ export interface FileRoutesByTo {
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/team': typeof AppTeamRoute
   '/app/time': typeof AppTimeRoute
   '/share/$token': typeof ShareTokenRoute
   '/app': typeof AppIndexRoute
@@ -260,6 +268,7 @@ export interface FileRoutesById {
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/team': typeof AppTeamRoute
   '/app/time': typeof AppTimeRoute
   '/share/$token': typeof ShareTokenRoute
   '/app/': typeof AppIndexRoute
@@ -292,6 +301,7 @@ export interface FileRouteTypes {
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
+    | '/app/team'
     | '/app/time'
     | '/share/$token'
     | '/app/'
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
+    | '/app/team'
     | '/app/time'
     | '/share/$token'
     | '/app'
@@ -351,6 +362,7 @@ export interface FileRouteTypes {
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
+    | '/app/team'
     | '/app/time'
     | '/share/$token'
     | '/app/'
@@ -420,6 +432,13 @@ declare module '@tanstack/react-router' {
       path: '/time'
       fullPath: '/app/time'
       preLoaderRoute: typeof AppTimeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/team': {
+      id: '/app/team'
+      path: '/team'
+      fullPath: '/app/team'
+      preLoaderRoute: typeof AppTeamRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/settings': {
@@ -588,6 +607,7 @@ interface AppRouteChildren {
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppResearchRoute: typeof AppResearchRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppTeamRoute: typeof AppTeamRoute
   AppTimeRoute: typeof AppTimeRoute
   AppIndexRoute: typeof AppIndexRoute
   AppCasesCaseIdRoute: typeof AppCasesCaseIdRoute
@@ -613,6 +633,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppOnboardingRoute: AppOnboardingRoute,
   AppResearchRoute: AppResearchRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppTeamRoute: AppTeamRoute,
   AppTimeRoute: AppTimeRoute,
   AppIndexRoute: AppIndexRoute,
   AppCasesCaseIdRoute: AppCasesCaseIdRoute,

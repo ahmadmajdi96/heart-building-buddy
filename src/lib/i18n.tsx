@@ -58,6 +58,7 @@ const dict = {
   m_time: { ar: "تتبع الوقت", en: "Time Tracking" },
   m_deadlines: { ar: "المواعيد", en: "Deadlines" },
   m_activity: { ar: "سجل النشاط", en: "Activity Log" },
+  m_team: { ar: "الفريق", en: "Team" },
   m_settings: { ar: "الإعدادات", en: "Settings" },
 
   m_dashboard_desc: { ar: "نظرة شاملة على أداء المكتب والإنذارات والمهام.", en: "Firm-wide overview of performance, alerts and tasks." },

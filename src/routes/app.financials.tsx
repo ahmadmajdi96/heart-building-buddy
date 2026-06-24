@@ -94,7 +94,7 @@ function FinancialsPage() {
 }
 
 // ---------- helpers ----------
-function fmt(n: number, c = "SAR") { return `${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${c}`; }
+function fmt(n: number, c = "JOD") { return `${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2 })} ${c}`; }
 function calcTotals(items: Item[], taxRate: number) {
   const subtotal = items.reduce((s, i) => s + (Number(i.quantity) || 0) * (Number(i.unit_price) || 0), 0);
   const tax_amount = subtotal * (Number(taxRate) || 0) / 100;

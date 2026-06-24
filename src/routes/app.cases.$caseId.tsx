@@ -236,7 +236,7 @@ function SessionsTab({ caseId, data, onChange }: { caseId: string; data: NonNull
                   {e.scheduled_at && <div className="text-xs text-muted-foreground mt-1">{new Date(e.scheduled_at).toLocaleString()}</div>}
                   {e.body && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{e.body}</p>}
                 </div>
-                <Button variant="ghost" size="icon" onClick={async () => { await delEv({ data: { id: e.id } }); onChange(); }}><Trash2 className="size-4 text-destructive" /></Button>
+                <Button variant="ghost" size="icon" onClick={async () => { if (!confirm(locale === "ar" ? "حذف الجلسة؟" : "Delete session?")) return; try { await delEv({ data: { id: e.id } }); toast.success(locale === "ar" ? "تم الحذف" : "Deleted"); onChange(); } catch (err) { toast.error((err as Error).message); } }}><Trash2 className="size-4 text-destructive" /></Button>
               </li>
             ))}
           </ul>
@@ -327,7 +327,7 @@ function DocumentsTab({ caseId, docs, onChange }: { caseId: string; docs: any[];
               </div>
               <div className="flex gap-1">
                 <Button variant="ghost" size="icon" onClick={() => dl(d.id)}><Download className="size-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={async () => { if (confirm(locale === "ar" ? "حذف؟" : "Delete?")) { await delDoc({ data: { id: d.id } }); onChange(); } }}><Trash2 className="size-4 text-destructive" /></Button>
+                <Button variant="ghost" size="icon" onClick={async () => { if (confirm(locale === "ar" ? "حذف المستند؟" : "Delete document?")) { try { await delDoc({ data: { id: d.id } }); toast.success(locale === "ar" ? "تم الحذف" : "Deleted"); onChange(); } catch (e) { toast.error((e as Error).message); } } }}><Trash2 className="size-4 text-destructive" /></Button>
               </div>
             </li>
           ))}
@@ -339,11 +339,12 @@ function DocumentsTab({ caseId, docs, onChange }: { caseId: string; docs: any[];
 
 function PartiesTab({ caseId }: { caseId: string }) {
   const { locale } = useI18n();
+  const ar = locale === "ar";
   const list = useServerFn(listParties);
   const save = useServerFn(saveParty);
   const del = useServerFn(deleteParty);
   const [rows, setRows] = useState<any[]>([]);
-  const [form, setForm] = useState({ name: "", role: "other", contact: "", notes: "" });
+  const [form, setForm] = useState({ name: "", role: "other", contact: "", email: "", phone: "", notes: "" });
   const [loading, setLoading] = useState(true);
 
   const roles = [
@@ -354,47 +355,63 @@ function PartiesTab({ caseId }: { caseId: string }) {
     { value: "judge", ar: "قاضي", en: "Judge" },
     { value: "other", ar: "أخرى", en: "Other" },
   ];
-  const roleLabel = (v: string) => roles.find((r) => r.value === v)?.[locale === "ar" ? "ar" : "en"] ?? v;
+  const roleLabel = (v: string) => roles.find((r) => r.value === v)?.[ar ? "ar" : "en"] ?? v;
 
   async function refresh() { setLoading(true); try { setRows(await list({ data: { case_id: caseId } })); } finally { setLoading(false); } }
   useEffect(() => { refresh(); }, [caseId]);
 
   async function add() {
-    if (!form.name) { toast.error(locale === "ar" ? "الاسم مطلوب" : "Name required"); return; }
-    try { await save({ data: { case_id: caseId, ...form } }); setForm({ name: "", role: "other", contact: "", notes: "" }); refresh(); }
+    if (!form.name) { toast.error(ar ? "الاسم مطلوب" : "Name required"); return; }
+    try {
+      await save({ data: { case_id: caseId, ...form } });
+      setForm({ name: "", role: "other", contact: "", email: "", phone: "", notes: "" });
+      toast.success(ar ? "تمت إضافة الطرف" : "Party added");
+      refresh();
+    } catch (e) { toast.error((e as Error).message); }
+  }
+
+  async function remove(id: string) {
+    if (!confirm(ar ? "حذف الطرف؟" : "Delete party?")) return;
+    try { await del({ data: { id } }); toast.success(ar ? "تم الحذف" : "Deleted"); refresh(); }
     catch (e) { toast.error((e as Error).message); }
   }
 
   return (
     <div className="space-y-4">
       <div className="card-elev rounded-xl border bg-card p-5">
-        <h3 className="font-serif text-lg mb-4">{locale === "ar" ? "إضافة طرف" : "Add party"}</h3>
+        <h3 className="font-serif text-lg mb-4">{ar ? "إضافة طرف" : "Add party"}</h3>
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5"><Label>{locale === "ar" ? "الاسم *" : "Name *"}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>{locale === "ar" ? "الدور" : "Role"}</Label>
+          <div className="space-y-1.5"><Label>{ar ? "الاسم *" : "Name *"}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>{ar ? "الدور" : "Role"}</Label>
             <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{roles.map((r) => <SelectItem key={r.value} value={r.value}>{locale === "ar" ? r.ar : r.en}</SelectItem>)}</SelectContent>
+              <SelectContent>{roles.map((r) => <SelectItem key={r.value} value={r.value}>{ar ? r.ar : r.en}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5 sm:col-span-2"><Label>{locale === "ar" ? "وسيلة التواصل" : "Contact"}</Label><Input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} /></div>
-          <div className="space-y-1.5 sm:col-span-2"><Label>{locale === "ar" ? "ملاحظات" : "Notes"}</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>{ar ? "البريد الإلكتروني" : "Email"}</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>{ar ? "الهاتف" : "Phone"}</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+          <div className="space-y-1.5 sm:col-span-2"><Label>{ar ? "وسيلة تواصل أخرى" : "Other contact"}</Label><Input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} /></div>
+          <div className="space-y-1.5 sm:col-span-2"><Label>{ar ? "ملاحظات" : "Notes"}</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
         </div>
-        <Button variant="gold" size="sm" className="mt-4 gap-1.5" onClick={add}><Plus className="size-4" />{locale === "ar" ? "إضافة" : "Add"}</Button>
+        <Button variant="gold" size="sm" className="mt-4 gap-1.5" onClick={add}><Plus className="size-4" />{ar ? "إضافة" : "Add"}</Button>
       </div>
 
       <div className="card-elev rounded-xl border bg-card">
         {loading ? <div className="p-8 grid place-items-center"><Loader2 className="size-5 animate-spin text-gold" /></div>
-        : rows.length === 0 ? <div className="p-8 text-center text-sm text-muted-foreground">{locale === "ar" ? "لا توجد أطراف" : "No parties yet"}</div>
+        : rows.length === 0 ? <div className="p-8 text-center text-sm text-muted-foreground">{ar ? "لا توجد أطراف" : "No parties yet"}</div>
         : <ul className="divide-y">{rows.map((p) => (
           <li key={p.id} className="flex items-start justify-between p-4">
-            <div>
+            <div className="min-w-0">
               <div className="text-[10px] uppercase tracking-wider text-gold">{roleLabel(p.role)}</div>
               <div className="font-medium">{p.name}</div>
-              {p.contact && <div className="text-xs text-muted-foreground mt-0.5">{p.contact}</div>}
+              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
+                {p.email && <span>✉ {p.email}</span>}
+                {p.phone && <span>☎ {p.phone}</span>}
+                {p.contact && <span>{p.contact}</span>}
+              </div>
               {p.notes && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{p.notes}</p>}
             </div>
-            <Button variant="ghost" size="icon" onClick={async () => { await del({ data: { id: p.id } }); refresh(); }}><Trash2 className="size-4 text-destructive" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => remove(p.id)}><Trash2 className="size-4 text-destructive" /></Button>
           </li>
         ))}</ul>}
       </div>
@@ -415,7 +432,7 @@ function NotesTab({ caseId }: { caseId: string }) {
 
   async function submit() {
     if (!body.trim()) return;
-    try { await add({ data: { case_id: caseId, body: body.trim() } }); setBody(""); refresh(); }
+    try { await add({ data: { case_id: caseId, body: body.trim() } }); setBody(""); toast.success(locale === "ar" ? "تمت إضافة الملاحظة" : "Note added"); refresh(); }
     catch (e) { toast.error((e as Error).message); }
   }
 
@@ -434,7 +451,7 @@ function NotesTab({ caseId }: { caseId: string }) {
               <p className="text-sm whitespace-pre-wrap">{n.body}</p>
               <div className="mt-2 text-[11px] text-muted-foreground">{new Date(n.created_at).toLocaleString()}</div>
             </div>
-            <Button variant="ghost" size="icon" onClick={async () => { await del({ data: { id: n.id } }); refresh(); }}><Trash2 className="size-4 text-destructive" /></Button>
+            <Button variant="ghost" size="icon" onClick={async () => { if (!confirm(locale === "ar" ? "حذف الملاحظة؟" : "Delete note?")) return; try { await del({ data: { id: n.id } }); toast.success(locale === "ar" ? "تم الحذف" : "Deleted"); refresh(); } catch (e) { toast.error((e as Error).message); } }}><Trash2 className="size-4 text-destructive" /></Button>
           </li>
         ))}</ul>}
       </div>

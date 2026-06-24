@@ -14,14 +14,14 @@ import {
   LayoutDashboard, Briefcase, FileText, Search, Sparkles, CalendarDays,
   Receipt, GraduationCap, BarChart3, Building2, Settings, Clock,
   ArrowLeft, Gavel, LogOut, Loader2, Mic, Video, Menu, ChevronDown, MoreHorizontal,
-  AlertTriangle, History,
+  AlertTriangle, History, Users,
 } from "lucide-react";
 
 export const Route = createFileRoute("/app")({
   component: () => <OrgProvider><AppLayout /></OrgProvider>,
 });
 
-type NavItem = { to: string; key: TKey; icon: ComponentType<{ className?: string }>; perm?: Permission };
+type NavItem = { to: string; key: TKey; icon: ComponentType<{ className?: string }>; perm?: Permission; firmOnly?: boolean };
 
 const navItems: NavItem[] = [
   { to: "/app/dashboard", key: "m_dashboard", icon: LayoutDashboard },
@@ -37,6 +37,7 @@ const navItems: NavItem[] = [
   { to: "/app/meetings", key: "m_meetings", icon: Video },
   { to: "/app/financials", key: "m_financials", icon: Receipt, perm: "view_financials" },
   { to: "/app/clients", key: "m_clients", icon: Building2, perm: "view_clients" },
+  { to: "/app/team", key: "m_team", icon: Users, firmOnly: true },
   { to: "/app/education", key: "m_education", icon: GraduationCap },
   { to: "/app/analytics", key: "m_analytics", icon: BarChart3, perm: "view_financials" },
   { to: "/app/activity", key: "m_activity", icon: History, perm: "manage_members" },
@@ -100,7 +101,7 @@ function AppLayout() {
     return <div className="min-h-screen grid place-items-center"><Loader2 className="size-6 animate-spin text-gold" /></div>;
   }
 
-  const visibleNav = navItems.filter((i) => !i.perm || !org || can(i.perm));
+  const visibleNav = navItems.filter((i) => (!i.perm || !org || can(i.perm)) && (!i.firmOnly || org?.type === "firm"));
   const primary = visibleNav.slice(0, PRIMARY_COUNT);
   const overflow = visibleNav.slice(PRIMARY_COUNT);
   const isActive = (to: string) => pathname === to || (to !== "/app/dashboard" && pathname.startsWith(to));

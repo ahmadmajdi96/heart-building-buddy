@@ -80,11 +80,11 @@ export const practiceMix = [
 ];
 
 export const invoices = [
-  { id: "INV-2026-0481", client: "شركة الأنوار", amount: 48200, currency: "SAR", issued: "2026-06-01", due: "2026-07-01", status: "paid" },
+  { id: "INV-2026-0481", client: "شركة الأنوار", amount: 48200, currency: "JOD", issued: "2026-06-01", due: "2026-07-01", status: "paid" },
   { id: "INV-2026-0482", client: "Gulf Capital", amount: 126500, currency: "USD", issued: "2026-06-05", due: "2026-07-05", status: "sent" },
-  { id: "INV-2026-0483", client: "وزارة الأشغال", amount: 312000, currency: "AED", issued: "2026-06-10", due: "2026-07-10", status: "overdue" },
-  { id: "INV-2026-0484", client: "مجموعة الواحة", amount: 18750, currency: "SAR", issued: "2026-06-12", due: "2026-07-12", status: "draft" },
-  { id: "INV-2026-0485", client: "شركة نسيج", amount: 64300, currency: "EGP", issued: "2026-06-15", due: "2026-07-15", status: "sent" },
+  { id: "INV-2026-0483", client: "وزارة الأشغال", amount: 312000, currency: "JOD", issued: "2026-06-10", due: "2026-07-10", status: "overdue" },
+  { id: "INV-2026-0484", client: "مجموعة الواحة", amount: 18750, currency: "JOD", issued: "2026-06-12", due: "2026-07-12", status: "draft" },
+  { id: "INV-2026-0485", client: "شركة نسيج", amount: 64300, currency: "JOD", issued: "2026-06-15", due: "2026-07-15", status: "sent" },
 ];
 
 export type Course = {

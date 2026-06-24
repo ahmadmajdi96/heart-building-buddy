@@ -256,10 +256,12 @@ export type Database = {
           case_id: string
           contact: string | null
           created_at: string
+          email: string | null
           id: string
           name: string
           notes: string | null
           owner_id: string
+          phone: string | null
           role: string
           updated_at: string
         }
@@ -267,10 +269,12 @@ export type Database = {
           case_id: string
           contact?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           name: string
           notes?: string | null
           owner_id: string
+          phone?: string | null
           role?: string
           updated_at?: string
         }
@@ -278,10 +282,12 @@ export type Database = {
           case_id?: string
           contact?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           name?: string
           notes?: string | null
           owner_id?: string
+          phone?: string | null
           role?: string
           updated_at?: string
         }
