@@ -53,6 +53,7 @@ function TimePage() {
   const lCases = useServerFn(listCases);
   const lClients = useServerFn(listClients);
   const invoiceFromTime = useServerFn(createInvoiceFromTime);
+  const exportCsv = useServerFn(exportTimeEntriesCsv);
 
   const [entries, setEntries] = useState<Entry[]>([]);
   const [cases, setCases] = useState<CaseRow[]>([]);
