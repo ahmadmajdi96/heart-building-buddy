@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppTimeRouteImport } from './routes/app.time'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppResearchRouteImport } from './routes/app.research'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
@@ -57,6 +58,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTimeRoute = AppTimeRouteImport.update({
+  id: '/time',
+  path: '/time',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -174,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/time': typeof AppTimeRoute
   '/app/': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
@@ -199,6 +206,7 @@ export interface FileRoutesByTo {
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/time': typeof AppTimeRoute
   '/app': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
@@ -226,6 +234,7 @@ export interface FileRoutesById {
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
+  '/app/time': typeof AppTimeRoute
   '/app/': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
@@ -254,6 +263,7 @@ export interface FileRouteTypes {
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
+    | '/app/time'
     | '/app/'
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
@@ -279,6 +289,7 @@ export interface FileRouteTypes {
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
+    | '/app/time'
     | '/app'
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
@@ -305,6 +316,7 @@ export interface FileRouteTypes {
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
+    | '/app/time'
     | '/app/'
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
@@ -357,6 +369,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/time': {
+      id: '/app/time'
+      path: '/time'
+      fullPath: '/app/time'
+      preLoaderRoute: typeof AppTimeRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/settings': {
@@ -509,6 +528,7 @@ interface AppRouteChildren {
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppResearchRoute: typeof AppResearchRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppTimeRoute: typeof AppTimeRoute
   AppIndexRoute: typeof AppIndexRoute
   AppCasesCaseIdRoute: typeof AppCasesCaseIdRoute
   AppMeetingsIdRoute: typeof AppMeetingsIdRoute
@@ -531,6 +551,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppOnboardingRoute: AppOnboardingRoute,
   AppResearchRoute: AppResearchRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppTimeRoute: AppTimeRoute,
   AppIndexRoute: AppIndexRoute,
   AppCasesCaseIdRoute: AppCasesCaseIdRoute,
   AppMeetingsIdRoute: AppMeetingsIdRoute,
