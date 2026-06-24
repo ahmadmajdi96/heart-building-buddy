@@ -327,7 +327,7 @@ function DocumentsTab({ caseId, docs, onChange }: { caseId: string; docs: any[];
               </div>
               <div className="flex gap-1">
                 <Button variant="ghost" size="icon" onClick={() => dl(d.id)}><Download className="size-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={async () => { if (confirm(locale === "ar" ? "حذف؟" : "Delete?")) { await delDoc({ data: { id: d.id } }); onChange(); } }}><Trash2 className="size-4 text-destructive" /></Button>
+                <Button variant="ghost" size="icon" onClick={async () => { if (confirm(locale === "ar" ? "حذف المستند؟" : "Delete document?")) { try { await delDoc({ data: { id: d.id } }); toast.success(locale === "ar" ? "تم الحذف" : "Deleted"); onChange(); } catch (e) { toast.error((e as Error).message); } } }}><Trash2 className="size-4 text-destructive" /></Button>
               </div>
             </li>
           ))}
