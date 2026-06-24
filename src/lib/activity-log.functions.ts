@@ -26,7 +26,7 @@ export const listActivity = createServerFn({ method: "POST" })
     const ids = Array.from(new Set((rows ?? []).map((r: any) => r.actor_id as string | null).filter((x: string | null): x is string => !!x)));
     const nameById: Record<string, string | null> = {};
     if (ids.length) {
-      const { data: profs } = await context.supabase.from("profiles").select("id, full_name").in("id", ids);
+      const { data: profs } = await context.supabase.from("profiles").select("id, full_name").in("id", ids as string[]);
       for (const p of profs ?? []) nameById[p.id] = p.full_name;
     }
     return (rows ?? []).map((r: any) => ({ ...r, actor_name: r.actor_id ? nameById[r.actor_id] ?? null : null }));
