@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({ component: AuthPage });
 
-type Mode = "signin" | "signup" | "magic";
+type Mode = "signin" | "signup" | "magic" | "forgot";
 
 function AuthPage() {
   const navigate = useNavigate();
