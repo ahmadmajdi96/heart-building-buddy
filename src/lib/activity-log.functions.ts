@@ -23,7 +23,7 @@ export const listActivity = createServerFn({ method: "POST" })
     if (data.entity_type) q = q.eq("entity_type", data.entity_type);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    const ids = Array.from(new Set((rows ?? []).map((r: any) => r.actor_id).filter(Boolean)));
+    const ids = Array.from(new Set((rows ?? []).map((r: any) => r.actor_id as string | null).filter((x: string | null): x is string => !!x)));
     const nameById: Record<string, string | null> = {};
     if (ids.length) {
       const { data: profs } = await context.supabase.from("profiles").select("id, full_name").in("id", ids);
