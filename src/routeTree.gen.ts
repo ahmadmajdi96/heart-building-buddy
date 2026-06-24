@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as ShareTokenRouteImport } from './routes/share.$token'
 import { Route as AppTimeRouteImport } from './routes/app.time'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppResearchRouteImport } from './routes/app.research'
@@ -61,6 +62,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
+} as any)
+const ShareTokenRoute = ShareTokenRouteImport.update({
+  id: '/share/$token',
+  path: '/share/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppTimeRoute = AppTimeRouteImport.update({
   id: '/time',
@@ -195,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/time': typeof AppTimeRoute
+  '/share/$token': typeof ShareTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
@@ -223,6 +230,7 @@ export interface FileRoutesByTo {
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/time': typeof AppTimeRoute
+  '/share/$token': typeof ShareTokenRoute
   '/app': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
@@ -253,6 +261,7 @@ export interface FileRoutesById {
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/time': typeof AppTimeRoute
+  '/share/$token': typeof ShareTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
@@ -284,6 +293,7 @@ export interface FileRouteTypes {
     | '/app/research'
     | '/app/settings'
     | '/app/time'
+    | '/share/$token'
     | '/app/'
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
@@ -312,6 +322,7 @@ export interface FileRouteTypes {
     | '/app/research'
     | '/app/settings'
     | '/app/time'
+    | '/share/$token'
     | '/app'
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
@@ -341,6 +352,7 @@ export interface FileRouteTypes {
     | '/app/research'
     | '/app/settings'
     | '/app/time'
+    | '/share/$token'
     | '/app/'
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
@@ -355,6 +367,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   SetPasswordRoute: typeof SetPasswordRoute
+  ShareTokenRoute: typeof ShareTokenRoute
   ApiElevenlabsScribeTokenRoute: typeof ApiElevenlabsScribeTokenRoute
 }
 
@@ -394,6 +407,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/share/$token': {
+      id: '/share/$token'
+      path: '/share/$token'
+      fullPath: '/share/$token'
+      preLoaderRoute: typeof ShareTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/app/time': {
       id: '/app/time'
@@ -609,6 +629,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   SetPasswordRoute: SetPasswordRoute,
+  ShareTokenRoute: ShareTokenRoute,
   ApiElevenlabsScribeTokenRoute: ApiElevenlabsScribeTokenRoute,
 }
 export const routeTree = rootRouteImport
