@@ -43,7 +43,7 @@ function OnboardingPage() {
   const [form, setForm] = useState({
     legal_name: "", display_name: "", email: "", phone: "", address: "", tax_id: "",
     logo_path: "", currency: "SAR", default_tax_rate: "15",
-    country: "SA", preferred_language: locale,
+    country: "SA", preferred_language: locale as string,
   });
   const [saving, setSaving] = useState(false);
 
