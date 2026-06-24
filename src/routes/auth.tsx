@@ -67,10 +67,12 @@ function AuthPage() {
 
   const title =
     mode === "signup" ? "Create your account" :
-    mode === "magic" ? "Team member sign-in" : "Welcome back";
+    mode === "magic" ? "Team member sign-in" :
+    mode === "forgot" ? "Reset your password" : "Welcome back";
   const subtitle =
     mode === "signup" ? "Set up your private legal workspace." :
     mode === "magic" ? "Enter the email your firm invited. We'll send a one-time link." :
+    mode === "forgot" ? "Enter your email and we'll send you a reset link." :
     "Sign in to your workspace.";
 
   return (
