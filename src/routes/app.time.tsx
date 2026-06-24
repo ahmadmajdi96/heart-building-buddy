@@ -14,9 +14,10 @@ import {
   listTimeEntries, saveTimeEntry, deleteTimeEntry,
   startTimer, stopTimer, getRunningTimer,
 } from "@/lib/time-entries.functions";
+import { createInvoiceFromTime } from "@/lib/invoicing.functions";
 import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
-import { Plus, Loader2, Pencil, Trash2, Play, Square, Clock, Search } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, Play, Square, Clock, Search, Receipt } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/time")({ component: TimePage });
@@ -51,6 +52,7 @@ function TimePage() {
   const running = useServerFn(getRunningTimer);
   const lCases = useServerFn(listCases);
   const lClients = useServerFn(listClients);
+  const invoiceFromTime = useServerFn(createInvoiceFromTime);
 
   const [entries, setEntries] = useState<Entry[]>([]);
   const [cases, setCases] = useState<CaseRow[]>([]);
@@ -61,6 +63,10 @@ function TimePage() {
   const [now, setNow] = useState(Date.now());
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<Entry> | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [invoiceForm, setInvoiceForm] = useState({ client_name: "", client_id: "" as string | "", case_id: "" as string | "", tax_rate: "", due_date: "", notes: "" });
+  const [creatingInvoice, setCreatingInvoice] = useState(false);
 
   // Timer form
   const [tDesc, setTDesc] = useState("");
@@ -240,26 +246,57 @@ function TimePage() {
 
       {/* Entries table */}
       <div className="card-elev rounded-xl border bg-card">
-        <div className="flex flex-wrap gap-3 border-b p-4">
+        <div className="flex flex-wrap items-center gap-3 border-b p-4">
           <div className="relative max-w-sm flex-1">
             <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={ar ? "ابحث…" : "Search…"} className="h-9 ps-9" />
           </div>
+          {selected.size > 0 && (
+            <div className="ms-auto flex items-center gap-3">
+              <span className="text-xs text-muted-foreground">{ar ? `محدد: ${selected.size}` : `${selected.size} selected`}</span>
+              <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>{ar ? "مسح" : "Clear"}</Button>
+              <Button size="sm" variant="gold" className="gap-1.5" onClick={() => {
+                const sample = filtered.find((e) => selected.has(e.id));
+                setInvoiceForm({
+                  client_name: sample?.clients?.name ?? "",
+                  client_id: sample?.client_id ?? "",
+                  case_id: sample?.case_id ?? "",
+                  tax_rate: "", due_date: "", notes: "",
+                });
+                setInvoiceOpen(true);
+              }}>
+                <Receipt className="size-4" />{ar ? "إنشاء فاتورة" : "Create invoice"}
+              </Button>
+            </div>
+          )}
         </div>
         {loading ? <div className="grid place-items-center p-12"><Loader2 className="size-5 animate-spin text-gold" /></div>
         : filtered.length === 0 ? <div className="p-12 text-center text-sm text-muted-foreground">{ar ? "لا توجد سجلات بعد." : "No time entries yet."}</div>
         : <div className="overflow-x-auto"><table className="w-full text-sm">
           <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground"><tr>
+            <th className="px-3 py-3 w-10"><Checkbox checked={filtered.filter((e) => e.billable && e.status !== "billed").every((e) => selected.has(e.id)) && filtered.some((e) => e.billable && e.status !== "billed")} onCheckedChange={(v) => {
+              const next = new Set(selected);
+              const billable = filtered.filter((e) => e.billable && e.status !== "billed").map((e) => e.id);
+              if (v) billable.forEach((id) => next.add(id));
+              else billable.forEach((id) => next.delete(id));
+              setSelected(next);
+            }} /></th>
             <th className="px-5 py-3 text-start font-medium">{ar ? "التاريخ" : "Date"}</th>
             <th className="px-5 py-3 text-start font-medium">{ar ? "الوصف" : "Description"}</th>
             <th className="px-5 py-3 text-start font-medium">{ar ? "القضية" : "Matter"}</th>
             <th className="px-5 py-3 text-start font-medium">{ar ? "العميل" : "Client"}</th>
             <th className="px-5 py-3 text-end font-medium">{ar ? "المدة" : "Duration"}</th>
             <th className="px-5 py-3 text-end font-medium">{ar ? "المبلغ" : "Amount"}</th>
+            <th className="px-5 py-3 text-start font-medium">{ar ? "الحالة" : "Status"}</th>
             <th className="px-5 py-3 text-end"></th>
           </tr></thead>
-          <tbody className="divide-y">{filtered.map((e) => (
-            <tr key={e.id} className="hover:bg-secondary/40">
+          <tbody className="divide-y">{filtered.map((e) => {
+            const billed = e.status === "billed";
+            return (
+            <tr key={e.id} className={`hover:bg-secondary/40 ${billed ? "opacity-60" : ""}`}>
+              <td className="px-3 py-3"><Checkbox disabled={!e.billable || billed} checked={selected.has(e.id)} onCheckedChange={(v) => {
+                const next = new Set(selected); if (v) next.add(e.id); else next.delete(e.id); setSelected(next);
+              }} /></td>
               <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">{new Date(e.started_at).toLocaleDateString()}</td>
               <td className="px-5 py-3">
                 <div className="font-medium">{e.description || "—"}</div>
@@ -269,14 +306,88 @@ function TimePage() {
               <td className="px-5 py-3 text-muted-foreground">{e.clients?.name ?? "—"}</td>
               <td className="px-5 py-3 text-end tabular-nums">{formatDuration(e.duration_seconds)}</td>
               <td className="px-5 py-3 text-end tabular-nums">{e.billable && e.hourly_rate ? `$${((e.duration_seconds / 3600) * e.hourly_rate).toFixed(2)}` : "—"}</td>
+              <td className="px-5 py-3 text-xs">
+                <span className={`inline-flex rounded-full px-2 py-0.5 ${billed ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
+                  {billed ? (ar ? "مفوترة" : "Billed") : (ar ? "غير مفوترة" : "Unbilled")}
+                </span>
+              </td>
               <td className="px-5 py-3 text-end">
                 <Button variant="ghost" size="icon" onClick={() => { setEditing(e); setEditOpen(true); }}><Pencil className="size-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => remove(e.id)}><Trash2 className="size-4 text-destructive" /></Button>
               </td>
             </tr>
-          ))}</tbody>
+          );})}</tbody>
         </table></div>}
       </div>
+
+      {/* Create invoice from time */}
+      <Dialog open={invoiceOpen} onOpenChange={setInvoiceOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{ar ? "إنشاء فاتورة من الوقت" : "Create invoice from time"}</DialogTitle></DialogHeader>
+          <div className="grid gap-4">
+            <div className="rounded-md border bg-secondary/40 p-3 text-sm">
+              {ar ? `سيتم تضمين ${selected.size} سجل قابل للفوترة.` : `${selected.size} billable entries will be included.`}
+            </div>
+            <div className="space-y-1.5"><Label>{ar ? "اسم العميل *" : "Client name *"}</Label>
+              <Input value={invoiceForm.client_name} onChange={(e) => setInvoiceForm({ ...invoiceForm, client_name: e.target.value })} />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5"><Label>{ar ? "العميل" : "Client (linked)"}</Label>
+                <Select value={invoiceForm.client_id || "none"} onValueChange={(v) => setInvoiceForm({ ...invoiceForm, client_id: v === "none" ? "" : v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{ar ? "بدون" : "None"}</SelectItem>
+                    {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5"><Label>{ar ? "القضية" : "Matter"}</Label>
+                <Select value={invoiceForm.case_id || "none"} onValueChange={(v) => setInvoiceForm({ ...invoiceForm, case_id: v === "none" ? "" : v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{ar ? "بدون" : "None"}</SelectItem>
+                    {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5"><Label>{ar ? "الضريبة %" : "Tax %"}</Label>
+                <Input type="number" step="0.01" value={invoiceForm.tax_rate} onChange={(e) => setInvoiceForm({ ...invoiceForm, tax_rate: e.target.value })} placeholder={ar ? "افتراضي المؤسسة" : "Org default"} />
+              </div>
+              <div className="space-y-1.5"><Label>{ar ? "الاستحقاق" : "Due date"}</Label>
+                <Input type="date" value={invoiceForm.due_date} onChange={(e) => setInvoiceForm({ ...invoiceForm, due_date: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-1.5"><Label>{ar ? "ملاحظات" : "Notes"}</Label>
+              <Textarea rows={2} value={invoiceForm.notes} onChange={(e) => setInvoiceForm({ ...invoiceForm, notes: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setInvoiceOpen(false)}>{ar ? "إلغاء" : "Cancel"}</Button>
+            <Button variant="gold" disabled={creatingInvoice || !invoiceForm.client_name} onClick={async () => {
+              setCreatingInvoice(true);
+              try {
+                await invoiceFromTime({ data: {
+                  entry_ids: Array.from(selected),
+                  client_name: invoiceForm.client_name,
+                  client_id: invoiceForm.client_id || null,
+                  case_id: invoiceForm.case_id || null,
+                  tax_rate: invoiceForm.tax_rate ? Number(invoiceForm.tax_rate) : null,
+                  due_date: invoiceForm.due_date || null,
+                  notes: invoiceForm.notes || undefined,
+                }});
+                toast.success(ar ? "تم إنشاء الفاتورة" : "Invoice created");
+                setInvoiceOpen(false); setSelected(new Set()); refresh();
+              } catch (e) { toast.error((e as Error).message); }
+              finally { setCreatingInvoice(false); }
+            }}>
+              {creatingInvoice && <Loader2 className="size-4 animate-spin" />}{ar ? "إنشاء" : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
