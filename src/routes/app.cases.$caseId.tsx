@@ -13,8 +13,9 @@ import { getCase, addCaseEvent, deleteCaseEvent } from "@/lib/cases.functions";
 import { createDocument, getSignedDownloadUrl, deleteDocument } from "@/lib/documents.functions";
 import { saveAppointment } from "@/lib/appointments.functions";
 import { listParties, saveParty, deleteParty, listNotes, addNote, deleteNote } from "@/lib/case-extras.functions";
+import { listCaseMembers, addCaseMember, removeCaseMember, updateCaseMemberRole, listAssignableUsers } from "@/lib/case-members.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Loader2, Trash2, Upload, Download, Plus, Calendar as CalIcon, FileText, Users, StickyNote, ClipboardList } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, Upload, Download, Plus, Calendar as CalIcon, FileText, Users, StickyNote, ClipboardList, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/cases/$caseId")({ component: CaseProfilePage });
@@ -61,6 +62,7 @@ function CaseProfilePage() {
           <TabsTrigger value="sessions" className="gap-1.5"><CalIcon className="size-3.5" />{locale === "ar" ? "الجلسات" : "Sessions"}</TabsTrigger>
           <TabsTrigger value="documents" className="gap-1.5"><FileText className="size-3.5" />{locale === "ar" ? "المستندات" : "Documents"}</TabsTrigger>
           <TabsTrigger value="parties" className="gap-1.5"><Users className="size-3.5" />{locale === "ar" ? "الأطراف" : "Parties"}</TabsTrigger>
+          <TabsTrigger value="team" className="gap-1.5"><UserPlus className="size-3.5" />{locale === "ar" ? "الفريق" : "Team"}</TabsTrigger>
           <TabsTrigger value="notes" className="gap-1.5"><StickyNote className="size-3.5" />{locale === "ar" ? "الملاحظات" : "Notes"}</TabsTrigger>
         </TabsList>
 
@@ -75,6 +77,9 @@ function CaseProfilePage() {
         </TabsContent>
         <TabsContent value="parties" className="mt-6">
           <PartiesTab caseId={caseId} />
+        </TabsContent>
+        <TabsContent value="team" className="mt-6">
+          <TeamTab caseId={caseId} />
         </TabsContent>
         <TabsContent value="notes" className="mt-6">
           <NotesTab caseId={caseId} />
