@@ -423,7 +423,7 @@ function TeamTab({ caseId }: { caseId: string }) {
             </div>
             <div className="flex items-center gap-2">
               <Select value={m.role} onValueChange={async (v) => {
-                try { await updateRole({ data: { id: m.id, role: v as any } }); refresh(); }
+                try { await updateRole({ data: { id: m.id, role: v as any } }); toast.success(ar ? "تم تحديث الدور" : "Role updated"); refresh(); }
                 catch (e) { toast.error((e as Error).message); }
               }}>
                 <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
@@ -431,7 +431,7 @@ function TeamTab({ caseId }: { caseId: string }) {
               </Select>
               <Button variant="ghost" size="icon" onClick={async () => {
                 if (!confirm(ar ? "إزالة العضو؟" : "Remove member?")) return;
-                try { await remove({ data: { id: m.id } }); refresh(); }
+                try { await remove({ data: { id: m.id } }); toast.success(ar ? "تمت الإزالة" : "Member removed"); refresh(); }
                 catch (e) { toast.error((e as Error).message); }
               }}><Trash2 className="size-4 text-destructive" /></Button>
             </div>
