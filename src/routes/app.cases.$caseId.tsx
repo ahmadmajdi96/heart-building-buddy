@@ -432,7 +432,7 @@ function NotesTab({ caseId }: { caseId: string }) {
 
   async function submit() {
     if (!body.trim()) return;
-    try { await add({ data: { case_id: caseId, body: body.trim() } }); setBody(""); refresh(); }
+    try { await add({ data: { case_id: caseId, body: body.trim() } }); setBody(""); toast.success(locale === "ar" ? "تمت إضافة الملاحظة" : "Note added"); refresh(); }
     catch (e) { toast.error((e as Error).message); }
   }
 
