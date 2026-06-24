@@ -14,9 +14,10 @@ import {
   listTimeEntries, saveTimeEntry, deleteTimeEntry,
   startTimer, stopTimer, getRunningTimer,
 } from "@/lib/time-entries.functions";
+import { createInvoiceFromTime } from "@/lib/invoicing.functions";
 import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
-import { Plus, Loader2, Pencil, Trash2, Play, Square, Clock, Search } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, Play, Square, Clock, Search, Receipt } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/time")({ component: TimePage });
