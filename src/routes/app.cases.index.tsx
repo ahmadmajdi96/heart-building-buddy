@@ -152,6 +152,10 @@ function CasesPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5"><Label>{locale === "ar" ? "المحكمة" : "Court"}</Label><Input value={editing?.court ?? ""} onChange={(e) => setEditing({ ...editing!, court: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>{locale === "ar" ? "القاعة" : "Court room"}</Label><Input value={editing?.court_room ?? ""} onChange={(e) => setEditing({ ...editing!, court_room: e.target.value })} /></div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5"><Label>{locale === "ar" ? "القاضي" : "Judge"}</Label><Input value={editing?.judge ?? ""} onChange={(e) => setEditing({ ...editing!, judge: e.target.value })} /></div>
               <div className="space-y-1.5"><Label>{locale === "ar" ? "الموكل" : "Client"}</Label>
                 <Select value={editing?.client_id ?? "none"} onValueChange={(v) => setEditing({ ...editing!, client_id: v === "none" ? null : v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -162,6 +166,11 @@ function CasesPage() {
                 </Select>
               </div>
             </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5"><Label>{locale === "ar" ? "الطرف المعارض" : "Opposing party"}</Label><Input value={editing?.opposing_party ?? ""} onChange={(e) => setEditing({ ...editing!, opposing_party: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>{locale === "ar" ? "محامي الخصم" : "Opposing counsel"}</Label><Input value={editing?.opposing_counsel ?? ""} onChange={(e) => setEditing({ ...editing!, opposing_counsel: e.target.value })} /></div>
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5"><Label>{locale === "ar" ? "الحالة" : "Status"}</Label>
                 <Select value={editing?.status ?? "open"} onValueChange={(v) => setEditing({ ...editing!, status: v })}>
