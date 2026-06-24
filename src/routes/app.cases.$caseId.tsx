@@ -197,6 +197,19 @@ function DocumentsTab({ caseId, docs, onChange }: { caseId: string; docs: any[];
   const signedUrl = useServerFn(getSignedDownloadUrl);
   const delDoc = useServerFn(deleteDocument);
   const [uploading, setUploading] = useState(false);
+  const [category, setCategory] = useState<string>("other");
+  const [filter, setFilter] = useState<string>("all");
+
+  const categories = [
+    { v: "pleading", ar: "مذكرات", en: "Pleadings" },
+    { v: "contract", ar: "عقود", en: "Contracts" },
+    { v: "evidence", ar: "أدلة", en: "Evidence" },
+    { v: "court_paper", ar: "أوراق المحكمة", en: "Court papers" },
+    { v: "invoice", ar: "فواتير", en: "Invoices" },
+    { v: "correspondence", ar: "مراسلات", en: "Correspondence" },
+    { v: "other", ar: "أخرى", en: "Other" },
+  ];
+  const catLabel = (v: string | null) => categories.find((c) => c.v === v)?.[locale === "ar" ? "ar" : "en"] ?? (locale === "ar" ? "أخرى" : "Other");
 
   async function upload(file: File) {
     setUploading(true);
@@ -206,7 +219,7 @@ function DocumentsTab({ caseId, docs, onChange }: { caseId: string; docs: any[];
       const path = `${u.user.id}/${caseId}/${Date.now()}-${file.name}`;
       const { error } = await supabase.storage.from("documents").upload(path, file);
       if (error) throw error;
-      await createDoc({ data: { name: file.name, mime_type: file.type, size: file.size, storage_path: path, case_id: caseId } });
+      await createDoc({ data: { name: file.name, mime_type: file.type, size: file.size, storage_path: path, case_id: caseId, category } });
       toast.success(locale === "ar" ? "تم الرفع" : "Uploaded");
       onChange();
     } catch (e) { toast.error((e as Error).message); }
@@ -217,21 +230,45 @@ function DocumentsTab({ caseId, docs, onChange }: { caseId: string; docs: any[];
     catch (e) { toast.error((e as Error).message); }
   }
 
+  const filtered = filter === "all" ? docs : docs.filter((d) => (d.category ?? "other") === filter);
+
   return (
     <div className="space-y-4">
-      <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed bg-card p-6 text-sm text-muted-foreground hover:bg-secondary/40">
-        {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-        <span>{locale === "ar" ? "رفع مستند جديد" : "Upload a document"}</span>
-        <input type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); }} />
-      </label>
+      <div className="grid gap-3 sm:grid-cols-[1fr_200px]">
+        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed bg-card p-6 text-sm text-muted-foreground hover:bg-secondary/40">
+          {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+          <span>{locale === "ar" ? "رفع مستند جديد" : "Upload a document"}</span>
+          <input type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); }} />
+        </label>
+        <div className="space-y-1.5">
+          <Label className="text-xs uppercase tracking-wider text-muted-foreground">{locale === "ar" ? "الفئة" : "Category"}</Label>
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{categories.map((c) => <SelectItem key={c.v} value={c.v}>{locale === "ar" ? c.ar : c.en}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <Label className="text-xs uppercase tracking-wider text-muted-foreground">{locale === "ar" ? "تصفية" : "Filter"}</Label>
+        <Select value={filter} onValueChange={setFilter}>
+          <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{locale === "ar" ? "الكل" : "All categories"}</SelectItem>
+            {categories.map((c) => <SelectItem key={c.v} value={c.v}>{locale === "ar" ? c.ar : c.en}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
       <div className="card-elev rounded-xl border bg-card">
-        {docs.length === 0 ? <div className="p-8 text-center text-sm text-muted-foreground">{locale === "ar" ? "لا توجد مستندات" : "No documents"}</div>
+        {filtered.length === 0 ? <div className="p-8 text-center text-sm text-muted-foreground">{locale === "ar" ? "لا توجد مستندات" : "No documents"}</div>
         : <ul className="divide-y">
-          {docs.map((d) => (
+          {filtered.map((d) => (
             <li key={d.id} className="flex items-center justify-between p-4">
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">{d.name}</div>
-                <div className="text-xs text-muted-foreground">{Math.round((d.size ?? 0) / 1024)} KB</div>
+                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                  <span className="inline-flex rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider">{catLabel(d.category)}</span>
+                  <span>{Math.round((d.size ?? 0) / 1024)} KB</span>
+                </div>
               </div>
               <div className="flex gap-1">
                 <Button variant="ghost" size="icon" onClick={() => dl(d.id)}><Download className="size-4" /></Button>
@@ -423,7 +460,7 @@ function TeamTab({ caseId }: { caseId: string }) {
             </div>
             <div className="flex items-center gap-2">
               <Select value={m.role} onValueChange={async (v) => {
-                try { await updateRole({ data: { id: m.id, role: v as any } }); refresh(); }
+                try { await updateRole({ data: { id: m.id, role: v as any } }); toast.success(ar ? "تم تحديث الدور" : "Role updated"); refresh(); }
                 catch (e) { toast.error((e as Error).message); }
               }}>
                 <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
@@ -431,7 +468,7 @@ function TeamTab({ caseId }: { caseId: string }) {
               </Select>
               <Button variant="ghost" size="icon" onClick={async () => {
                 if (!confirm(ar ? "إزالة العضو؟" : "Remove member?")) return;
-                try { await remove({ data: { id: m.id } }); refresh(); }
+                try { await remove({ data: { id: m.id } }); toast.success(ar ? "تمت الإزالة" : "Member removed"); refresh(); }
                 catch (e) { toast.error((e as Error).message); }
               }}><Trash2 className="size-4 text-destructive" /></Button>
             </div>

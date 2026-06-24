@@ -23,11 +23,13 @@ import { Route as AppFinancialsRouteImport } from './routes/app.financials'
 import { Route as AppEducationRouteImport } from './routes/app.education'
 import { Route as AppDraftingRouteImport } from './routes/app.drafting'
 import { Route as AppDocumentsRouteImport } from './routes/app.documents'
+import { Route as AppDeadlinesRouteImport } from './routes/app.deadlines'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppCourtroomRouteImport } from './routes/app.courtroom'
 import { Route as AppClientsRouteImport } from './routes/app.clients'
 import { Route as AppCalendarRouteImport } from './routes/app.calendar'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
+import { Route as AppActivityRouteImport } from './routes/app.activity'
 import { Route as AppMeetingsIndexRouteImport } from './routes/app.meetings.index'
 import { Route as AppCasesIndexRouteImport } from './routes/app.cases.index'
 import { Route as AppMeetingsIdRouteImport } from './routes/app.meetings.$id'
@@ -105,6 +107,11 @@ const AppDocumentsRoute = AppDocumentsRouteImport.update({
   path: '/documents',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDeadlinesRoute = AppDeadlinesRouteImport.update({
+  id: '/deadlines',
+  path: '/deadlines',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -128,6 +135,11 @@ const AppCalendarRoute = AppCalendarRouteImport.update({
 const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppActivityRoute = AppActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMeetingsIndexRoute = AppMeetingsIndexRouteImport.update({
@@ -167,11 +179,13 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/set-password': typeof SetPasswordRoute
+  '/app/activity': typeof AppActivityRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/calendar': typeof AppCalendarRoute
   '/app/clients': typeof AppClientsRoute
   '/app/courtroom': typeof AppCourtroomRoute
   '/app/dashboard': typeof AppDashboardRoute
+  '/app/deadlines': typeof AppDeadlinesRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
@@ -193,11 +207,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/set-password': typeof SetPasswordRoute
+  '/app/activity': typeof AppActivityRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/calendar': typeof AppCalendarRoute
   '/app/clients': typeof AppClientsRoute
   '/app/courtroom': typeof AppCourtroomRoute
   '/app/dashboard': typeof AppDashboardRoute
+  '/app/deadlines': typeof AppDeadlinesRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
@@ -221,11 +237,13 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/set-password': typeof SetPasswordRoute
+  '/app/activity': typeof AppActivityRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/calendar': typeof AppCalendarRoute
   '/app/clients': typeof AppClientsRoute
   '/app/courtroom': typeof AppCourtroomRoute
   '/app/dashboard': typeof AppDashboardRoute
+  '/app/deadlines': typeof AppDeadlinesRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
@@ -250,11 +268,13 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/set-password'
+    | '/app/activity'
     | '/app/analytics'
     | '/app/calendar'
     | '/app/clients'
     | '/app/courtroom'
     | '/app/dashboard'
+    | '/app/deadlines'
     | '/app/documents'
     | '/app/drafting'
     | '/app/education'
@@ -276,11 +296,13 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/set-password'
+    | '/app/activity'
     | '/app/analytics'
     | '/app/calendar'
     | '/app/clients'
     | '/app/courtroom'
     | '/app/dashboard'
+    | '/app/deadlines'
     | '/app/documents'
     | '/app/drafting'
     | '/app/education'
@@ -303,11 +325,13 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/set-password'
+    | '/app/activity'
     | '/app/analytics'
     | '/app/calendar'
     | '/app/clients'
     | '/app/courtroom'
     | '/app/dashboard'
+    | '/app/deadlines'
     | '/app/documents'
     | '/app/drafting'
     | '/app/education'
@@ -434,6 +458,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDocumentsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/deadlines': {
+      id: '/app/deadlines'
+      path: '/deadlines'
+      fullPath: '/app/deadlines'
+      preLoaderRoute: typeof AppDeadlinesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/dashboard': {
       id: '/app/dashboard'
       path: '/dashboard'
@@ -467,6 +498,13 @@ declare module '@tanstack/react-router' {
       path: '/analytics'
       fullPath: '/app/analytics'
       preLoaderRoute: typeof AppAnalyticsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/activity': {
+      id: '/app/activity'
+      path: '/activity'
+      fullPath: '/app/activity'
+      preLoaderRoute: typeof AppActivityRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/meetings/': {
@@ -515,11 +553,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppActivityRoute: typeof AppActivityRoute
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppCalendarRoute: typeof AppCalendarRoute
   AppClientsRoute: typeof AppClientsRoute
   AppCourtroomRoute: typeof AppCourtroomRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppDeadlinesRoute: typeof AppDeadlinesRoute
   AppDocumentsRoute: typeof AppDocumentsRoute
   AppDraftingRoute: typeof AppDraftingRoute
   AppEducationRoute: typeof AppEducationRoute
@@ -538,11 +578,13 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppActivityRoute: AppActivityRoute,
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppCalendarRoute: AppCalendarRoute,
   AppClientsRoute: AppClientsRoute,
   AppCourtroomRoute: AppCourtroomRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppDeadlinesRoute: AppDeadlinesRoute,
   AppDocumentsRoute: AppDocumentsRoute,
   AppDraftingRoute: AppDraftingRoute,
   AppEducationRoute: AppEducationRoute,

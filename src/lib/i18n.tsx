@@ -56,6 +56,8 @@ const dict = {
   m_live_sessions: { ar: "الجلسات المباشرة", en: "Live Sessions" },
   m_meetings: { ar: "الاجتماعات", en: "Meetings" },
   m_time: { ar: "تتبع الوقت", en: "Time Tracking" },
+  m_deadlines: { ar: "المواعيد", en: "Deadlines" },
+  m_activity: { ar: "سجل النشاط", en: "Activity Log" },
   m_settings: { ar: "الإعدادات", en: "Settings" },
 
   m_dashboard_desc: { ar: "نظرة شاملة على أداء المكتب والإنذارات والمهام.", en: "Firm-wide overview of performance, alerts and tasks." },

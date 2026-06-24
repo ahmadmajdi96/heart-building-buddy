@@ -9,6 +9,7 @@ const DocInput = z.object({
   storage_path: z.string().min(1),
   extracted_text: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  category: z.string().optional(),
   case_id: z.string().uuid().nullable().optional(),
   client_id: z.string().uuid().nullable().optional(),
   is_template: z.boolean().optional(),

@@ -13,6 +13,7 @@ import {
   LayoutDashboard, Briefcase, FileText, Search, Sparkles, CalendarDays,
   Receipt, GraduationCap, BarChart3, Building2, Settings, Bell, Clock,
   ArrowLeft, Gavel, LogOut, Loader2, Mic, Video, Menu, ChevronDown, MoreHorizontal,
+  AlertTriangle, History,
 } from "lucide-react";
 
 export const Route = createFileRoute("/app")({
@@ -26,9 +27,10 @@ const navItems: NavItem[] = [
   { to: "/app/cases", key: "m_cases", icon: Briefcase, perm: "view_cases" },
   { to: "/app/documents", key: "m_documents", icon: FileText, perm: "view_cases" },
   { to: "/app/time", key: "m_time", icon: Clock, perm: "view_cases" },
+  { to: "/app/deadlines", key: "m_deadlines", icon: AlertTriangle, perm: "view_cases" },
+  { to: "/app/calendar", key: "m_calendar", icon: CalendarDays },
   { to: "/app/research", key: "m_research", icon: Search },
   { to: "/app/drafting", key: "m_drafting", icon: Sparkles, perm: "edit_cases" },
-  { to: "/app/calendar", key: "m_calendar", icon: CalendarDays },
   { to: "/app/courtroom", key: "m_courtroom", icon: Gavel },
   { to: "/app/live-sessions", key: "m_live_sessions", icon: Mic },
   { to: "/app/meetings", key: "m_meetings", icon: Video },
@@ -36,6 +38,7 @@ const navItems: NavItem[] = [
   { to: "/app/clients", key: "m_clients", icon: Building2, perm: "view_clients" },
   { to: "/app/education", key: "m_education", icon: GraduationCap },
   { to: "/app/analytics", key: "m_analytics", icon: BarChart3, perm: "view_financials" },
+  { to: "/app/activity", key: "m_activity", icon: History, perm: "manage_members" },
 ];
 
 // Primary items shown in the top bar; the rest fall into "More".
