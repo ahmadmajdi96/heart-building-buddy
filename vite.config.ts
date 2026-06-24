@@ -6,10 +6,10 @@ export default defineConfig({
   },
   server: {
     host: "0.0.0.0",
-    allowedHosts: ["arab.law.cortanexai.com", ".cortanexai.com"],
+    allowedHosts: true,
   },
   preview: {
     host: "0.0.0.0",
-    allowedHosts: ["arab.law.cortanexai.com", ".cortanexai.com"],
+    allowedHosts: true,
   },
 } as any);
