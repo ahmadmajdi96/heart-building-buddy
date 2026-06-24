@@ -185,10 +185,7 @@ function AppLayout() {
           {/* Right actions */}
           <div className="ms-auto flex items-center gap-1.5">
             <LangToggle />
-            <Button variant="ghost" size="icon" aria-label={t("app_notifications")} className="relative">
-              <Bell className="size-4" />
-              <span className="absolute end-2.5 top-2.5 size-1.5 rounded-full bg-destructive" />
-            </Button>
+            <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 rounded-full p-1 pr-2 ring-1 ring-transparent transition hover:ring-border focus:outline-none focus-visible:ring-gold/40">
