@@ -181,6 +181,32 @@ function OnboardingPage() {
               <Input type="number" step="0.01" value={form.default_tax_rate} onChange={(e) => setForm({ ...form, default_tax_rate: e.target.value })} />
             </Field>
           </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label={locale === "ar" ? "الدولة" : "Country"}>
+              <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })}>
+                <option value="SA">Saudi Arabia</option>
+                <option value="AE">United Arab Emirates</option>
+                <option value="JO">Jordan</option>
+                <option value="EG">Egypt</option>
+                <option value="KW">Kuwait</option>
+                <option value="QA">Qatar</option>
+                <option value="BH">Bahrain</option>
+                <option value="OM">Oman</option>
+                <option value="LB">Lebanon</option>
+                <option value="IQ">Iraq</option>
+                <option value="MA">Morocco</option>
+                <option value="TN">Tunisia</option>
+                <option value="DZ">Algeria</option>
+                <option value="other">Other</option>
+              </select>
+            </Field>
+            <Field label={locale === "ar" ? "اللغة المفضّلة" : "Preferred language"}>
+              <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={form.preferred_language} onChange={(e) => setForm({ ...form, preferred_language: e.target.value })}>
+                <option value="ar">العربية</option>
+                <option value="en">English</option>
+              </select>
+            </Field>
+          </div>
           <Field label={locale === "ar" ? "الشعار" : "Logo"}>
             <LogoPicker
               value={form.logo_path}
