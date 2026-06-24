@@ -8,6 +8,8 @@ const PartyInput = z.object({
   name: z.string().min(1),
   role: z.string().min(1).default("other"),
   contact: z.string().optional(),
+  email: z.string().email().optional().or(z.literal("")),
+  phone: z.string().optional(),
   notes: z.string().optional(),
 });
 
