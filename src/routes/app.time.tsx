@@ -52,6 +52,7 @@ function TimePage() {
   const running = useServerFn(getRunningTimer);
   const lCases = useServerFn(listCases);
   const lClients = useServerFn(listClients);
+  const invoiceFromTime = useServerFn(createInvoiceFromTime);
 
   const [entries, setEntries] = useState<Entry[]>([]);
   const [cases, setCases] = useState<CaseRow[]>([]);
@@ -62,6 +63,10 @@ function TimePage() {
   const [now, setNow] = useState(Date.now());
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<Entry> | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [invoiceForm, setInvoiceForm] = useState({ client_name: "", client_id: "" as string | "", case_id: "" as string | "", tax_rate: "", due_date: "", notes: "" });
+  const [creatingInvoice, setCreatingInvoice] = useState(false);
 
   // Timer form
   const [tDesc, setTDesc] = useState("");
