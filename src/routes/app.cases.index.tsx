@@ -16,7 +16,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/cases/")({ component: CasesPage });
 
-type CaseRow = { id: string; title: string; case_number: string | null; court: string | null; jurisdiction: string | null; status: string; priority: string | null; opened_at: string; client_id: string | null; description: string | null; clients?: { id: string; name: string } | null };
+type CaseRow = { id: string; title: string; case_number: string | null; court: string | null; court_room?: string | null; jurisdiction: string | null; status: string; priority: string | null; opened_at: string; client_id: string | null; description: string | null; clients?: { id: string; name: string } | null; judge?: string | null; opposing_party?: string | null; opposing_counsel?: string | null };
 type ClientRow = { id: string; name: string };
 
 function CasesPage() {
