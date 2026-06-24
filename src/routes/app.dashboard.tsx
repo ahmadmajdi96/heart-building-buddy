@@ -10,6 +10,7 @@ import { useOrg, roleLabel, type OrgRole } from "@/lib/org-context";
 import {
   Briefcase, Clock3, DollarSign, FileWarning, ArrowUpRight, Users,
   Loader2, FileText, Pencil, Video, Receipt, TrendingUp, Radio,
+  AlertTriangle, Timer,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -90,15 +91,37 @@ function DashboardPage() {
 
       {/* Secondary KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+        <StatTile label={locale === "ar" ? "ساعات (الشهر)" : "Hours (month)"}
+          value={(c as any).hoursMonth?.toFixed(1) ?? "0.0"}
+          delta={locale === "ar" ? `قابلة للفوترة: ${(c as any).billableHoursMonth?.toFixed(1) ?? 0}` : `Billable: ${(c as any).billableHoursMonth?.toFixed(1) ?? 0}`}
+          icon={<Timer className="size-4" />} tone="gold" />
+        <StatTile label={locale === "ar" ? "أعمال جارية (WIP)" : "Work in progress"}
+          value={fmtMoney((c as any).wipMonth ?? 0)}
+          icon={<DollarSign className="size-4" />} />
+        <StatTile label={locale === "ar" ? "فواتير متأخرة" : "Overdue invoices"}
+          value={String((c as any).overdueCount ?? 0)}
+          delta={(c as any).overdueAmount ? fmtMoney((c as any).overdueAmount) : undefined}
+          icon={<AlertTriangle className="size-4" />} tone={(c as any).overdueCount > 0 ? "warning" : undefined} />
+        <StatTile label={locale === "ar" ? "مواعيد متأخرة" : "Overdue deadlines"}
+          value={String((c as any).overdueDeadlines ?? 0)}
+          icon={<AlertTriangle className="size-4" />} tone={(c as any).overdueDeadlines > 0 ? "warning" : undefined} />
         <StatTile label={locale === "ar" ? "العملاء" : "Clients"} value={String(c.clients)} icon={<Users className="size-4" />} />
+        <StatTile label={locale === "ar" ? "فواتير مدفوعة" : "Paid invoices"} value={`${c.invoicePaidCount}/${c.invoiceTotalCount}`} icon={<TrendingUp className="size-4" />} tone="success" />
+      </div>
+
+      {/* Tertiary KPIs */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatTile label={locale === "ar" ? "المستندات" : "Documents"} value={String(c.documents)} icon={<FileText className="size-4" />} />
         <StatTile label={locale === "ar" ? "المسودات" : "Drafts"} value={String(c.drafts)} icon={<Pencil className="size-4" />} />
         <StatTile label={locale === "ar" ? "اجتماعات" : "Meetings"} value={String(c.meetings)}
           delta={c.liveMeetings ? (locale === "ar" ? `${c.liveMeetings} مباشر` : `${c.liveMeetings} live`) : undefined}
           icon={<Video className="size-4" />} />
         <StatTile label={locale === "ar" ? "جلسات مباشرة" : "Live sessions"} value={String(c.liveSessions)} icon={<Radio className="size-4" />} />
-        <StatTile label={locale === "ar" ? "فواتير مدفوعة" : "Paid invoices"} value={`${c.invoicePaidCount}/${c.invoiceTotalCount}`} icon={<TrendingUp className="size-4" />} tone="success" />
+        <StatTile label={locale === "ar" ? "إجمالي ساعات الشهر" : "Total hours (month)"}
+          value={(c as any).hoursMonth?.toFixed(1) ?? "0.0"}
+          icon={<Clock3 className="size-4" />} />
       </div>
+
 
       {/* Revenue trend + Cases by status */}
       <div className="grid gap-6 lg:grid-cols-3">

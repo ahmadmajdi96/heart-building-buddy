@@ -16,7 +16,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/cases/")({ component: CasesPage });
 
-type CaseRow = { id: string; title: string; case_number: string | null; court: string | null; jurisdiction: string | null; status: string; priority: string | null; opened_at: string; client_id: string | null; description: string | null; clients?: { id: string; name: string } | null };
+type CaseRow = { id: string; title: string; case_number: string | null; court: string | null; court_room?: string | null; jurisdiction: string | null; status: string; priority: string | null; opened_at: string; client_id: string | null; description: string | null; clients?: { id: string; name: string } | null; judge?: string | null; opposing_party?: string | null; opposing_counsel?: string | null };
 type ClientRow = { id: string; name: string };
 
 function CasesPage() {
@@ -58,14 +58,19 @@ function CasesPage() {
     try {
       await save({ data: {
         id: editing.id, title: editing.title!, case_number: editing.case_number ?? undefined,
-        court: editing.court ?? undefined, jurisdiction: editing.jurisdiction ?? undefined,
+        court: editing.court ?? undefined, court_room: editing.court_room ?? undefined,
+        jurisdiction: editing.jurisdiction ?? undefined,
         status: (editing.status ?? "open") as any, priority: (editing.priority ?? "medium") as any,
         description: editing.description ?? undefined, client_id: editing.client_id ?? null,
+        judge: editing.judge ?? undefined,
+        opposing_party: editing.opposing_party ?? undefined,
+        opposing_counsel: editing.opposing_counsel ?? undefined,
       }});
       setEditOpen(false); setEditing(null); refresh();
       toast.success(locale === "ar" ? "تم الحفظ" : "Saved");
     } catch (e) { toast.error((e as Error).message); }
   }
+
   async function remove(id: string) {
     if (!confirm(locale === "ar" ? "حذف هذه القضية؟" : "Delete this case?")) return;
     try { await del({ data: { id } }); refresh(); } catch (e) { toast.error((e as Error).message); }
@@ -147,6 +152,10 @@ function CasesPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5"><Label>{locale === "ar" ? "المحكمة" : "Court"}</Label><Input value={editing?.court ?? ""} onChange={(e) => setEditing({ ...editing!, court: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>{locale === "ar" ? "القاعة" : "Court room"}</Label><Input value={editing?.court_room ?? ""} onChange={(e) => setEditing({ ...editing!, court_room: e.target.value })} /></div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5"><Label>{locale === "ar" ? "القاضي" : "Judge"}</Label><Input value={editing?.judge ?? ""} onChange={(e) => setEditing({ ...editing!, judge: e.target.value })} /></div>
               <div className="space-y-1.5"><Label>{locale === "ar" ? "الموكل" : "Client"}</Label>
                 <Select value={editing?.client_id ?? "none"} onValueChange={(v) => setEditing({ ...editing!, client_id: v === "none" ? null : v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -157,6 +166,11 @@ function CasesPage() {
                 </Select>
               </div>
             </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5"><Label>{locale === "ar" ? "الطرف المعارض" : "Opposing party"}</Label><Input value={editing?.opposing_party ?? ""} onChange={(e) => setEditing({ ...editing!, opposing_party: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>{locale === "ar" ? "محامي الخصم" : "Opposing counsel"}</Label><Input value={editing?.opposing_counsel ?? ""} onChange={(e) => setEditing({ ...editing!, opposing_counsel: e.target.value })} /></div>
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5"><Label>{locale === "ar" ? "الحالة" : "Status"}</Label>
                 <Select value={editing?.status ?? "open"} onValueChange={(v) => setEditing({ ...editing!, status: v })}>

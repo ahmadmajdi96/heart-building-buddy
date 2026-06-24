@@ -10,10 +10,14 @@ export const getDashboardStats = createServerFn({ method: "GET" })
     const startMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const startYear = new Date(now.getFullYear(), 0, 1).toISOString();
 
+    // Auto-mark overdue invoices before any reads
+    try { await (supabase as any).rpc("mark_invoices_overdue"); } catch { /* non-fatal */ }
+
+
     const [
       casesRes, apptsAll, clientsRes, docsRes, recentCases, upcoming,
       invoices, payments, ytdPayments, drafts, meetings, liveSessions,
-      recentClients, recentDocs, recentInvoices, allInvoices,
+      recentClients, recentDocs, recentInvoices, allInvoices, timeMonth, openDeadlines,
     ] = await Promise.all([
       supabase.from("cases").select("id,status,opened_at,court"),
       supabase.from("appointments").select("id,starts_at,kind").gte("starts_at", now.toISOString()).lte("starts_at", in7),
@@ -30,7 +34,9 @@ export const getDashboardStats = createServerFn({ method: "GET" })
       supabase.from("clients").select("id,name,email,created_at").order("created_at", { ascending: false }).limit(5),
       supabase.from("documents").select("id,name,created_at,case_id").order("created_at", { ascending: false }).limit(5),
       supabase.from("tax_invoices").select("id,number,total,amount_paid,status,issue_date,clients(name)").order("issue_date", { ascending: false }).limit(5),
-      supabase.from("tax_invoices").select("total,amount_paid,status"),
+      supabase.from("tax_invoices").select("total,amount_paid,status,due_date"),
+      supabase.from("time_entries").select("duration_seconds,billable,hourly_rate,started_at").gte("started_at", startMonth),
+      supabase.from("deadlines").select("id, due_at, status").eq("status", "open"),
     ]);
 
     const cases = casesRes.data ?? [];
@@ -44,9 +50,20 @@ export const getDashboardStats = createServerFn({ method: "GET" })
       (s, i) => s + Math.max(Number(i.total || 0) - Number(i.amount_paid || 0), 0), 0);
     const invoicedTotal = (allInvoices.data ?? []).reduce((s, i) => s + Number(i.total || 0), 0);
     const invoicePaidCount = (allInvoices.data ?? []).filter((i) => i.status === "paid").length;
+    const overdueCount = (allInvoices.data ?? []).filter((i: any) => i.status === "overdue").length;
+    const overdueAmount = (allInvoices.data ?? []).filter((i: any) => i.status === "overdue")
+      .reduce((s: number, i: any) => s + Math.max(Number(i.total || 0) - Number(i.amount_paid || 0), 0), 0);
 
     const meetingsArr = meetings.data ?? [];
     const liveMeetings = meetingsArr.filter((m) => !m.ended_at).length;
+
+    const timeRows = (timeMonth.data ?? []) as any[];
+    const hoursMonth = timeRows.reduce((s, e) => s + Number(e.duration_seconds || 0), 0) / 3600;
+    const billableHoursMonth = timeRows.filter((e) => e.billable).reduce((s, e) => s + Number(e.duration_seconds || 0), 0) / 3600;
+    const wipMonth = timeRows.filter((e) => e.billable).reduce((s, e) => s + (Number(e.duration_seconds || 0) / 3600) * Number(e.hourly_rate || 0), 0);
+
+    const nowMs = Date.now();
+    const overdueDeadlines = (openDeadlines.data ?? []).filter((d: any) => new Date(d.due_at).getTime() < nowMs).length;
 
     // Monthly revenue trend (last 6 months)
     const trend: { month: string; amount: number }[] = [];
@@ -71,6 +88,9 @@ export const getDashboardStats = createServerFn({ method: "GET" })
         liveSessions: liveSessions.count ?? 0,
         monthRevenue, ytdRevenue, outstanding, invoicedTotal, invoicePaidCount,
         invoiceTotalCount: (allInvoices.data ?? []).length,
+        overdueCount, overdueAmount,
+        hoursMonth, billableHoursMonth, wipMonth,
+        overdueDeadlines,
       },
       revenueTrend: trend,
       recentCases: recentCases.data ?? [],
@@ -80,6 +100,7 @@ export const getDashboardStats = createServerFn({ method: "GET" })
       recentInvoices: recentInvoices.data ?? [],
     };
   });
+
 
 export const getTeamPerformance = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

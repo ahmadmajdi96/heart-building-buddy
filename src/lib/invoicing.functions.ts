@@ -20,6 +20,20 @@ async function getCallerOrg(ctx: { supabase: any; userId: string }) {
   };
 }
 
+async function logActivity(ctx: any, orgId: string, action: string, invId: string, summary: string, caseId?: string | null) {
+  try {
+    await ctx.supabase.from("activity_log").insert({
+      org_id: orgId,
+      actor_id: ctx.userId,
+      entity_type: "invoice",
+      entity_id: invId,
+      case_id: caseId ?? null,
+      action,
+      summary,
+    });
+  } catch { /* non-fatal */ }
+}
+
 const CreateInput = z.object({
   entry_ids: z.array(z.string().uuid()).min(1),
   client_name: z.string().min(1),
@@ -36,7 +50,6 @@ export const createInvoiceFromTime = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const mem = await getCallerOrg(context);
 
-    // Pull entries (RLS ensures only owner can read them)
     const { data: entries, error: eErr } = await context.supabase
       .from("time_entries")
       .select("id, description, duration_seconds, hourly_rate, currency, billable, status")
@@ -48,11 +61,7 @@ export const createInvoiceFromTime = createServerFn({ method: "POST" })
     const items = usable.map((e: any) => {
       const hours = Number((e.duration_seconds / 3600).toFixed(2));
       const unit_price = Number(e.hourly_rate ?? 0);
-      return {
-        description: e.description || "Legal services",
-        quantity: hours,
-        unit_price,
-      };
+      return { description: e.description || "Legal services", quantity: hours, unit_price };
     });
     const subtotal = items.reduce((a, i) => a + i.quantity * i.unit_price, 0);
     const taxRate = data.tax_rate ?? (mem.organizations?.default_tax_rate ?? 0);
@@ -60,8 +69,7 @@ export const createInvoiceFromTime = createServerFn({ method: "POST" })
     const total = Number((subtotal + tax_amount).toFixed(2));
 
     const { data: numRes, error: nErr } = await context.supabase.rpc("next_doc_number", {
-      _org_id: mem.org_id,
-      _kind: "invoice",
+      _org_id: mem.org_id, _kind: "invoice",
     });
     if (nErr) throw new Error(nErr.message);
 
@@ -79,14 +87,12 @@ export const createInvoiceFromTime = createServerFn({ method: "POST" })
         currency: mem.organizations?.currency ?? "USD",
         tax_rate: Number(taxRate),
         subtotal: Number(subtotal.toFixed(2)),
-        tax_amount,
-        total,
+        tax_amount, total,
         notes: data.notes ?? null,
         items,
         created_by: context.userId,
       })
-      .select()
-      .maybeSingle();
+      .select().maybeSingle();
     if (iErr) throw new Error(iErr.message);
     if (!inv) throw new Error("Failed to create invoice");
 
@@ -96,6 +102,7 @@ export const createInvoiceFromTime = createServerFn({ method: "POST" })
       .in("id", usable.map((e: any) => e.id));
     if (uErr) throw new Error(uErr.message);
 
+    await logActivity(context, mem.org_id, "created", inv.id, `Invoice ${inv.number} from time entries`, data.case_id);
     return inv;
   });
 
@@ -111,9 +118,31 @@ export const setInvoiceStatus = createServerFn({ method: "POST" })
     const { data: row, error } = await context.supabase
       .from("tax_invoices")
       .update({ status: data.status })
-      .eq("id", data.id)
-      .select()
-      .maybeSingle();
+      .eq("id", data.id).select().maybeSingle();
     if (error) throw new Error(error.message);
+    if (row) {
+      await logActivity(context, (row as any).org_id, `status:${data.status}`, data.id, `Invoice ${(row as any).number} → ${data.status}`, (row as any).case_id);
+    }
     return row;
+  });
+
+export const sweepOverdueInvoices = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { error } = await context.supabase.rpc("mark_invoices_overdue");
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const listOverdueInvoices = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await context.supabase.rpc("mark_invoices_overdue");
+    const { data, error } = await context.supabase
+      .from("tax_invoices")
+      .select("id, number, client_name, due_date, total, amount_paid, currency, status")
+      .eq("status", "overdue")
+      .order("due_date", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data ?? [];
   });

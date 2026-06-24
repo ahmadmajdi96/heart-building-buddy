@@ -7,11 +7,16 @@ const CaseInput = z.object({
   title: z.string().min(1),
   case_number: z.string().optional(),
   court: z.string().optional(),
+  court_room: z.string().optional(),
   jurisdiction: z.string().optional(),
   status: z.enum(["open", "pending", "closed", "won", "lost"]).default("open"),
   priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
   description: z.string().optional(),
   client_id: z.string().uuid().nullable().optional(),
+  judge: z.string().optional(),
+  opposing_party: z.string().optional(),
+  opposing_counsel: z.string().optional(),
+  responsible_lawyer: z.string().uuid().nullable().optional(),
 });
 
 export const listCases = createServerFn({ method: "GET" })
@@ -29,11 +34,13 @@ export const getCase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const [caseRes, events, docs, appts] = await Promise.all([
+    const [caseRes, events, docs, appts, invoices, timeEntries] = await Promise.all([
       context.supabase.from("cases").select("*, clients(id, name, email, phone)").eq("id", data.id).maybeSingle(),
       context.supabase.from("case_events").select("*").eq("case_id", data.id).order("created_at", { ascending: false }),
       context.supabase.from("documents").select("*").eq("case_id", data.id).order("created_at", { ascending: false }),
       context.supabase.from("appointments").select("*").eq("case_id", data.id).order("starts_at", { ascending: true }),
+      context.supabase.from("tax_invoices").select("id, number, issue_date, due_date, status, total, amount_paid, currency").eq("case_id", data.id).order("issue_date", { ascending: false }),
+      context.supabase.from("time_entries").select("id, description, duration_seconds, hourly_rate, billable, status, started_at").eq("case_id", data.id).order("started_at", { ascending: false }),
     ]);
     if (caseRes.error) throw new Error(caseRes.error.message);
     return {
@@ -41,6 +48,8 @@ export const getCase = createServerFn({ method: "POST" })
       events: events.data ?? [],
       documents: docs.data ?? [],
       appointments: appts.data ?? [],
+      invoices: invoices.data ?? [],
+      timeEntries: timeEntries.data ?? [],
     };
   });
 
@@ -48,7 +57,12 @@ export const saveCase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => CaseInput.parse(d))
   .handler(async ({ data, context }) => {
-    const payload = { ...data, client_id: data.client_id || null, owner_id: context.userId };
+    const payload: any = {
+      ...data,
+      client_id: data.client_id || null,
+      responsible_lawyer: data.responsible_lawyer || null,
+      owner_id: context.userId,
+    };
     if (data.id) {
       const { id, ...rest } = payload;
       const { data: row, error } = await context.supabase.from("cases").update(rest).eq("id", id!).select().maybeSingle();

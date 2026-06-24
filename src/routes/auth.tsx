@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({ component: AuthPage });
 
-type Mode = "signin" | "signup" | "magic";
+type Mode = "signin" | "signup" | "magic" | "forgot";
 
 function AuthPage() {
   const navigate = useNavigate();
@@ -48,6 +48,13 @@ function AuthPage() {
         });
         if (error) throw error;
         toast.success("Sign-in link sent. Check your email — open it on this device to set your password.");
+      } else if (mode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + "/set-password",
+        });
+        if (error) throw error;
+        toast.success("Password reset link sent. Check your email.");
+        setMode("signin");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -60,10 +67,12 @@ function AuthPage() {
 
   const title =
     mode === "signup" ? "Create your account" :
-    mode === "magic" ? "Team member sign-in" : "Welcome back";
+    mode === "magic" ? "Team member sign-in" :
+    mode === "forgot" ? "Reset your password" : "Welcome back";
   const subtitle =
     mode === "signup" ? "Set up your private legal workspace." :
     mode === "magic" ? "Enter the email your firm invited. We'll send a one-time link." :
+    mode === "forgot" ? "Enter your email and we'll send you a reset link." :
     "Sign in to your workspace.";
 
   return (
@@ -83,7 +92,7 @@ function AuthPage() {
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1" />
           </div>
-          {mode !== "magic" && (
+          {mode !== "magic" && mode !== "forgot" && (
             <div>
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="mt-1" />
@@ -91,24 +100,39 @@ function AuthPage() {
           )}
           <Button type="submit" variant="gold" className="w-full" disabled={busy}>
             {busy && <Loader2 className="size-4 animate-spin" />}
-            {mode === "signup" ? "Create account" : mode === "magic" ? "Send sign-in link" : "Sign in"}
+            {mode === "signup" ? "Create account" :
+             mode === "magic" ? "Send sign-in link" :
+             mode === "forgot" ? "Send reset link" : "Sign in"}
           </Button>
         </form>
         <div className="mt-4 space-y-2 text-center text-sm">
-          {mode !== "magic" ? (
+          {mode === "signin" && (
+            <button onClick={() => setMode("forgot")} className="block w-full text-muted-foreground hover:text-foreground">
+              Forgot your password?
+            </button>
+          )}
+          {mode === "forgot" && (
+            <button onClick={() => setMode("signin")} className="block w-full text-gold hover:underline">
+              Back to sign-in
+            </button>
+          )}
+          {mode !== "magic" && mode !== "forgot" ? (
             <button onClick={() => setMode("magic")} className="block w-full text-gold hover:underline">
               Invited team member? Sign in without a password
             </button>
-          ) : (
+          ) : mode === "magic" ? (
             <button onClick={() => setMode("signin")} className="block w-full text-gold hover:underline">
               Back to password sign-in
             </button>
+          ) : null}
+          {(mode === "signin" || mode === "signup") && (
+            <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")} className="block w-full text-muted-foreground hover:text-foreground">
+              {mode === "signup" ? "Have an account? Sign in" : "New here? Create an account"}
+            </button>
           )}
-          <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")} className="block w-full text-muted-foreground hover:text-foreground">
-            {mode === "signup" ? "Have an account? Sign in" : "New here? Create an account"}
-          </button>
         </div>
       </div>
     </div>
   );
 }
+

@@ -12,12 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   listTimeEntries, saveTimeEntry, deleteTimeEntry,
-  startTimer, stopTimer, getRunningTimer,
+  startTimer, stopTimer, getRunningTimer, exportTimeEntriesCsv,
 } from "@/lib/time-entries.functions";
 import { createInvoiceFromTime } from "@/lib/invoicing.functions";
 import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
-import { Plus, Loader2, Pencil, Trash2, Play, Square, Clock, Search, Receipt } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, Play, Square, Clock, Search, Receipt, Download } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/time")({ component: TimePage });
@@ -53,6 +53,7 @@ function TimePage() {
   const lCases = useServerFn(listCases);
   const lClients = useServerFn(listClients);
   const invoiceFromTime = useServerFn(createInvoiceFromTime);
+  const exportCsv = useServerFn(exportTimeEntriesCsv);
 
   const [entries, setEntries] = useState<Entry[]>([]);
   const [cases, setCases] = useState<CaseRow[]>([]);
@@ -165,11 +166,27 @@ function TimePage() {
         title={ar ? "تتبع الوقت" : "Time Tracking"}
         subtitle={ar ? `${entries.length} سجل` : `${entries.length} entries`}
         actions={
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { setEditing({ started_at: new Date().toISOString(), duration_seconds: 0, billable: true, currency: "USD", status: "logged" }); setEditOpen(true); }}>
-            <Plus className="size-4" />{ar ? "إدخال يدوي" : "Manual entry"}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={async () => {
+              try {
+                const r = await exportCsv({ data: {} });
+                const blob = new Blob([r.csv], { type: "text/csv;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url; a.download = `time-entries-${new Date().toISOString().slice(0,10)}.csv`;
+                a.click(); URL.revokeObjectURL(url);
+                toast.success(ar ? `تم تصدير ${r.count} سجل` : `Exported ${r.count} entries`);
+              } catch (e) { toast.error((e as Error).message); }
+            }}>
+              <Download className="size-4" />{ar ? "تصدير CSV" : "Export CSV"}
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { setEditing({ started_at: new Date().toISOString(), duration_seconds: 0, billable: true, currency: "USD", status: "logged" }); setEditOpen(true); }}>
+              <Plus className="size-4" />{ar ? "إدخال يدوي" : "Manual entry"}
+            </Button>
+          </div>
         }
       />
+
 
       {/* Timer card */}
       <div className="card-elev rounded-xl border bg-card p-5">
