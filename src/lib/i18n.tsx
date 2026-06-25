@@ -6,7 +6,7 @@ type Dict = Record<string, { ar: string; en: string }>;
 
 const dict = {
   // Brand
-  brand: { ar: "عرب لو", en: "Arab Law" },
+  brand: { ar: "محكم", en: "mohkam" },
   brand_tagline: {
     ar: "منظومة العمل القانوني الذكية للعالم العربي",
     en: "The AI-native legal operating system for the Arab world",

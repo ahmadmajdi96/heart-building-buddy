@@ -32,13 +32,13 @@ import type { ComponentType } from "react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Arab Law — منظومة العمل القانوني الذكية" },
+      { title: "mohkam محكم — منظومة العمل القانوني الذكية" },
       {
         name: "description",
         content:
           "منصة قانونية موحدة للمكاتب والإدارات والجامعات والمؤسسات القضائية في العالم العربي.",
       },
-      { property: "og:title", content: "Arab Law — AI-Native Legal OS" },
+      { property: "og:title", content: "mohkam محكم — AI-Native Legal OS" },
       {
         property: "og:description",
         content:
@@ -965,7 +965,7 @@ function SiteFooter() {
         <div className="mt-14 gold-rule" />
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-[11px] uppercase tracking-[0.3em] text-foreground/45">
           <div>
-            © {new Date().getFullYear()} Arab Law · {t("footer_rights")}
+            © {new Date().getFullYear()} mohkam محكم · {t("footer_rights")}
           </div>
           <div className="flex items-center gap-6">
             <span>SOC 2</span>

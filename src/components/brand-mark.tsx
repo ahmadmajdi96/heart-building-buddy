@@ -22,7 +22,7 @@ export function BrandMark({ className, tone = "light" }: { className?: string; t
             tone === "light" ? "text-foreground" : "text-sidebar-foreground",
           )}
         >
-          عرب لو
+          محكم
         </div>
         <div
           className={cn(
@@ -30,7 +30,7 @@ export function BrandMark({ className, tone = "light" }: { className?: string; t
             tone === "light" ? "text-muted-foreground" : "text-sidebar-foreground/60",
           )}
         >
-          Arab Law
+          mohkam
         </div>
       </div>
     </div>
