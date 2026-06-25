@@ -108,10 +108,10 @@
 
   /* Sidebar: deep navy with gold typography */
   --sidebar: oklch(0.20 0.12 262);
-  --sidebar-foreground: oklch(0.94 0.02 82);
+  --sidebar-foreground: oklch(0.96 0.04 96);
   --sidebar-border: oklch(0.28 0.11 262);
   --sidebar-accent: oklch(0.26 0.11 262);
-  --sidebar-accent-foreground: oklch(0.99 0.015 82);
+  --sidebar-accent-foreground: oklch(0.99 0.04 96);
 }
 
 .dark {
