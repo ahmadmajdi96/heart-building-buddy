@@ -32,7 +32,7 @@ export const Route = createFileRoute("/app/team")({ component: TeamPage });
 function initials(s: string) {
   return s.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join("") || "·";
 }
-const GOLD = "oklch(0.78 0.13 82)";
+const GOLD = "oklch(0.91 0.17 100)";
 const CHAMPAGNE = "oklch(0.93 0.04 85)";
 const ONYX = "oklch(0.13 0.012 60)";
 const PALETTE = [GOLD, "oklch(0.65 0.13 60)", "oklch(0.55 0.08 30)", CHAMPAGNE, "oklch(0.45 0.05 250)", "oklch(0.70 0.10 140)"];
@@ -267,7 +267,7 @@ function TeamAnalytics() {
                 <CartesianGrid strokeDasharray="3 6" vertical={false} stroke="currentColor" className="text-muted-foreground/15" />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="currentColor" className="text-muted-foreground" />
                 <YAxis tick={{ fontSize: 11 }} stroke="currentColor" className="text-muted-foreground" allowDecimals={false} />
-                <Tooltip cursor={{ fill: "oklch(0.78 0.13 82 / 0.08)" }} contentStyle={{ background: ONYX, border: `1px solid ${GOLD}`, borderRadius: 8, color: "#fff", fontSize: 12 }} />
+                <Tooltip cursor={{ fill: "oklch(0.91 0.17 100 / 0.08)" }} contentStyle={{ background: ONYX, border: `1px solid ${GOLD}`, borderRadius: 8, color: "#fff", fontSize: 12 }} />
                 <Bar dataKey="lead" stackId="a" fill={GOLD} radius={[0, 0, 0, 0]} name={ar ? "مسؤول" : "Lead"} />
                 <Bar dataKey="assist" stackId="a" fill={CHAMPAGNE} radius={[6, 6, 0, 0]} name={ar ? "مساعد" : "Assist"} />
               </BarChart>
@@ -282,7 +282,7 @@ function TeamAnalytics() {
 function Kpi({ icon: Icon, label, value, sub, accent }: { icon: any; label: string; value: number; sub?: string; accent: "gold" | "champagne" | "onyx" }) {
   const ring = accent === "gold" ? "from-gold/20 to-transparent" : accent === "champagne" ? "from-champagne/40 to-transparent" : "from-onyx/15 to-transparent";
   return (
-    <Card className="relative overflow-hidden p-5 group transition-all duration-300 hover:shadow-[0_12px_40px_-12px_oklch(0.78_0.13_82/0.35)] hover:-translate-y-0.5">
+    <Card className="relative overflow-hidden p-5 group transition-all duration-300 hover:shadow-[0_12px_40px_-12px_oklch(0.91_0.17_100/0.35)] hover:-translate-y-0.5">
       <div className={`absolute inset-0 bg-gradient-to-br ${ring} opacity-60 group-hover:opacity-100 transition-opacity`} />
       <div className="relative flex items-start justify-between">
         <div>
