@@ -40,7 +40,7 @@ function AnalyticsPage() {
   if (loading || !stats) return <div className="grid place-items-center p-12"><Loader2 className="size-6 animate-spin text-gold" /></div>;
 
   const statusData = Object.entries(stats.statusCounts).map(([k, v]) => ({ name: k, value: v }));
-  const COLORS = ["#c9a84c", "#0f3460", "#16a34a", "#dc2626", "#9333ea"];
+  const COLORS = ["#fce343", "#0f3460", "#16a34a", "#dc2626", "#9333ea"];
 
   return (
     <div className="space-y-6">
@@ -75,7 +75,7 @@ function AnalyticsPage() {
                 <YAxis fontSize={12} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="cases" fill="#c9a84c" name={locale === "ar" ? "قضايا" : "Cases"} radius={[4,4,0,0]} />
+                <Bar dataKey="cases" fill="#fce343" name={locale === "ar" ? "قضايا" : "Cases"} radius={[4,4,0,0]} />
                 <Bar dataKey="clients" fill="#0f3460" name={locale === "ar" ? "موكلون" : "Clients"} radius={[4,4,0,0]} />
                 <Bar dataKey="docs" fill="#7a5c2a" name={locale === "ar" ? "مستندات" : "Docs"} radius={[4,4,0,0]} />
               </BarChart>
@@ -108,7 +108,7 @@ function AnalyticsPage() {
                 <XAxis dataKey="m" fontSize={12} />
                 <YAxis fontSize={12} />
                 <Tooltip />
-                <Line type="monotone" dataKey="docs" stroke="#c9a84c" strokeWidth={3} dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="docs" stroke="#fce343" strokeWidth={3} dot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
