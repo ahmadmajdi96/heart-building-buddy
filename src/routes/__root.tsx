@@ -78,10 +78,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Arab Law — AI-Native Legal Operating System" },
+      { title: "mohkam محكم — AI-Native Legal Operating System" },
       { name: "description", content: "Enterprise legal platform for Arab firms, in-house counsel, universities and judicial institutions. Bilingual, multi-tenant, AI-powered." },
-      { name: "author", content: "Arab Law" },
-      { property: "og:title", content: "Arab Law — AI-Native Legal Operating System" },
+      { name: "author", content: "mohkam محكم" },
+      { property: "og:title", content: "mohkam محكم — AI-Native Legal Operating System" },
       { property: "og:description", content: "Case management, AI drafting, legal research, court scheduling, billing and legal education — in one bilingual platform." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
