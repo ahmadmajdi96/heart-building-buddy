@@ -57,62 +57,61 @@
 }
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.625rem;
 
-  /* Pearl / diamond ivory canvas */
-  --background: oklch(0.985 0.006 82);
-  --foreground: oklch(0.16 0.012 60);
+  /* Pure white canvas */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.18 0.04 258);
 
-  /* Cards: warm white */
-  --card: oklch(0.995 0.004 85);
-  --card-foreground: oklch(0.16 0.012 60);
-  --popover: oklch(0.995 0.004 85);
-  --popover-foreground: oklch(0.16 0.012 60);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.04 258);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.04 258);
 
-  /* Obsidian — couture authority */
-  --primary: oklch(0.18 0.014 60);
-  --primary-foreground: oklch(0.98 0.012 85);
+  /* Navy — primary authority */
+  --primary: oklch(0.26 0.08 258);
+  --primary-foreground: oklch(0.99 0.005 250);
 
-  --secondary: oklch(0.955 0.012 80);
-  --secondary-foreground: oklch(0.18 0.014 60);
+  --secondary: oklch(0.965 0.012 250);
+  --secondary-foreground: oklch(0.22 0.07 258);
 
-  --muted: oklch(0.955 0.01 80);
-  --muted-foreground: oklch(0.46 0.018 60);
+  --muted: oklch(0.965 0.01 250);
+  --muted-foreground: oklch(0.48 0.03 255);
 
-  --accent: oklch(0.94 0.025 82);
-  --accent-foreground: oklch(0.18 0.014 60);
+  --accent: oklch(0.94 0.02 80);
+  --accent-foreground: oklch(0.22 0.07 258);
 
-  /* Luxury palette */
-  --gold: oklch(0.78 0.13 82);
-  --gold-foreground: oklch(0.20 0.04 55);
-  --champagne: oklch(0.93 0.04 85);
-  --pearl: oklch(0.97 0.008 85);
-  --platinum: oklch(0.88 0.01 80);
-  --onyx: oklch(0.13 0.012 60);
+  /* Gold accent */
+  --gold: oklch(0.78 0.14 82);
+  --gold-foreground: oklch(0.22 0.07 258);
+  --champagne: oklch(0.93 0.05 85);
+  --pearl: oklch(0.985 0.005 250);
+  --platinum: oklch(0.88 0.01 250);
+  --onyx: oklch(0.14 0.04 258);
 
-  --success: oklch(0.62 0.11 155);
+  --success: oklch(0.64 0.13 155);
   --success-foreground: oklch(0.99 0 0);
-  --warning: oklch(0.78 0.13 78);
-  --warning-foreground: oklch(0.20 0.04 55);
-  --destructive: oklch(0.55 0.20 27);
+  --warning: oklch(0.78 0.14 78);
+  --warning-foreground: oklch(0.22 0.07 258);
+  --destructive: oklch(0.57 0.22 27);
   --destructive-foreground: oklch(0.99 0 0);
 
-  --border: oklch(0.90 0.012 80);
-  --input: oklch(0.92 0.01 80);
-  --ring: oklch(0.78 0.13 82);
+  --border: oklch(0.92 0.01 250);
+  --input: oklch(0.93 0.01 250);
+  --ring: oklch(0.78 0.14 82);
 
-  --chart-1: oklch(0.78 0.13 82);
-  --chart-2: oklch(0.55 0.10 60);
-  --chart-3: oklch(0.70 0.08 85);
-  --chart-4: oklch(0.30 0.015 60);
-  --chart-5: oklch(0.88 0.04 82);
+  --chart-1: oklch(0.78 0.14 82);
+  --chart-2: oklch(0.26 0.08 258);
+  --chart-3: oklch(0.55 0.12 255);
+  --chart-4: oklch(0.70 0.10 85);
+  --chart-5: oklch(0.42 0.10 258);
 
-  /* Sidebar: deep obsidian with warm undertone, gold typography */
-  --sidebar: oklch(0.14 0.012 60);
-  --sidebar-foreground: oklch(0.90 0.015 82);
-  --sidebar-border: oklch(0.22 0.014 60);
-  --sidebar-accent: oklch(0.20 0.014 60);
-  --sidebar-accent-foreground: oklch(0.98 0.012 85);
+  /* Sidebar: deep navy with gold typography */
+  --sidebar: oklch(0.18 0.06 258);
+  --sidebar-foreground: oklch(0.92 0.015 80);
+  --sidebar-border: oklch(0.26 0.07 258);
+  --sidebar-accent: oklch(0.24 0.07 258);
+  --sidebar-accent-foreground: oklch(0.99 0.012 80);
 }
 
 .dark {
@@ -174,12 +173,12 @@
 }
 
 @layer components {
-  /* Couture hero — obsidian with brushed gold light */
+  /* Hero — deep navy with brushed gold light */
   .hero-gradient {
     background:
-      radial-gradient(ellipse 70% 50% at 20% 0%, oklch(0.78 0.13 82 / 0.22), transparent 60%),
-      radial-gradient(ellipse 60% 60% at 90% 110%, oklch(0.78 0.13 82 / 0.10), transparent 60%),
-      linear-gradient(180deg, oklch(0.15 0.012 60), oklch(0.10 0.01 60));
+      radial-gradient(ellipse 70% 50% at 20% 0%, oklch(0.78 0.14 82 / 0.22), transparent 60%),
+      radial-gradient(ellipse 60% 60% at 90% 110%, oklch(0.55 0.12 255 / 0.20), transparent 60%),
+      linear-gradient(180deg, oklch(0.20 0.07 258), oklch(0.13 0.05 258));
   }
 
   .gold-divider {
