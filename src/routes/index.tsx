@@ -151,6 +151,14 @@ function SiteHeader() {
             asChild
             variant="ghost"
             size="sm"
+            className="text-[12px] uppercase tracking-[0.18em]"
+          >
+            <Link to="/auth">{ar(locale, "تسجيل الدخول", "Sign in")}</Link>
+          </Button>
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
             className="hidden text-[12px] uppercase tracking-[0.18em] sm:inline-flex"
           >
             <a href="#beta">{ar(locale, "حجز عرض", "Book a Demo")}</a>
