@@ -210,7 +210,7 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="font-serif text-[3.25rem] leading-[0.98] tracking-[-0.025em] text-pearl md:text-[5.5rem] lg:text-[6.75rem]"
+            className="font-serif text-[2.75rem] leading-[0.98] tracking-[-0.025em] text-pearl md:text-[4.25rem] lg:text-[5.25rem]"
           >
             {ar(locale, "ممارسة ", "Practice ")}
             <em className="not-italic [font-style:italic] text-gilded">
@@ -427,7 +427,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
         <div className="mb-16 grid items-end gap-10 lg:grid-cols-12">
           <div className="lg:col-span-8">
             <Eyebrow>{ar(locale, "المنصة", "The Platform")}</Eyebrow>
-            <h2 className="mt-5 font-serif text-5xl leading-[1.02] tracking-[-0.02em] md:text-6xl lg:text-[4.5rem]">
+            <h2 className="mt-5 font-serif text-4xl leading-[1.02] tracking-[-0.02em] md:text-5xl lg:text-[3.5rem]">
               {ar(locale, "نظرة موحّدة على ", "A unified view of how ")}
               <em className="not-italic [font-style:italic] text-gold">
                 {ar(locale, "كيف يعمل محكم", "Mohkam works")}
@@ -508,7 +508,7 @@ function Problem() {
       <div className="grid gap-16 lg:grid-cols-12">
         <div className="lg:col-span-5">
           <Eyebrow>{ar(locale, "المشكلة", "The Problem")}</Eyebrow>
-          <h2 className="mt-5 font-serif text-4xl leading-[1.05] tracking-[-0.02em] md:text-5xl">
+          <h2 className="mt-5 font-serif text-3xl leading-[1.05] tracking-[-0.02em] md:text-4xl">
             {ar(
               locale,
               "المكاتب تعمل على أدوات لم تُصمَّم للقانون",
@@ -555,7 +555,7 @@ function Solution() {
     <Section className="bg-pearl/40">
       <div className="mx-auto max-w-4xl text-center">
         <Eyebrow>{ar(locale, "الحل", "The Solution")}</Eyebrow>
-        <h2 className="mt-6 font-serif text-5xl leading-[1.02] tracking-[-0.02em] md:text-6xl">
+        <h2 className="mt-6 font-serif text-4xl leading-[1.02] tracking-[-0.02em] md:text-5xl">
           {ar(locale, "منصة واحدة ", "One platform to ")}
           <em className="not-italic [font-style:italic] text-gold">
             {ar(locale, "لإدارة المكتب بالكامل", "run the whole firm")}
@@ -600,7 +600,7 @@ function Workflow() {
       <div className="mb-16 grid items-end gap-10 lg:grid-cols-12">
         <div className="lg:col-span-7">
           <Eyebrow>{ar(locale, "سير العمل", "Product Workflow")}</Eyebrow>
-          <h2 className="mt-5 font-serif text-5xl leading-[1.02] tracking-[-0.02em] md:text-6xl">
+          <h2 className="mt-5 font-serif text-4xl leading-[1.02] tracking-[-0.02em] md:text-5xl">
             {ar(locale, "من ", "From ")}
             <em className="not-italic [font-style:italic] text-gold">
               {ar(locale, "أوّل اجتماع عميل", "first client intake")}
@@ -720,7 +720,7 @@ function Features() {
       <div className="mb-16 grid items-end gap-10 lg:grid-cols-12">
         <div className="lg:col-span-7">
           <Eyebrow>{ar(locale, "المزايا الأساسية", "Core Features")}</Eyebrow>
-          <h2 className="mt-5 font-serif text-5xl leading-[1.02] tracking-[-0.02em] md:text-6xl">
+          <h2 className="mt-5 font-serif text-4xl leading-[1.02] tracking-[-0.02em] md:text-5xl">
             {ar(
               locale,
               "كل ما يحتاجه مكتبك ليبقى منظّماً",
@@ -792,7 +792,7 @@ function AI({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
         <div className="grid items-start gap-16 lg:grid-cols-12">
           <div className="lg:col-span-5">
             <Eyebrow>{ar(locale, "الذكاء القانوني", "Legal AI")}</Eyebrow>
-            <h2 className="mt-5 font-serif text-5xl leading-[1.02] tracking-[-0.02em] text-pearl md:text-6xl">
+            <h2 className="mt-5 font-serif text-4xl leading-[1.02] tracking-[-0.02em] text-pearl md:text-5xl">
               {ar(locale, "ذكاء داخل ", "Legal AI ")}
               <em className="not-italic [font-style:italic] text-gold">
                 {ar(locale, "سير العمل", "inside the workflow")}
@@ -858,7 +858,7 @@ function WhyMohkam() {
     <Section className="bg-background">
       <div className="mb-14 max-w-3xl">
         <Eyebrow>{ar(locale, "لماذا محكم", "Why Mohkam")}</Eyebrow>
-        <h2 className="mt-5 font-serif text-5xl leading-[1.02] tracking-[-0.02em] md:text-6xl">
+        <h2 className="mt-5 font-serif text-4xl leading-[1.02] tracking-[-0.02em] md:text-5xl">
           {ar(locale, "مبني ", "Built for the ")}
           <em className="not-italic [font-style:italic] text-gold">
             {ar(locale, "للسوق القانوني العربي", "Arab legal market")}
@@ -912,7 +912,7 @@ function Security() {
       <div className="grid gap-16 lg:grid-cols-12">
         <div className="lg:col-span-5">
           <Eyebrow>{ar(locale, "الأمان", "Security")}</Eyebrow>
-          <h2 className="mt-5 font-serif text-5xl leading-[1.02] tracking-[-0.02em] md:text-6xl">
+          <h2 className="mt-5 font-serif text-4xl leading-[1.02] tracking-[-0.02em] md:text-5xl">
             {ar(locale, "مصمَّم للعمل ", "Designed for ")}
             <em className="not-italic [font-style:italic] text-gold">
               {ar(locale, "السري", "confidential legal work")}
@@ -966,7 +966,7 @@ function Dashboard() {
     <Section className="bg-background">
       <div className="mx-auto mb-12 max-w-3xl text-center">
         <Eyebrow>{ar(locale, "لوحة التحكم", "Dashboard")}</Eyebrow>
-        <h2 className="mt-5 font-serif text-5xl leading-[1.02] tracking-[-0.02em] md:text-6xl">
+        <h2 className="mt-5 font-serif text-4xl leading-[1.02] tracking-[-0.02em] md:text-5xl">
           {ar(locale, "اعرف ما يحتاج انتباهك ", "Know what needs your ")}
           <em className="not-italic [font-style:italic] text-gold">
             {ar(locale, "اليوم", "attention today")}
@@ -1007,7 +1007,7 @@ function WhoFor() {
     <Section className="bg-pearl/40">
       <div className="mb-14">
         <Eyebrow>{ar(locale, "لمن صُمم", "Who It's For")}</Eyebrow>
-        <h2 className="mt-5 font-serif text-5xl leading-[1.02] tracking-[-0.02em] md:text-6xl">
+        <h2 className="mt-5 font-serif text-4xl leading-[1.02] tracking-[-0.02em] md:text-5xl">
           {ar(locale, "للمحامين الأفراد والمكاتب", "Built for solo lawyers and law firms")}
         </h2>
       </div>
@@ -1048,7 +1048,7 @@ function Beta() {
       <div className="grid gap-16 lg:grid-cols-12">
         <div className="lg:col-span-5">
           <Eyebrow>{ar(locale, "النسخة الخاصة", "Private Beta")}</Eyebrow>
-          <h2 className="mt-5 font-serif text-5xl leading-[1.02] tracking-[-0.02em] md:text-6xl">
+          <h2 className="mt-5 font-serif text-4xl leading-[1.02] tracking-[-0.02em] md:text-5xl">
             {ar(locale, "انضم للبيتا ", "Join the ")}
             <em className="not-italic [font-style:italic] text-gold">
               {ar(locale, "الخاصة", "private beta")}
@@ -1176,7 +1176,7 @@ function Pricing() {
     <Section id="pricing" className="bg-pearl/40">
       <div className="mx-auto mb-14 max-w-3xl text-center">
         <Eyebrow>{ar(locale, "الأسعار", "Pricing")}</Eyebrow>
-        <h2 className="mt-5 font-serif text-5xl leading-[1.02] tracking-[-0.02em] md:text-6xl">
+        <h2 className="mt-5 font-serif text-4xl leading-[1.02] tracking-[-0.02em] md:text-5xl">
           {ar(locale, "أسعار بسيطة ", "Simple pricing for ")}
           <em className="not-italic [font-style:italic] text-gold">
             {ar(locale, "للمكاتب المبكرة", "early firms")}
@@ -1308,7 +1308,7 @@ function FAQ() {
       <div className="grid gap-16 lg:grid-cols-12">
         <div className="lg:col-span-4">
           <Eyebrow>{ar(locale, "أسئلة شائعة", "FAQ")}</Eyebrow>
-          <h2 className="mt-5 font-serif text-5xl leading-[1.02] tracking-[-0.02em] md:text-6xl">
+          <h2 className="mt-5 font-serif text-4xl leading-[1.02] tracking-[-0.02em] md:text-5xl">
             {ar(locale, "أسئلة ", "Frequently asked ")}
             <em className="not-italic [font-style:italic] text-gold">
               {ar(locale, "متكرّرة", "questions")}
@@ -1347,7 +1347,7 @@ function FinalCTA({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
       />
       <div className="container relative mx-auto max-w-5xl px-6 py-28 text-center lg:py-36">
         <img src={logoSrc} alt="Mohkam" className="mx-auto h-24 w-24 rounded-2xl bg-white p-2 shadow-2xl" />
-        <h2 className="mt-10 font-serif text-5xl leading-[1.02] tracking-[-0.02em] text-pearl md:text-6xl">
+        <h2 className="mt-10 font-serif text-4xl leading-[1.02] tracking-[-0.02em] text-pearl md:text-5xl">
           {ar(locale, "جاهز ", "Ready to ")}
           <em className="not-italic [font-style:italic] text-gold">
             {ar(locale, "لتحديث مكتبك؟", "modernize your law firm?")}
