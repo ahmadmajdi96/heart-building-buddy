@@ -1363,13 +1363,13 @@ function FinalCTA({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
             "Move your cases, deadlines, documents, billing, and legal AI into one bilingual workspace.",
           )}
         </p>
-        <div className="mt-10 flex flex-wrap justify-center gap-3">
-          <Button asChild size="lg" variant="gold" className="h-12 px-7 text-[12px] uppercase tracking-[0.22em] shadow-xl">
+        <div className="mt-10 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap">
+          <Button asChild size="lg" variant="gold" className="h-12 px-6 text-[11px] uppercase tracking-[0.22em] shadow-xl sm:px-7 sm:text-[12px]">
             <a href="#beta">
               {ar(locale, "النسخة الخاصة", "Request Private Beta")} <Arrow className="size-4" />
             </a>
           </Button>
-          <Button asChild size="lg" variant="outline" className="h-12 border-pearl/30 bg-transparent px-7 text-[12px] uppercase tracking-[0.22em] text-pearl hover:bg-pearl hover:text-onyx">
+          <Button asChild size="lg" variant="outline" className="h-12 border-pearl/30 bg-transparent px-6 text-[11px] uppercase tracking-[0.22em] text-pearl hover:bg-pearl hover:text-onyx sm:px-7 sm:text-[12px]">
             <a href="#beta">{ar(locale, "حجز عرض", "Book a Demo")}</a>
           </Button>
         </div>
