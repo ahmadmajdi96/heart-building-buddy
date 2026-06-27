@@ -187,12 +187,7 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
         }}
       />
       <div className="arabesque absolute inset-0 opacity-[0.06]" aria-hidden />
-      {/* Vertical gold rule */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-px -translate-x-1/2 lg:block"
-        style={{ background: "linear-gradient(180deg, transparent, color-mix(in oklch, var(--gold), transparent 70%) 40%, color-mix(in oklch, var(--gold), transparent 70%) 60%, transparent)" }}
-      />
+
 
       <div className="container relative mx-auto max-w-7xl px-6 pb-28 pt-20 lg:pb-40 lg:pt-32">
         {/* Top status pill */}
