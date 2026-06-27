@@ -122,25 +122,24 @@ function LandingPage() {
 function SiteHeader() {
   const { locale } = useI18n();
   const nav = [
-    { href: "#product", label: ar(locale, "المنتج", "Product") },
+    { href: "#platform", label: ar(locale, "المنتج", "Product") },
     { href: "#features", label: ar(locale, "المزايا", "Features") },
     { href: "#ai", label: ar(locale, "الذكاء", "AI") },
     { href: "#security", label: ar(locale, "الأمان", "Security") },
     { href: "#pricing", label: ar(locale, "الأسعار", "Pricing") },
-    { href: "#beta", label: ar(locale, "طلب الوصول", "Request Access") },
   ];
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
-      <div className="container mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
+    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-xl">
+      <div className="container mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-6 px-6">
         <Link to="/" className="flex items-center">
           <BrandMark />
         </Link>
-        <nav className="hidden items-center gap-8 text-[12px] font-medium uppercase tracking-[0.2em] lg:flex">
+        <nav className="hidden items-center gap-1 lg:flex">
           {nav.map((item) => (
             <a
               key={item.href}
               href={item.href}
-              className="text-foreground/60 transition-colors hover:text-foreground"
+              className="rounded-full px-3.5 py-1.5 text-[13.5px] font-medium text-foreground/70 transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
             >
               {item.label}
             </a>
@@ -148,35 +147,23 @@ function SiteHeader() {
         </nav>
         <div className="flex items-center gap-2">
           <LangToggle />
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="text-[12px] uppercase tracking-[0.18em]"
-          >
+          <Button asChild variant="ghost" size="sm" className="text-[13px] font-medium">
             <Link to="/auth">{ar(locale, "تسجيل الدخول", "Sign in")}</Link>
-          </Button>
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="hidden text-[12px] uppercase tracking-[0.18em] sm:inline-flex"
-          >
-            <a href="#beta">{ar(locale, "حجز عرض", "Book a Demo")}</a>
           </Button>
           <Button
             asChild
             size="sm"
             variant="gold"
-            className="text-[12px] uppercase tracking-[0.18em] shadow-md"
+            className="h-9 rounded-full px-4 text-[13px] font-medium shadow-sm"
           >
-            <a href="#beta">{ar(locale, "النسخة الخاصة", "Request Private Beta")}</a>
+            <a href="#beta">{ar(locale, "النسخة الخاصة", "Request Beta")}</a>
           </Button>
         </div>
       </div>
     </header>
   );
 }
+
 
 /* ───────────────────────── HERO ───────────────────────── */
 
@@ -200,12 +187,7 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
         }}
       />
       <div className="arabesque absolute inset-0 opacity-[0.06]" aria-hidden />
-      {/* Vertical gold rule */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-px -translate-x-1/2 lg:block"
-        style={{ background: "linear-gradient(180deg, transparent, color-mix(in oklch, var(--gold), transparent 70%) 40%, color-mix(in oklch, var(--gold), transparent 70%) 60%, transparent)" }}
-      />
+
 
       <div className="container relative mx-auto max-w-7xl px-6 pb-28 pt-20 lg:pb-40 lg:pt-32">
         {/* Top status pill */}
@@ -626,24 +608,31 @@ function Workflow() {
         </div>
       </div>
       <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-2 lg:grid-cols-3">
-        {steps.map((s, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 18 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ delay: (i % 3) * 0.08 }}
-            className="group relative bg-background p-8 transition-colors hover:bg-pearl/40"
-          >
-            <div className="flex items-baseline justify-between">
-              <span className="font-serif text-5xl italic text-gold/70">{String(i + 1).padStart(2, "0")}</span>
-              <span className="h-px w-12 bg-gold transition-all group-hover:w-20" />
-            </div>
-            <h3 className="mt-6 font-serif text-2xl tracking-tight text-foreground">{s.t}</h3>
-            <p className="mt-3 text-[14px] leading-relaxed text-foreground/65">{s.d}</p>
-          </motion.div>
-        ))}
+        {steps.map((s, i) => {
+          const isLast = i === steps.length - 1;
+          // 7 items in 3-col grid leaves 2 empty cells on the last row; make the
+          // final step span both remaining columns so there is no grey gap.
+          const spanCls = isLast ? "md:col-span-2 lg:col-span-2" : "";
+          return (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ delay: (i % 3) * 0.05, duration: 0.4, ease: "easeOut" }}
+              className={`group relative bg-background p-8 transition-colors hover:bg-pearl/40 ${spanCls}`}
+            >
+              <div className="flex items-baseline justify-between">
+                <span className="font-serif text-5xl italic text-gold/70">{String(i + 1).padStart(2, "0")}</span>
+                <span className="h-px w-12 bg-gold transition-all group-hover:w-20" />
+              </div>
+              <h3 className="mt-6 font-serif text-2xl tracking-tight text-foreground">{s.t}</h3>
+              <p className="mt-3 text-[14px] leading-relaxed text-foreground/65">{s.d}</p>
+            </motion.div>
+          );
+        })}
       </div>
+
     </Section>
   );
 }
