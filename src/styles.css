@@ -148,11 +148,31 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  /* Anchored sections clear the sticky header */
+  section[id] {
+    scroll-margin-top: 88px;
   }
 
   html[dir="rtl"] {
     font-family: var(--font-arabic);
   }
+
+  /* Arabic — Instrument Serif lacks Arabic shaping; use IBM Plex Sans Arabic for headings */
+  html[dir="rtl"] h1,
+  html[dir="rtl"] h2,
+  html[dir="rtl"] h3,
+  html[dir="rtl"] .font-serif {
+    font-family: var(--font-arabic);
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+  html[dir="rtl"] h1 { font-size: 1.06em; }
+  html[dir="rtl"] h2 { font-size: 1.06em; }
+  html[dir="rtl"] h3 { font-size: 1.04em; }
+  html[dir="rtl"] em { font-style: normal; }
 
   body {
     background-color: var(--color-background);
@@ -171,6 +191,7 @@
     font-weight: 400;
   }
 }
+
 
 @layer components {
   /* Hero — deep navy with brushed gold light */
