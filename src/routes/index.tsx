@@ -458,7 +458,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: (i % 3) * 0.08, duration: 0.5 }}
-              className="group relative flex flex-col justify-between overflow-hidden bg-background p-8 transition-all duration-500 hover:bg-onyx hover:text-pearl"
+              className="group relative flex flex-col justify-between overflow-hidden bg-background p-6 transition-all duration-500 hover:bg-onyx hover:text-pearl sm:p-8"
             >
               {/* Hover spotlight */}
               <div
