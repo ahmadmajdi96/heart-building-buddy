@@ -1348,7 +1348,7 @@ function FinalCTA({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
         className="pointer-events-none absolute inset-x-0 -top-32 h-[480px] opacity-50 blur-3xl"
         style={{ background: "radial-gradient(ellipse at top, color-mix(in oklch, var(--gold), transparent 55%), transparent 70%)" }}
       />
-      <div className="container relative mx-auto max-w-5xl px-6 py-28 text-center lg:py-36">
+      <div className="container relative mx-auto max-w-5xl px-4 py-20 text-center sm:px-6 sm:py-28 lg:py-36">
         <img src={logoSrc} alt="Mohkam" className="mx-auto h-24 w-24 rounded-2xl bg-white p-2 shadow-2xl" />
         <h2 className="mt-10 font-serif text-4xl leading-[1.02] tracking-[-0.02em] text-pearl md:text-5xl">
           {ar(locale, "جاهز ", "Ready to ")}
