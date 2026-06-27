@@ -1441,7 +1441,7 @@ function SiteFooter() {
               </ul>
             </div>
           ))}
-          <div className="lg:col-span-1 lg:text-end">
+          <div className="sm:col-span-2 lg:col-span-1 lg:text-end">
             <LangToggle />
           </div>
         </div>
