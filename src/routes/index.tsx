@@ -620,13 +620,13 @@ function Workflow() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ delay: (i % 3) * 0.05, duration: 0.4, ease: "easeOut" }}
-            className="group relative bg-background p-8 transition-colors hover:bg-pearl/40"
+            className="group relative bg-background p-6 transition-colors hover:bg-pearl/40 sm:p-8"
           >
               <div className="flex items-baseline justify-between">
-                <span className="font-serif text-5xl italic text-gold/70">{String(i + 1).padStart(2, "0")}</span>
-                <span className="h-px w-12 bg-gold transition-all group-hover:w-20" />
+                <span className="font-serif text-4xl italic text-gold/70 sm:text-5xl">{String(i + 1).padStart(2, "0")}</span>
+                <span className="h-px w-10 bg-gold transition-all group-hover:w-16 sm:w-12 sm:group-hover:w-20" />
               </div>
-              <h3 className="mt-6 font-serif text-2xl tracking-tight text-foreground">{s.t}</h3>
+              <h3 className="mt-5 font-serif text-xl tracking-tight text-foreground sm:mt-6 sm:text-2xl">{s.t}</h3>
               <p className="mt-3 text-[14px] leading-relaxed text-foreground/65">{s.d}</p>
             </motion.div>
           ))}
