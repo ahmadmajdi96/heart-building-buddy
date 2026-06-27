@@ -1415,7 +1415,7 @@ function SiteFooter() {
     <footer className="bg-background">
       <div className="container mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12">
-          <div className="lg:col-span-5">
+          <div className="sm:col-span-2 lg:col-span-5">
             <BrandMark size="lg" />
             <p className="mt-5 max-w-sm text-[14px] leading-[1.7] text-foreground/65">
               {ar(
