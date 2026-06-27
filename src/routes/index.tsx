@@ -1074,7 +1074,7 @@ function Beta() {
         </div>
         <form
           onSubmit={(e) => e.preventDefault()}
-          className="lg:col-span-7 rounded-3xl border border-border bg-pearl/40 p-8 shadow-sm"
+          className="rounded-3xl border border-border bg-pearl/40 p-5 shadow-sm sm:p-8 lg:col-span-7"
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={ar(locale, "الاسم الكامل", "Full name")} />
