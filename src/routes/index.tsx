@@ -592,6 +592,8 @@ function Workflow() {
     { t: ar(locale, "تسجيل الوقت والأتعاب", "Log time and fees"), d: ar(locale, "تتبّع الساعات القابلة وغير القابلة للفوترة لكل قضية ومحامٍ وعميل.", "Track billable and non-billable work per case, per lawyer, and per client.") },
     { t: ar(locale, "إصدار الفواتير", "Generate invoices"), d: ar(locale, "أنشئ عروض أسعار وفواتير ضريبية بالدينار الأردني بشعار المكتب والبيانات القانونية والضريبة.", "Create quotes and JOD tax invoices with your firm logo, legal details, tax calculation, and payment records.") },
     { t: ar(locale, "ذكاء قانوني حيث يهمّ", "Use legal AI where it matters"), d: ar(locale, "اطرح أسئلة بحث، صُغ مستندات، لخّص ملفات، وراجع العقود بإشراف المحامي.", "Ask research questions, draft documents, summarize case materials, and review contracts with lawyer-controlled AI support.") },
+    { t: ar(locale, "راجع أداء المكتب", "Review firm performance"), d: ar(locale, "تابع الإيرادات والأرباح وساعات الفريق ومعدلات التحصيل من لوحة تحكم مركزية.", "Monitor revenue, profitability, team hours, and collection rates from a central command dashboard.") },
+    { t: ar(locale, "تعاون وشارك بأمان", "Collaborate and share securely"), d: ar(locale, "وزّع الأدوار داخل الفريق، شارك المستندات بروابط آمنة، وتابع نشاط كل قضية.", "Assign roles within the team, share documents via secure links, and track activity on every matter.") },
   ];
   return (
     <Section className="bg-background">
