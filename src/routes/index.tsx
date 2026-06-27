@@ -82,7 +82,7 @@ function Section({
 }) {
   return (
     <section id={id} className={`relative border-b border-border ${className}`}>
-      <div className="container mx-auto max-w-7xl px-6 py-24 lg:py-32">{children}</div>
+      <div className="container mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-32">{children}</div>
     </section>
   );
 }
@@ -130,8 +130,8 @@ function SiteHeader() {
   ];
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-xl">
-      <div className="container mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-6 px-6">
-        <Link to="/" className="flex items-center">
+      <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-[72px] sm:gap-6 sm:px-6">
+        <Link to="/" className="flex min-w-0 items-center">
           <BrandMark />
         </Link>
         <nav className="hidden items-center gap-1 lg:flex">
@@ -145,18 +145,21 @@ function SiteHeader() {
             </a>
           ))}
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <LangToggle />
-          <Button asChild variant="ghost" size="sm" className="text-[13px] font-medium">
+          <Button asChild variant="ghost" size="sm" className="hidden text-[13px] font-medium sm:inline-flex">
             <Link to="/auth">{ar(locale, "تسجيل الدخول", "Sign in")}</Link>
+          </Button>
+          <Button asChild variant="ghost" size="sm" className="px-2 text-[12px] font-medium sm:hidden">
+            <Link to="/auth">{ar(locale, "دخول", "Sign in")}</Link>
           </Button>
           <Button
             asChild
             size="sm"
             variant="gold"
-            className="h-9 rounded-full px-4 text-[13px] font-medium shadow-sm"
+            className="h-9 rounded-full px-3 text-[12px] font-medium shadow-sm sm:px-4 sm:text-[13px]"
           >
-            <a href="#beta">{ar(locale, "النسخة الخاصة", "Request Beta")}</a>
+            <a href="#beta">{ar(locale, "بيتا", "Request Beta")}</a>
           </Button>
         </div>
       </div>
@@ -189,13 +192,13 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
       <div className="arabesque absolute inset-0 opacity-[0.06]" aria-hidden />
 
 
-      <div className="container relative mx-auto max-w-7xl px-6 pb-28 pt-20 lg:pb-40 lg:pt-32">
+      <div className="container relative mx-auto max-w-7xl px-4 pb-20 pt-14 sm:px-6 sm:pb-28 sm:pt-20 lg:pb-40 lg:pt-32">
         {/* Top status pill */}
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mx-auto mb-12 flex w-fit items-center gap-3 rounded-full border border-gold/25 bg-white/[0.04] px-4 py-1.5 text-[11px] uppercase tracking-[0.28em] text-pearl/80 backdrop-blur-sm"
+          className="mx-auto mb-10 flex w-fit max-w-full items-center gap-3 rounded-full border border-gold/25 bg-white/[0.04] px-3 py-1.5 text-center text-[10px] uppercase tracking-[0.22em] text-pearl/80 backdrop-blur-sm sm:mb-12 sm:px-4 sm:text-[11px] sm:tracking-[0.28em]"
         >
           <span className="relative grid size-2 place-items-center">
             <span className="absolute inset-0 animate-ping rounded-full bg-gold/60" />
@@ -238,13 +241,13 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.28 }}
-            className="mt-12 flex flex-wrap items-center justify-center gap-3"
+            className="mt-10 flex flex-wrap items-center justify-center gap-3 sm:mt-12"
           >
             <Button
               asChild
               size="lg"
               variant="gold"
-              className="h-12 px-8 text-[12px] uppercase tracking-[0.24em] shadow-[0_10px_40px_-10px_rgba(252,227,67,0.5)]"
+              className="h-12 w-full px-6 text-[11px] uppercase tracking-[0.22em] shadow-[0_10px_40px_-10px_rgba(252,227,67,0.5)] sm:w-auto sm:px-8 sm:text-[12px] sm:tracking-[0.24em]"
             >
               <a href="#beta">
                 {ar(locale, "طلب عرض توضيحي", "Request a Demo")} <Arrow className="size-4" />
@@ -254,7 +257,7 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
               asChild
               size="lg"
               variant="ghost"
-              className="h-12 border border-pearl/15 bg-white/[0.03] px-8 text-[12px] uppercase tracking-[0.24em] text-pearl hover:bg-white/[0.08] hover:text-pearl"
+              className="h-12 w-full border border-pearl/15 bg-white/[0.03] px-6 text-[11px] uppercase tracking-[0.22em] text-pearl hover:bg-white/[0.08] hover:text-pearl sm:w-auto sm:px-8 sm:text-[12px] sm:tracking-[0.24em]"
             >
               <a href="#platform">{ar(locale, "استكشف المنصة", "Explore the Platform")}</a>
             </Button>
@@ -265,7 +268,7 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.45 }}
-            className="mx-auto mt-14 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[12px] uppercase tracking-[0.22em] text-pearl/55"
+            className="mx-auto mt-12 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-[10px] uppercase tracking-[0.18em] text-pearl/55 sm:mt-14 sm:gap-x-8 sm:text-[12px] sm:tracking-[0.22em]"
           >
             {ticks.map((t) => (
               <li key={t} className="flex items-center gap-2">
@@ -281,7 +284,7 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.5 }}
-          className="relative mx-auto mt-20 max-w-5xl"
+          className="relative mx-auto mt-14 max-w-5xl sm:mt-20"
         >
           <div className="absolute -inset-x-8 -inset-y-6 -z-10 rounded-[2rem] opacity-50 blur-3xl"
             style={{ background: "radial-gradient(ellipse 60% 60% at 50% 50%, color-mix(in oklch, var(--gold), transparent 60%), transparent 70%)" }}
@@ -423,7 +426,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
   ];
   return (
     <section id="platform" className="relative border-b border-border bg-background">
-      <div className="container mx-auto max-w-7xl px-6 py-24 lg:py-32">
+      <div className="container mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-32">
         <div className="mb-16 grid items-end gap-10 lg:grid-cols-12">
           <div className="lg:col-span-8">
             <Eyebrow>{ar(locale, "المنصة", "The Platform")}</Eyebrow>
@@ -455,7 +458,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: (i % 3) * 0.08, duration: 0.5 }}
-              className="group relative flex flex-col justify-between overflow-hidden bg-background p-8 transition-all duration-500 hover:bg-onyx hover:text-pearl"
+              className="group relative flex flex-col justify-between overflow-hidden bg-background p-6 transition-all duration-500 hover:bg-onyx hover:text-pearl sm:p-8"
             >
               {/* Hover spotlight */}
               <div
@@ -472,7 +475,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
                     <m.icon className="size-4" />
                   </div>
                 </div>
-                <h3 className="mt-10 font-serif text-[2rem] leading-[1.05] tracking-[-0.015em] text-foreground group-hover:text-pearl">
+                <h3 className="mt-8 font-serif text-[1.625rem] leading-[1.1] tracking-[-0.015em] text-foreground group-hover:text-pearl sm:mt-10 sm:text-[2rem]">
                   {m.title}
                 </h3>
                 <p className="mt-4 text-[14.5px] leading-relaxed text-foreground/65 group-hover:text-pearl/70">
@@ -617,13 +620,13 @@ function Workflow() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ delay: (i % 3) * 0.05, duration: 0.4, ease: "easeOut" }}
-            className="group relative bg-background p-8 transition-colors hover:bg-pearl/40"
+            className="group relative bg-background p-6 transition-colors hover:bg-pearl/40 sm:p-8"
           >
               <div className="flex items-baseline justify-between">
-                <span className="font-serif text-5xl italic text-gold/70">{String(i + 1).padStart(2, "0")}</span>
-                <span className="h-px w-12 bg-gold transition-all group-hover:w-20" />
+                <span className="font-serif text-4xl italic text-gold/70 sm:text-5xl">{String(i + 1).padStart(2, "0")}</span>
+                <span className="h-px w-10 bg-gold transition-all group-hover:w-16 sm:w-12 sm:group-hover:w-20" />
               </div>
-              <h3 className="mt-6 font-serif text-2xl tracking-tight text-foreground">{s.t}</h3>
+              <h3 className="mt-5 font-serif text-xl tracking-tight text-foreground sm:mt-6 sm:text-2xl">{s.t}</h3>
               <p className="mt-3 text-[14px] leading-relaxed text-foreground/65">{s.d}</p>
             </motion.div>
           ))}
@@ -788,7 +791,7 @@ function AI({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
         className="pointer-events-none absolute -end-32 top-1/2 size-[640px] -translate-y-1/2 rounded-full opacity-60 blur-3xl"
         style={{ background: "radial-gradient(circle, color-mix(in oklch, var(--gold), transparent 55%), transparent 70%)" }}
       />
-      <div className="container relative mx-auto max-w-7xl px-6 py-24 lg:py-32">
+      <div className="container relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-32">
         <div className="grid items-start gap-16 lg:grid-cols-12">
           <div className="lg:col-span-5">
             <Eyebrow>{ar(locale, "الذكاء القانوني", "Legal AI")}</Eyebrow>
@@ -1071,7 +1074,7 @@ function Beta() {
         </div>
         <form
           onSubmit={(e) => e.preventDefault()}
-          className="lg:col-span-7 rounded-3xl border border-border bg-pearl/40 p-8 shadow-sm"
+          className="rounded-3xl border border-border bg-pearl/40 p-5 shadow-sm sm:p-8 lg:col-span-7"
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={ar(locale, "الاسم الكامل", "Full name")} />
@@ -1318,9 +1321,9 @@ function FAQ() {
         <div className="lg:col-span-8">
           <div className="divide-y divide-border rounded-2xl border border-border bg-background">
             {qs.map(([q, a], i) => (
-              <details key={i} className="group p-6 open:bg-pearl/40">
-                <summary className="flex cursor-pointer list-none items-start justify-between gap-6">
-                  <span className="font-serif text-xl text-foreground">{q}</span>
+              <details key={i} className="group p-5 open:bg-pearl/40 sm:p-6">
+                <summary className="flex cursor-pointer list-none items-start justify-between gap-4 sm:gap-6">
+                  <span className="font-serif text-base text-foreground sm:text-xl">{q}</span>
                   <span className="mt-1 grid size-7 shrink-0 place-items-center rounded-full border border-gold/40 text-gold transition-transform group-open:rotate-45">+</span>
                 </summary>
                 <p className="mt-3 text-[14.5px] leading-relaxed text-foreground/70">{a}</p>
@@ -1345,9 +1348,9 @@ function FinalCTA({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
         className="pointer-events-none absolute inset-x-0 -top-32 h-[480px] opacity-50 blur-3xl"
         style={{ background: "radial-gradient(ellipse at top, color-mix(in oklch, var(--gold), transparent 55%), transparent 70%)" }}
       />
-      <div className="container relative mx-auto max-w-5xl px-6 py-28 text-center lg:py-36">
+      <div className="container relative mx-auto max-w-5xl px-4 py-20 text-center sm:px-6 sm:py-28 lg:py-36">
         <img src={logoSrc} alt="Mohkam" className="mx-auto h-24 w-24 rounded-2xl bg-white p-2 shadow-2xl" />
-        <h2 className="mt-10 font-serif text-4xl leading-[1.02] tracking-[-0.02em] text-pearl md:text-5xl">
+        <h2 className="mt-8 font-serif text-3xl leading-[1.05] tracking-[-0.02em] text-pearl sm:mt-10 sm:text-4xl md:text-5xl">
           {ar(locale, "جاهز ", "Ready to ")}
           <em className="not-italic [font-style:italic] text-gold">
             {ar(locale, "لتحديث مكتبك؟", "modernize your law firm?")}
@@ -1360,13 +1363,13 @@ function FinalCTA({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
             "Move your cases, deadlines, documents, billing, and legal AI into one bilingual workspace.",
           )}
         </p>
-        <div className="mt-10 flex flex-wrap justify-center gap-3">
-          <Button asChild size="lg" variant="gold" className="h-12 px-7 text-[12px] uppercase tracking-[0.22em] shadow-xl">
+        <div className="mt-10 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap">
+          <Button asChild size="lg" variant="gold" className="h-12 px-6 text-[11px] uppercase tracking-[0.22em] shadow-xl sm:px-7 sm:text-[12px]">
             <a href="#beta">
               {ar(locale, "النسخة الخاصة", "Request Private Beta")} <Arrow className="size-4" />
             </a>
           </Button>
-          <Button asChild size="lg" variant="outline" className="h-12 border-pearl/30 bg-transparent px-7 text-[12px] uppercase tracking-[0.22em] text-pearl hover:bg-pearl hover:text-onyx">
+          <Button asChild size="lg" variant="outline" className="h-12 border-pearl/30 bg-transparent px-6 text-[11px] uppercase tracking-[0.22em] text-pearl hover:bg-pearl hover:text-onyx sm:px-7 sm:text-[12px]">
             <a href="#beta">{ar(locale, "حجز عرض", "Book a Demo")}</a>
           </Button>
         </div>
@@ -1410,9 +1413,9 @@ function SiteFooter() {
   ];
   return (
     <footer className="bg-background">
-      <div className="container mx-auto max-w-7xl px-6 py-16">
-        <div className="grid gap-10 lg:grid-cols-12">
-          <div className="lg:col-span-5">
+      <div className="container mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-12">
+          <div className="sm:col-span-2 lg:col-span-5">
             <BrandMark size="lg" />
             <p className="mt-5 max-w-sm text-[14px] leading-[1.7] text-foreground/65">
               {ar(
@@ -1438,7 +1441,7 @@ function SiteFooter() {
               </ul>
             </div>
           ))}
-          <div className="lg:col-span-1 lg:text-end">
+          <div className="sm:col-span-2 lg:col-span-1 lg:text-end">
             <LangToggle />
           </div>
         </div>
