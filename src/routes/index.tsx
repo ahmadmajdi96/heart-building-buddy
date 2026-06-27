@@ -64,7 +64,7 @@ const fadeUp = {
 
 function Eyebrow({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.32em] text-gold">
+    <span className="landing-eyebrow inline-flex items-center gap-2">
       <span className="inline-block h-px w-6 bg-gold" />
       {children}
     </span>

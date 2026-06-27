@@ -160,14 +160,25 @@
     font-family: var(--font-arabic);
   }
 
+  /* Arabic shaping breaks when letter-spacing is applied; keep all RTL text connected. */
+  html[dir="rtl"] * {
+    letter-spacing: 0 !important;
+  }
+
   /* Arabic — Instrument Serif lacks Arabic shaping; use IBM Plex Sans Arabic for headings */
   html[dir="rtl"] h1,
   html[dir="rtl"] h2,
   html[dir="rtl"] h3,
   html[dir="rtl"] .font-serif {
     font-family: var(--font-arabic);
-    font-weight: 600;
-    letter-spacing: -0.005em;
+    font-weight: 700;
+    letter-spacing: 0 !important;
+  }
+  html[dir="rtl"] h1 em,
+  html[dir="rtl"] h2 em,
+  html[dir="rtl"] h3 em,
+  html[dir="rtl"] .text-gilded {
+    font-weight: 800;
   }
   html[dir="rtl"] h1 { font-size: 1.06em; }
   html[dir="rtl"] h2 { font-size: 1.06em; }
@@ -259,6 +270,21 @@
     text-transform: uppercase;
     font-weight: 500;
     color: color-mix(in oklch, var(--foreground), transparent 45%);
+  }
+
+  .landing-eyebrow {
+    font-size: 0.8125rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    font-weight: 800;
+    line-height: 1.45;
+    color: var(--gold);
+  }
+
+  html[dir="rtl"] .landing-eyebrow {
+    font-size: 0.9375rem;
+    letter-spacing: 0 !important;
+    line-height: 1.75;
   }
 }
 
