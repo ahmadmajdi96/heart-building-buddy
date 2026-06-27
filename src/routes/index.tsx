@@ -268,7 +268,7 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.45 }}
-            className="mx-auto mt-14 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[12px] uppercase tracking-[0.22em] text-pearl/55"
+            className="mx-auto mt-12 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-[10px] uppercase tracking-[0.18em] text-pearl/55 sm:mt-14 sm:gap-x-8 sm:text-[12px] sm:tracking-[0.22em]"
           >
             {ticks.map((t) => (
               <li key={t} className="flex items-center gap-2">
