@@ -475,7 +475,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
                     <m.icon className="size-4" />
                   </div>
                 </div>
-                <h3 className="mt-10 font-serif text-[2rem] leading-[1.05] tracking-[-0.015em] text-foreground group-hover:text-pearl">
+                <h3 className="mt-8 font-serif text-[1.625rem] leading-[1.1] tracking-[-0.015em] text-foreground group-hover:text-pearl sm:mt-10 sm:text-[2rem]">
                   {m.title}
                 </h3>
                 <p className="mt-4 text-[14.5px] leading-relaxed text-foreground/65 group-hover:text-pearl/70">
