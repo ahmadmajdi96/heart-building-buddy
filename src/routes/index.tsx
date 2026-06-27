@@ -198,7 +198,7 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mx-auto mb-12 flex w-fit items-center gap-3 rounded-full border border-gold/25 bg-white/[0.04] px-4 py-1.5 text-[11px] uppercase tracking-[0.28em] text-pearl/80 backdrop-blur-sm"
+          className="mx-auto mb-10 flex w-fit max-w-full items-center gap-3 rounded-full border border-gold/25 bg-white/[0.04] px-3 py-1.5 text-center text-[10px] uppercase tracking-[0.22em] text-pearl/80 backdrop-blur-sm sm:mb-12 sm:px-4 sm:text-[11px] sm:tracking-[0.28em]"
         >
           <span className="relative grid size-2 place-items-center">
             <span className="absolute inset-0 animate-ping rounded-full bg-gold/60" />
