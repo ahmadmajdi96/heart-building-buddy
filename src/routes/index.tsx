@@ -210,7 +210,7 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="font-serif text-[3.25rem] leading-[0.98] tracking-[-0.025em] text-pearl md:text-[5.5rem] lg:text-[6.75rem]"
+            className="font-serif text-[2.75rem] leading-[0.98] tracking-[-0.025em] text-pearl md:text-[4.25rem] lg:text-[5.25rem]"
           >
             {ar(locale, "ممارسة ", "Practice ")}
             <em className="not-italic [font-style:italic] text-gilded">
