@@ -284,7 +284,7 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.5 }}
-          className="relative mx-auto mt-20 max-w-5xl"
+          className="relative mx-auto mt-14 max-w-5xl sm:mt-20"
         >
           <div className="absolute -inset-x-8 -inset-y-6 -z-10 rounded-[2rem] opacity-50 blur-3xl"
             style={{ background: "radial-gradient(ellipse 60% 60% at 50% 50%, color-mix(in oklch, var(--gold), transparent 60%), transparent 70%)" }}
