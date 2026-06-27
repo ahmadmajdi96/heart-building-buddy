@@ -192,7 +192,7 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
       <div className="arabesque absolute inset-0 opacity-[0.06]" aria-hidden />
 
 
-      <div className="container relative mx-auto max-w-7xl px-6 pb-28 pt-20 lg:pb-40 lg:pt-32">
+      <div className="container relative mx-auto max-w-7xl px-4 pb-20 pt-14 sm:px-6 sm:pb-28 sm:pt-20 lg:pb-40 lg:pt-32">
         {/* Top status pill */}
         <motion.div
           initial={{ opacity: 0, y: -8 }}
