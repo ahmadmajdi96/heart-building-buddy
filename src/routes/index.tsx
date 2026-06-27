@@ -608,24 +608,31 @@ function Workflow() {
         </div>
       </div>
       <div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-2 lg:grid-cols-3">
-        {steps.map((s, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 18 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ delay: (i % 3) * 0.08 }}
-            className="group relative bg-background p-8 transition-colors hover:bg-pearl/40"
-          >
-            <div className="flex items-baseline justify-between">
-              <span className="font-serif text-5xl italic text-gold/70">{String(i + 1).padStart(2, "0")}</span>
-              <span className="h-px w-12 bg-gold transition-all group-hover:w-20" />
-            </div>
-            <h3 className="mt-6 font-serif text-2xl tracking-tight text-foreground">{s.t}</h3>
-            <p className="mt-3 text-[14px] leading-relaxed text-foreground/65">{s.d}</p>
-          </motion.div>
-        ))}
+        {steps.map((s, i) => {
+          const isLast = i === steps.length - 1;
+          // 7 items in 3-col grid leaves 2 empty cells on the last row; make the
+          // final step span both remaining columns so there is no grey gap.
+          const spanCls = isLast ? "md:col-span-2 lg:col-span-2" : "";
+          return (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ delay: (i % 3) * 0.05, duration: 0.4, ease: "easeOut" }}
+              className={`group relative bg-background p-8 transition-colors hover:bg-pearl/40 ${spanCls}`}
+            >
+              <div className="flex items-baseline justify-between">
+                <span className="font-serif text-5xl italic text-gold/70">{String(i + 1).padStart(2, "0")}</span>
+                <span className="h-px w-12 bg-gold transition-all group-hover:w-20" />
+              </div>
+              <h3 className="mt-6 font-serif text-2xl tracking-tight text-foreground">{s.t}</h3>
+              <p className="mt-3 text-[14px] leading-relaxed text-foreground/65">{s.d}</p>
+            </motion.div>
+          );
+        })}
       </div>
+
     </Section>
   );
 }
