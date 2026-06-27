@@ -791,7 +791,7 @@ function AI({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
         className="pointer-events-none absolute -end-32 top-1/2 size-[640px] -translate-y-1/2 rounded-full opacity-60 blur-3xl"
         style={{ background: "radial-gradient(circle, color-mix(in oklch, var(--gold), transparent 55%), transparent 70%)" }}
       />
-      <div className="container relative mx-auto max-w-7xl px-6 py-24 lg:py-32">
+      <div className="container relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-32">
         <div className="grid items-start gap-16 lg:grid-cols-12">
           <div className="lg:col-span-5">
             <Eyebrow>{ar(locale, "الذكاء القانوني", "Legal AI")}</Eyebrow>
