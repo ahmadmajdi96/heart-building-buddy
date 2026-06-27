@@ -82,7 +82,7 @@ function Section({
 }) {
   return (
     <section id={id} className={`relative border-b border-border ${className}`}>
-      <div className="container mx-auto max-w-7xl px-6 py-24 lg:py-32">{children}</div>
+      <div className="container mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-32">{children}</div>
     </section>
   );
 }
