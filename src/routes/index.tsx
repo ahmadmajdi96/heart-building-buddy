@@ -626,8 +626,7 @@ function Workflow() {
               <h3 className="mt-6 font-serif text-2xl tracking-tight text-foreground">{s.t}</h3>
               <p className="mt-3 text-[14px] leading-relaxed text-foreground/65">{s.d}</p>
             </motion.div>
-          );
-        })}
+          ))}
       </div>
 
     </Section>
