@@ -426,7 +426,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
   ];
   return (
     <section id="platform" className="relative border-b border-border bg-background">
-      <div className="container mx-auto max-w-7xl px-6 py-24 lg:py-32">
+      <div className="container mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-32">
         <div className="mb-16 grid items-end gap-10 lg:grid-cols-12">
           <div className="lg:col-span-8">
             <Eyebrow>{ar(locale, "المنصة", "The Platform")}</Eyebrow>
