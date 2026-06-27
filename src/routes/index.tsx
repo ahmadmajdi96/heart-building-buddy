@@ -97,6 +97,7 @@ function LandingPage() {
       <SiteHeader />
       <Hero Arrow={Arrow} />
       <Trust />
+      <Platform Arrow={Arrow} />
       <Problem />
       <Solution />
       <Workflow />
@@ -181,110 +182,159 @@ function SiteHeader() {
 
 function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
   const { locale } = useI18n();
-  const cards = [
-    { icon: Briefcase, label: ar(locale, "القضايا النشطة", "Active Cases") },
-    { icon: CalendarDays, label: ar(locale, "المواعيد القادمة", "Upcoming Deadlines") },
-    { icon: Receipt, label: ar(locale, "فواتير ضريبية", "Tax Invoices") },
-    { icon: Search, label: ar(locale, "بحث قانوني ذكي", "Legal AI Research") },
-    { icon: Lock, label: ar(locale, "مستندات آمنة", "Secure Documents") },
+  const ticks = [
+    ar(locale, "بحث قانوني أردني", "Jordanian legal research"),
+    ar(locale, "صياغة ومراجعة العقود", "Drafting & contract review"),
+    ar(locale, "إدارة القضايا والمواعيد", "Matter & deadline management"),
+    ar(locale, "فوترة بالدينار الأردني", "JOD billing & invoices"),
   ];
   return (
-    <section className="relative overflow-hidden border-b border-border">
+    <section className="relative isolate overflow-hidden border-b border-onyx/40 bg-onyx text-pearl">
+      {/* Cinematic background */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 60% 50% at 85% -10%, color-mix(in oklch, var(--gold), transparent 78%), transparent 60%), radial-gradient(ellipse 60% 50% at 0% 110%, color-mix(in oklch, var(--primary), transparent 88%), transparent 60%)",
+            "radial-gradient(ellipse 80% 60% at 78% 8%, color-mix(in oklch, var(--gold), transparent 70%), transparent 65%), radial-gradient(ellipse 70% 60% at 8% 110%, color-mix(in oklch, var(--primary), transparent 55%), transparent 60%), linear-gradient(180deg, oklch(0.18 0.10 262) 0%, oklch(0.13 0.07 262) 60%, oklch(0.10 0.05 262) 100%)",
         }}
       />
-      <div className="container relative mx-auto max-w-7xl px-6 pb-24 pt-16 lg:pb-32 lg:pt-24">
-        <div className="grid items-center gap-16 lg:grid-cols-12">
-          <motion.div
-            initial="hidden"
-            animate="show"
-            variants={fadeUp}
-            transition={{ duration: 0.6 }}
-            className="lg:col-span-7"
+      <div className="arabesque absolute inset-0 opacity-[0.06]" aria-hidden />
+      {/* Vertical gold rule */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-1/2 hidden w-px -translate-x-1/2 lg:block"
+        style={{ background: "linear-gradient(180deg, transparent, color-mix(in oklch, var(--gold), transparent 70%) 40%, color-mix(in oklch, var(--gold), transparent 70%) 60%, transparent)" }}
+      />
+
+      <div className="container relative mx-auto max-w-7xl px-6 pb-28 pt-20 lg:pb-40 lg:pt-32">
+        {/* Top status pill */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mx-auto mb-12 flex w-fit items-center gap-3 rounded-full border border-gold/25 bg-white/[0.04] px-4 py-1.5 text-[11px] uppercase tracking-[0.28em] text-pearl/80 backdrop-blur-sm"
+        >
+          <span className="relative grid size-2 place-items-center">
+            <span className="absolute inset-0 animate-ping rounded-full bg-gold/60" />
+            <span className="relative size-2 rounded-full bg-gold" />
+          </span>
+          {ar(locale, "النسخة الخاصة مفتوحة — الأردن ٢٠٢٦", "Private beta open · Jordan 2026")}
+        </motion.div>
+
+        {/* Centered editorial headline — Harvey style */}
+        <div className="mx-auto max-w-5xl text-center">
+          <motion.h1
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            className="font-serif text-[3.25rem] leading-[0.98] tracking-[-0.025em] text-pearl md:text-[5.5rem] lg:text-[6.75rem]"
           >
-            <Eyebrow>{ar(locale, "نظام تشغيل المكاتب القانونية", "The Legal Operating System")}</Eyebrow>
-            <h1 className="mt-6 font-serif text-[3rem] leading-[1.02] tracking-[-0.02em] text-foreground md:text-[4.5rem] lg:text-[5.5rem]">
-              {ar(locale, "نظام التشغيل ", "The operating system for ")}
-              <em className="not-italic [font-style:italic] text-gold">
-                {ar(locale, "للمكاتب القانونية العربية", "Arab law firms")}
-              </em>
-            </h1>
-            <p className="mt-8 max-w-2xl text-[17px] leading-[1.75] text-foreground/70">
-              {ar(
-                locale,
-                "محكم يجمع القضايا، العملاء، المستندات، المواعيد، الفوترة والذكاء القانوني في منصة ثنائية اللغة مبنية للمكاتب الحديثة في الأردن والعالم العربي.",
-                "Mohkam brings cases, clients, documents, deadlines, billing, and legal AI into one bilingual platform built for modern law firms in Jordan and the Arab world.",
-              )}
-            </p>
-            <p className="mt-4 max-w-2xl text-[15px] leading-[1.7] text-foreground/55">
-              {ar(
-                locale,
-                "توقّف عن إدارة مكتبك عبر الملفات الورقية وجداول Excel ومحادثات WhatsApp والأدوات المبعثرة. أدِر سير العمل القانوني الكامل من مساحة واحدة آمنة.",
-                "Stop running your practice across paper files, Excel sheets, WhatsApp chats, and disconnected tools. Manage the full legal workflow from one secure workspace.",
-              )}
-            </p>
-            <div className="mt-10 flex flex-wrap gap-3">
-              <Button asChild size="lg" variant="gold" className="h-12 px-7 text-[12px] uppercase tracking-[0.22em] shadow-lg">
-                <a href="#beta">
-                  {ar(locale, "النسخة الخاصة", "Request Private Beta")} <Arrow className="size-4" />
-                </a>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="h-12 border-onyx/20 px-7 text-[12px] uppercase tracking-[0.22em] hover:bg-onyx hover:text-pearl">
-                <a href="#product">{ar(locale, "كيف يعمل", "See How It Works")}</a>
-              </Button>
-            </div>
-            <div className="mt-8 flex items-center gap-2 text-[12px] uppercase tracking-[0.22em] text-foreground/50">
-              <Gem className="size-3.5 text-gold" />
-              {ar(
-                locale,
-                "صُنع في الأردن · عربي وإنجليزي · للمحامين والمكاتب",
-                "Built in Jordan · Arabic & English · Designed for solo lawyers and law firms",
-              )}
-            </div>
-          </motion.div>
+            {ar(locale, "ممارسة ", "Practice ")}
+            <em className="not-italic [font-style:italic] text-gilded">
+              {ar(locale, "بلا أعباء", "made effortless")}
+            </em>
+            <span className="block mt-2 text-pearl/95">
+              {ar(locale, "لمكاتب القانون العربية", "for Arab law firms")}
+            </span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.15 }}
+            className="mx-auto mt-10 max-w-2xl text-[17px] leading-[1.75] text-pearl/70"
+          >
+            {ar(
+              locale,
+              "محكم منصة قانونية ثنائية اللغة، مدعومة بالذكاء الاصطناعي، تجمع القضايا والعملاء والمستندات والمواعيد والفوترة في نظام تشغيل واحد للمكاتب القانونية في الأردن والعالم العربي.",
+              "Mohkam is a bilingual, AI-native legal platform that unifies cases, clients, documents, deadlines and billing into one operating system — built for law firms in Jordan and the wider Arab world.",
+            )}
+          </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, delay: 0.15 }}
-            className="relative lg:col-span-5"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.28 }}
+            className="mt-12 flex flex-wrap items-center justify-center gap-3"
           >
-            <div className="relative rounded-3xl border border-border bg-white p-6 shadow-2xl">
-              <div className="flex items-center justify-center pb-6">
-                <img src={logoSrc} alt="Mohkam" className="h-44 w-44 object-contain" />
-              </div>
-              <div className="grid gap-3">
-                {cards.map((c, i) => (
-                  <motion.div
-                    key={c.label}
-                    initial={{ opacity: 0, x: 12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 + i * 0.08 }}
-                    className="flex items-center justify-between rounded-xl border border-border bg-background px-4 py-3 hover:border-gold/60 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="grid size-9 place-items-center rounded-lg bg-onyx text-gold">
-                        <c.icon className="size-4" />
-                      </div>
-                      <div className="text-sm font-medium text-foreground">{c.label}</div>
-                    </div>
-                    <ArrowUpRight className="size-4 text-foreground/30" />
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -inset-6 -z-10 rounded-[2rem] opacity-60 blur-3xl"
-              style={{ background: "radial-gradient(circle at 60% 40%, color-mix(in oklch, var(--gold), transparent 70%), transparent 70%)" }}
-            />
+            <Button
+              asChild
+              size="lg"
+              variant="gold"
+              className="h-12 px-8 text-[12px] uppercase tracking-[0.24em] shadow-[0_10px_40px_-10px_rgba(252,227,67,0.5)]"
+            >
+              <a href="#beta">
+                {ar(locale, "طلب عرض توضيحي", "Request a Demo")} <Arrow className="size-4" />
+              </a>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="ghost"
+              className="h-12 border border-pearl/15 bg-white/[0.03] px-8 text-[12px] uppercase tracking-[0.24em] text-pearl hover:bg-white/[0.08] hover:text-pearl"
+            >
+              <a href="#platform">{ar(locale, "استكشف المنصة", "Explore the Platform")}</a>
+            </Button>
           </motion.div>
+
+          {/* Capability ticks */}
+          <motion.ul
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.45 }}
+            className="mx-auto mt-14 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[12px] uppercase tracking-[0.22em] text-pearl/55"
+          >
+            {ticks.map((t) => (
+              <li key={t} className="flex items-center gap-2">
+                <span className="size-1 rounded-full bg-gold" />
+                {t}
+              </li>
+            ))}
+          </motion.ul>
         </div>
+
+        {/* Floating product preview strip */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.5 }}
+          className="relative mx-auto mt-20 max-w-5xl"
+        >
+          <div className="absolute -inset-x-8 -inset-y-6 -z-10 rounded-[2rem] opacity-50 blur-3xl"
+            style={{ background: "radial-gradient(ellipse 60% 60% at 50% 50%, color-mix(in oklch, var(--gold), transparent 60%), transparent 70%)" }}
+            aria-hidden
+          />
+          <div className="overflow-hidden rounded-2xl border border-pearl/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] backdrop-blur-xl shadow-2xl">
+            {/* Window chrome */}
+            <div className="flex items-center justify-between border-b border-pearl/10 px-5 py-3">
+              <div className="flex items-center gap-2">
+                <span className="size-2.5 rounded-full bg-pearl/20" />
+                <span className="size-2.5 rounded-full bg-pearl/20" />
+                <span className="size-2.5 rounded-full bg-pearl/20" />
+              </div>
+              <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.28em] text-pearl/40">
+                <img src={logoSrc} alt="" className="h-5 w-5 rounded object-cover" />
+                mohkam.app / cases
+              </div>
+              <span className="text-[10px] uppercase tracking-[0.28em] text-gold/70">JOD</span>
+            </div>
+            <div className="grid gap-px bg-pearl/5 md:grid-cols-3">
+              {[
+                { icon: Briefcase, label: ar(locale, "القضايا النشطة", "Active matters"), value: "124" },
+                { icon: CalendarDays, label: ar(locale, "مواعيد هذا الأسبوع", "Deadlines this week"), value: "18" },
+                { icon: Receipt, label: ar(locale, "فواتير مستحقة", "Outstanding invoices"), value: "JOD 42,800" },
+              ].map((s) => (
+                <div key={s.label} className="bg-onyx/60 p-6">
+                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.28em] text-pearl/50">
+                    <s.icon className="size-3.5 text-gold" /> {s.label}
+                  </div>
+                  <div className="mt-3 font-serif text-3xl text-pearl">{s.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -293,18 +343,168 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
 /* ───────────────────────── TRUST / MARQUEE ───────────────────────── */
 
 function Trust() {
-  const items = ["Jordan Bar", "Amman Counsel", "Aqaba Legal", "Irbid Chambers", "Zarqa Partners", "Petra Law", "Levant Arbitration"];
+  const { locale } = useI18n();
+  const items = ["Jordan Bar Association", "Amman Counsel", "Aqaba Legal", "Irbid Chambers", "Zarqa Partners", "Petra Law", "Levant Arbitration"];
   return (
-    <section className="overflow-hidden border-b border-border bg-onyx py-5 text-pearl/70">
-      <div className="flex animate-[marquee_40s_linear_infinite] items-center gap-16 whitespace-nowrap text-[11px] uppercase tracking-[0.4em]">
-        {[...items, ...items, ...items].map((n, i) => (
-          <span key={i} className="flex items-center gap-16">
-            {n}
-            <span className="text-gold">✦</span>
-          </span>
-        ))}
+    <section className="overflow-hidden border-b border-border bg-background py-12">
+      <p className="mb-8 text-center text-[11px] uppercase tracking-[0.32em] text-foreground/45">
+        {ar(locale, "موثوق من قبل المهنيين في القانون", "Trusted by legal professionals across the region")}
+      </p>
+      <div className="relative">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-32 bg-gradient-to-r from-background to-transparent"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-32 bg-gradient-to-l from-background to-transparent"
+        />
+        <div className="flex animate-[marquee_50s_linear_infinite] items-center gap-16 whitespace-nowrap font-serif text-xl text-foreground/40">
+          {[...items, ...items, ...items].map((n, i) => (
+            <span key={i} className="flex items-center gap-16">
+              {n}
+              <span className="text-gold/60">✦</span>
+            </span>
+          ))}
+        </div>
       </div>
       <style>{`@keyframes marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }`}</style>
+    </section>
+  );
+}
+
+/* ───────────────────────── PLATFORM (Harvey-style modules) ───────────────────────── */
+
+function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
+  const { locale } = useI18n();
+  const modules = [
+    {
+      tag: "01 / Assistant",
+      icon: Sparkles,
+      title: ar(locale, "المساعد القانوني", "Assistant"),
+      desc: ar(
+        locale,
+        "اطرح أسئلة، حلّل المستندات، وصُغ المسودات بسرعة مع ذكاء اصطناعي متخصص بالقانون الأردني.",
+        "Ask questions, analyze documents, and draft faster with AI tuned for Jordanian law.",
+      ),
+    },
+    {
+      tag: "02 / Vault",
+      icon: Lock,
+      title: ar(locale, "خزينة المستندات", "Vault"),
+      desc: ar(
+        locale,
+        "خزّن، نظّم وحلّل آلاف المستندات القانونية بدفعات آمنة ومرتبطة بالقضية.",
+        "Securely store, organize, and bulk-analyze legal documents linked to every matter.",
+      ),
+    },
+    {
+      tag: "03 / Knowledge",
+      icon: BookOpen,
+      title: ar(locale, "المعرفة القانونية", "Knowledge"),
+      desc: ar(
+        locale,
+        "ابحث في القوانين والأنظمة والأحكام الأردنية مع إجابات منظّمة ومستندة إلى المصادر.",
+        "Research Jordanian statutes, regulations, and rulings with grounded, source-cited answers.",
+      ),
+    },
+    {
+      tag: "04 / Matters",
+      icon: Briefcase,
+      title: ar(locale, "إدارة القضايا", "Matters"),
+      desc: ar(
+        locale,
+        "ملف قضية موحّد للأطراف والجلسات والمواعيد والمستندات والوقت — على مرأى الفريق.",
+        "A unified matter file for parties, hearings, deadlines, documents, and time — visible to the whole team.",
+      ),
+    },
+    {
+      tag: "05 / Billing",
+      icon: Receipt,
+      title: ar(locale, "الفوترة", "Billing"),
+      desc: ar(
+        locale,
+        "حوّل الساعات إلى فواتير ضريبية بالدينار الأردني (16%) بترويسة المكتب وبصيغة ثنائية اللغة.",
+        "Turn hours into bilingual JOD tax invoices (16%) with your firm letterhead in seconds.",
+      ),
+    },
+    {
+      tag: "06 / Command",
+      icon: Activity,
+      title: ar(locale, "مركز التحكم", "Command Center"),
+      desc: ar(
+        locale,
+        "مؤشرات الأداء والربحية وأعباء الفريق ومعدلات التحصيل — في لوحة واحدة للشركاء.",
+        "KPIs, profitability, team workload, and collection rates — one dashboard for partners.",
+      ),
+    },
+  ];
+  return (
+    <section id="platform" className="relative border-b border-border bg-background">
+      <div className="container mx-auto max-w-7xl px-6 py-24 lg:py-32">
+        <div className="mb-16 grid items-end gap-10 lg:grid-cols-12">
+          <div className="lg:col-span-8">
+            <Eyebrow>{ar(locale, "المنصة", "The Platform")}</Eyebrow>
+            <h2 className="mt-5 font-serif text-5xl leading-[1.02] tracking-[-0.02em] md:text-6xl lg:text-[4.5rem]">
+              {ar(locale, "نظرة موحّدة على ", "A unified view of how ")}
+              <em className="not-italic [font-style:italic] text-gold">
+                {ar(locale, "كيف يعمل محكم", "Mohkam works")}
+              </em>
+              {ar(locale, " مع ممارستك بالكامل", " across your entire practice")}
+            </h2>
+          </div>
+          <div className="lg:col-span-4">
+            <p className="text-[16px] leading-[1.8] text-foreground/65">
+              {ar(
+                locale,
+                "ستة منتجات متكاملة تعمل من نفس البيانات — لا تبديل أدوات، لا فقدان سياق.",
+                "Six integrated products working from the same data — no tool switching, no lost context.",
+              )}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-px overflow-hidden rounded-3xl border border-border bg-border md:grid-cols-2 lg:grid-cols-3">
+          {modules.map((m, i) => (
+            <motion.a
+              key={m.title}
+              href="#features"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ delay: (i % 3) * 0.08, duration: 0.5 }}
+              className="group relative flex flex-col justify-between overflow-hidden bg-background p-8 transition-all duration-500 hover:bg-onyx hover:text-pearl"
+            >
+              {/* Hover spotlight */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                style={{ background: "radial-gradient(circle at 70% 0%, color-mix(in oklch, var(--gold), transparent 75%), transparent 60%)" }}
+              />
+              <div className="relative">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase tracking-[0.32em] text-foreground/40 group-hover:text-gold">
+                    {m.tag}
+                  </span>
+                  <div className="grid size-10 place-items-center rounded-xl bg-onyx text-gold transition-colors group-hover:bg-gold group-hover:text-onyx">
+                    <m.icon className="size-4" />
+                  </div>
+                </div>
+                <h3 className="mt-10 font-serif text-[2rem] leading-[1.05] tracking-[-0.015em] text-foreground group-hover:text-pearl">
+                  {m.title}
+                </h3>
+                <p className="mt-4 text-[14.5px] leading-relaxed text-foreground/65 group-hover:text-pearl/70">
+                  {m.desc}
+                </p>
+              </div>
+              <div className="relative mt-12 flex items-center gap-2 text-[11px] uppercase tracking-[0.28em] text-foreground/50 group-hover:text-gold">
+                {ar(locale, "اعرف المزيد", "Learn more")}
+                <Arrow className="size-3.5 transition-transform group-hover:translate-x-1" />
+              </div>
+            </motion.a>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
