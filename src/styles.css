@@ -158,6 +158,7 @@
 
   html[dir="rtl"] {
     font-family: var(--font-arabic);
+    --font-serif: var(--font-arabic);
   }
 
   /* Arabic shaping breaks when letter-spacing is applied; keep all RTL text connected. */
@@ -170,7 +171,7 @@
   html[dir="rtl"] h2,
   html[dir="rtl"] h3,
   html[dir="rtl"] .font-serif {
-    font-family: var(--font-arabic);
+    font-family: var(--font-arabic) !important;
     font-weight: 700;
     letter-spacing: 0 !important;
   }
