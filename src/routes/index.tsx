@@ -122,25 +122,24 @@ function LandingPage() {
 function SiteHeader() {
   const { locale } = useI18n();
   const nav = [
-    { href: "#product", label: ar(locale, "المنتج", "Product") },
+    { href: "#platform", label: ar(locale, "المنتج", "Product") },
     { href: "#features", label: ar(locale, "المزايا", "Features") },
     { href: "#ai", label: ar(locale, "الذكاء", "AI") },
     { href: "#security", label: ar(locale, "الأمان", "Security") },
     { href: "#pricing", label: ar(locale, "الأسعار", "Pricing") },
-    { href: "#beta", label: ar(locale, "طلب الوصول", "Request Access") },
   ];
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
-      <div className="container mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
+    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-xl">
+      <div className="container mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-6 px-6">
         <Link to="/" className="flex items-center">
           <BrandMark />
         </Link>
-        <nav className="hidden items-center gap-8 text-[12px] font-medium uppercase tracking-[0.2em] lg:flex">
+        <nav className="hidden items-center gap-1 lg:flex">
           {nav.map((item) => (
             <a
               key={item.href}
               href={item.href}
-              className="text-foreground/60 transition-colors hover:text-foreground"
+              className="rounded-full px-3.5 py-1.5 text-[13.5px] font-medium text-foreground/70 transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
             >
               {item.label}
             </a>
@@ -148,35 +147,23 @@ function SiteHeader() {
         </nav>
         <div className="flex items-center gap-2">
           <LangToggle />
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="text-[12px] uppercase tracking-[0.18em]"
-          >
+          <Button asChild variant="ghost" size="sm" className="text-[13px] font-medium">
             <Link to="/auth">{ar(locale, "تسجيل الدخول", "Sign in")}</Link>
-          </Button>
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="hidden text-[12px] uppercase tracking-[0.18em] sm:inline-flex"
-          >
-            <a href="#beta">{ar(locale, "حجز عرض", "Book a Demo")}</a>
           </Button>
           <Button
             asChild
             size="sm"
             variant="gold"
-            className="text-[12px] uppercase tracking-[0.18em] shadow-md"
+            className="h-9 rounded-full px-4 text-[13px] font-medium shadow-sm"
           >
-            <a href="#beta">{ar(locale, "النسخة الخاصة", "Request Private Beta")}</a>
+            <a href="#beta">{ar(locale, "النسخة الخاصة", "Request Beta")}</a>
           </Button>
         </div>
       </div>
     </header>
   );
 }
+
 
 /* ───────────────────────── HERO ───────────────────────── */
 
