@@ -130,8 +130,8 @@ function SiteHeader() {
   ];
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-xl">
-      <div className="container mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-6 px-6">
-        <Link to="/" className="flex items-center">
+      <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-[72px] sm:gap-6 sm:px-6">
+        <Link to="/" className="flex min-w-0 items-center">
           <BrandMark />
         </Link>
         <nav className="hidden items-center gap-1 lg:flex">
@@ -145,18 +145,21 @@ function SiteHeader() {
             </a>
           ))}
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <LangToggle />
-          <Button asChild variant="ghost" size="sm" className="text-[13px] font-medium">
+          <Button asChild variant="ghost" size="sm" className="hidden text-[13px] font-medium sm:inline-flex">
             <Link to="/auth">{ar(locale, "تسجيل الدخول", "Sign in")}</Link>
+          </Button>
+          <Button asChild variant="ghost" size="sm" className="px-2 text-[12px] font-medium sm:hidden">
+            <Link to="/auth">{ar(locale, "دخول", "Sign in")}</Link>
           </Button>
           <Button
             asChild
             size="sm"
             variant="gold"
-            className="h-9 rounded-full px-4 text-[13px] font-medium shadow-sm"
+            className="h-9 rounded-full px-3 text-[12px] font-medium shadow-sm sm:px-4 sm:text-[13px]"
           >
-            <a href="#beta">{ar(locale, "النسخة الخاصة", "Request Beta")}</a>
+            <a href="#beta">{ar(locale, "بيتا", "Request Beta")}</a>
           </Button>
         </div>
       </div>
