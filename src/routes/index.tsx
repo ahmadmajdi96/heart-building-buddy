@@ -427,7 +427,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
         <div className="mb-16 grid items-end gap-10 lg:grid-cols-12">
           <div className="lg:col-span-8">
             <Eyebrow>{ar(locale, "المنصة", "The Platform")}</Eyebrow>
-            <h2 className="mt-5 font-serif text-5xl leading-[1.02] tracking-[-0.02em] md:text-6xl lg:text-[4.5rem]">
+            <h2 className="mt-5 font-serif text-4xl leading-[1.02] tracking-[-0.02em] md:text-5xl lg:text-[3.5rem]">
               {ar(locale, "نظرة موحّدة على ", "A unified view of how ")}
               <em className="not-italic [font-style:italic] text-gold">
                 {ar(locale, "كيف يعمل محكم", "Mohkam works")}
