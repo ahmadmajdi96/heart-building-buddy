@@ -97,6 +97,7 @@ function LandingPage() {
       <SiteHeader />
       <Hero Arrow={Arrow} />
       <Trust />
+      <Platform Arrow={Arrow} />
       <Problem />
       <Solution />
       <Workflow />
