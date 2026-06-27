@@ -1321,9 +1321,9 @@ function FAQ() {
         <div className="lg:col-span-8">
           <div className="divide-y divide-border rounded-2xl border border-border bg-background">
             {qs.map(([q, a], i) => (
-              <details key={i} className="group p-6 open:bg-pearl/40">
-                <summary className="flex cursor-pointer list-none items-start justify-between gap-6">
-                  <span className="font-serif text-xl text-foreground">{q}</span>
+              <details key={i} className="group p-5 open:bg-pearl/40 sm:p-6">
+                <summary className="flex cursor-pointer list-none items-start justify-between gap-4 sm:gap-6">
+                  <span className="font-serif text-base text-foreground sm:text-xl">{q}</span>
                   <span className="mt-1 grid size-7 shrink-0 place-items-center rounded-full border border-gold/40 text-gold transition-transform group-open:rotate-45">+</span>
                 </summary>
                 <p className="mt-3 text-[14.5px] leading-relaxed text-foreground/70">{a}</p>
