@@ -1350,7 +1350,7 @@ function FinalCTA({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
       />
       <div className="container relative mx-auto max-w-5xl px-4 py-20 text-center sm:px-6 sm:py-28 lg:py-36">
         <img src={logoSrc} alt="Mohkam" className="mx-auto h-24 w-24 rounded-2xl bg-white p-2 shadow-2xl" />
-        <h2 className="mt-10 font-serif text-4xl leading-[1.02] tracking-[-0.02em] text-pearl md:text-5xl">
+        <h2 className="mt-8 font-serif text-3xl leading-[1.05] tracking-[-0.02em] text-pearl sm:mt-10 sm:text-4xl md:text-5xl">
           {ar(locale, "جاهز ", "Ready to ")}
           <em className="not-italic [font-style:italic] text-gold">
             {ar(locale, "لتحديث مكتبك؟", "modernize your law firm?")}
