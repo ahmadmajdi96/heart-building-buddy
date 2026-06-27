@@ -241,13 +241,13 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.28 }}
-            className="mt-12 flex flex-wrap items-center justify-center gap-3"
+            className="mt-10 flex flex-wrap items-center justify-center gap-3 sm:mt-12"
           >
             <Button
               asChild
               size="lg"
               variant="gold"
-              className="h-12 px-8 text-[12px] uppercase tracking-[0.24em] shadow-[0_10px_40px_-10px_rgba(252,227,67,0.5)]"
+              className="h-12 w-full px-6 text-[11px] uppercase tracking-[0.22em] shadow-[0_10px_40px_-10px_rgba(252,227,67,0.5)] sm:w-auto sm:px-8 sm:text-[12px] sm:tracking-[0.24em]"
             >
               <a href="#beta">
                 {ar(locale, "طلب عرض توضيحي", "Request a Demo")} <Arrow className="size-4" />
@@ -257,7 +257,7 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
               asChild
               size="lg"
               variant="ghost"
-              className="h-12 border border-pearl/15 bg-white/[0.03] px-8 text-[12px] uppercase tracking-[0.24em] text-pearl hover:bg-white/[0.08] hover:text-pearl"
+              className="h-12 w-full border border-pearl/15 bg-white/[0.03] px-6 text-[11px] uppercase tracking-[0.22em] text-pearl hover:bg-white/[0.08] hover:text-pearl sm:w-auto sm:px-8 sm:text-[12px] sm:tracking-[0.24em]"
             >
               <a href="#platform">{ar(locale, "استكشف المنصة", "Explore the Platform")}</a>
             </Button>
