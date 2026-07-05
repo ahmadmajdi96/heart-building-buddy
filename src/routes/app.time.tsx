@@ -218,6 +218,19 @@ function TimePage() {
         }
       />
 
+      {filterIds.size > 0 && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-gold/40 bg-gold/5 px-4 py-2.5 text-sm">
+          <div>
+            {ar ? `تصفية إلى ${filterIds.size} سجل من فاتورة المسودة.` : `Filtered to ${filterIds.size} entr${filterIds.size === 1 ? "y" : "ies"} from a draft invoice.`}
+          </div>
+          <Button size="sm" variant="ghost" onClick={() => navigate({ search: {} as any })}>
+            {ar ? "مسح التصفية" : "Clear filter"}
+          </Button>
+        </div>
+      )}
+
+
+
 
       {/* Timer card */}
       <div className="card-elev rounded-xl border bg-card p-5">
