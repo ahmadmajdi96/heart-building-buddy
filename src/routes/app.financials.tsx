@@ -597,7 +597,7 @@ function PlanDetailsDialog({ planId, onClose, onChanged }: { planId: string; onC
                 </thead>
                 <tbody className="divide-y">
                   {plan.payments.length === 0 && (
-                    <tr><Td colSpan={6} className="py-4 text-center text-xs text-muted-foreground">{t("No payments recorded yet.", "لا توجد مدفوعات بعد.")}</Td></tr>
+                    <tr><td colSpan={6} className="px-5 py-4 text-center text-xs text-muted-foreground">{t("No payments recorded yet.", "لا توجد مدفوعات بعد.")}</td></tr>
                   )}
                   {plan.payments.map((p: any, idx: number) => {
                     const sch = plan.schedules.find((x: any) => x.id === p.schedule_id);
