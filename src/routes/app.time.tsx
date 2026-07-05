@@ -367,10 +367,10 @@ function TimePage() {
       {/* Create invoice from time */}
       <Dialog open={invoiceOpen} onOpenChange={setInvoiceOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{ar ? "إنشاء فاتورة من الوقت" : "Create invoice from time"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{ar ? "إنشاء مسودة فاتورة" : "Create draft invoice"}</DialogTitle></DialogHeader>
           <div className="grid gap-4">
             <div className="rounded-md border bg-secondary/40 p-3 text-sm">
-              {ar ? `سيتم تضمين ${selected.size} سجل قابل للفوترة.` : `${selected.size} billable entries will be included.`}
+              {ar ? `سيتم تضمين ${selected.size} سجل. ستذهب إلى تبويب "الفواتير" وتصبح فاتورة ضريبية بعد قبولها.` : `${selected.size} entries will be included. Sent to the Invoices tab — accept it to become a tax invoice.`}
             </div>
             <div className="space-y-1.5"><Label>{ar ? "اسم العميل *" : "Client name *"}</Label>
               <Input value={invoiceForm.client_name} onChange={(e) => setInvoiceForm({ ...invoiceForm, client_name: e.target.value })} />
@@ -412,7 +412,7 @@ function TimePage() {
             <Button variant="gold" disabled={creatingInvoice || !invoiceForm.client_name} onClick={async () => {
               setCreatingInvoice(true);
               try {
-                await invoiceFromTime({ data: {
+                await draftFromTime({ data: {
                   entry_ids: Array.from(selected),
                   client_name: invoiceForm.client_name,
                   client_id: invoiceForm.client_id || null,
@@ -421,7 +421,7 @@ function TimePage() {
                   due_date: invoiceForm.due_date || null,
                   notes: invoiceForm.notes || undefined,
                 }});
-                toast.success(ar ? "تم إنشاء الفاتورة" : "Invoice created");
+                toast.success(ar ? "تم إنشاء مسودة الفاتورة" : "Draft invoice created");
                 setInvoiceOpen(false); setSelected(new Set()); refresh();
               } catch (e) { toast.error((e as Error).message); }
               finally { setCreatingInvoice(false); }
