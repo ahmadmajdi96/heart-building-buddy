@@ -40,6 +40,8 @@ function ClientsPage() {
   const [editing, setEditing] = useState<Partial<Client> | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [conflictOpen, setConflictOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Client | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function refresh() {
     setLoading(true);
@@ -58,6 +60,7 @@ function ClientsPage() {
 
   async function submit() {
     if (!editing?.name) { toast.error(locale === "ar" ? "الاسم مطلوب" : "Name is required"); return; }
+    const isNew = !editing.id;
     try {
       await save({ data: {
         id: editing.id, name: editing.name!, email: editing.email ?? "",
@@ -69,13 +72,31 @@ function ClientsPage() {
         status: (editing.status as any) ?? "active",
       }});
       setEditOpen(false); setEditing(null); refresh();
-      toast.success(locale === "ar" ? "تم الحفظ" : "Saved");
-    } catch (e) { toast.error((e as Error).message); }
+      toast.success(
+        isNew
+          ? (locale === "ar" ? "تم إضافة الموكل بنجاح" : "Client added successfully")
+          : (locale === "ar" ? "تم حفظ التغييرات بنجاح" : "Client saved successfully"),
+      );
+    } catch (e) {
+      toast.error(
+        (isNew
+          ? (locale === "ar" ? "فشل إضافة الموكل: " : "Failed to add client: ")
+          : (locale === "ar" ? "فشل الحفظ: " : "Save failed: ")) + (e as Error).message,
+      );
+    }
   }
 
-  async function remove(id: string) {
-    if (!confirm(locale === "ar" ? "حذف هذا الموكل؟" : "Delete this client?")) return;
-    try { await del({ data: { id } }); refresh(); } catch (e) { toast.error((e as Error).message); }
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      await del({ data: { id: pendingDelete.id } });
+      toast.success(locale === "ar" ? "تم حذف الموكل بنجاح" : "Client deleted successfully");
+      setPendingDelete(null);
+      refresh();
+    } catch (e) {
+      toast.error((locale === "ar" ? "فشل الحذف: " : "Delete failed: ") + (e as Error).message);
+    } finally { setDeleting(false); }
   }
 
   return (
