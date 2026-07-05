@@ -213,6 +213,16 @@ function CasesPage() {
                 <Select value={editing?.client_id ?? "none"} onValueChange={(v) => setEditing({ ...editing!, client_id: v === "none" ? null : v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
+                    <div className="p-1 border-b mb-1">
+                      <button
+                        type="button"
+                        onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setQuickClientOpen(true); }}
+                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-gold hover:bg-gold/10 focus:bg-gold/10 outline-none"
+                      >
+                        <UserPlus className="size-4" />
+                        {locale === "ar" ? "إضافة موكل جديد" : "Add new client"}
+                      </button>
+                    </div>
                     <SelectItem value="none">{locale === "ar" ? "بدون" : "None"}</SelectItem>
                     {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
