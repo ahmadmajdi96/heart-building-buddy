@@ -535,7 +535,7 @@ function InvoicesTab() {
                       <Button size="icon" variant="ghost" onClick={() => changeStatus(r.id, "issued")} title={locale === "ar" ? "إرسال" : "Send"}><Send className="size-4 text-primary" /></Button>
                     )}
                     {can("edit_financials") && (r.status === "issued" || r.status === "overdue" || r.status === "partial") && (
-                      <Button size="icon" variant="ghost" onClick={() => changeStatus(r.id, "paid")} title={locale === "ar" ? "مدفوع" : "Paid"}><CheckCircle2 className="size-4 text-emerald-600" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => { setPayTarget(r); setPayDate(new Date().toISOString().slice(0,10)); }} title={locale === "ar" ? "مدفوع" : "Paid"}><CheckCircle2 className="size-4 text-emerald-600" /></Button>
                     )}
                     {can("edit_financials") && r.status !== "void" && r.status !== "paid" && (
                       <Button size="icon" variant="ghost" onClick={() => changeStatus(r.id, "void")} title={locale === "ar" ? "إلغاء" : "Cancel"}><XCircle className="size-4 text-amber-600" /></Button>
