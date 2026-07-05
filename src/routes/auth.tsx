@@ -4,11 +4,34 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BrandMark } from "@/components/brand-mark";
-import { Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({ component: AuthPage });
+
+type Mode = "signin" | "signup" | "magic" | "forgot";
+
+function friendlyAuthError(raw: string, mode: Mode, locale: "ar" | "en"): string {
+  const m = raw.toLowerCase();
+  const ar = locale === "ar";
+  if (m.includes("invalid login") || m.includes("invalid credentials") || m.includes("invalid email or password"))
+    return ar ? "بريد إلكتروني أو كلمة مرور غير صحيحة." : "Invalid email or password. Please try again.";
+  if (m.includes("email not confirmed"))
+    return ar ? "لم يتم تأكيد البريد الإلكتروني بعد. تحقق من بريدك." : "Email not confirmed yet. Please check your inbox.";
+  if (m.includes("user not found") || m.includes("no user found") || (mode === "magic" && m.includes("signups not allowed")))
+    return ar ? "لا يوجد حساب بهذا البريد الإلكتروني." : "No account exists for this email.";
+  if (m.includes("already registered") || m.includes("user already"))
+    return ar ? "هذا البريد الإلكتروني مسجّل مسبقاً." : "This email is already registered. Try signing in.";
+  if (m.includes("password should be") || m.includes("password") && m.includes("6"))
+    return ar ? "يجب أن تكون كلمة المرور 6 أحرف على الأقل." : "Password must be at least 6 characters.";
+  if (m.includes("rate limit") || m.includes("too many"))
+    return ar ? "محاولات كثيرة. حاول مرة أخرى بعد قليل." : "Too many attempts. Please try again shortly.";
+  if (m.includes("network") || m.includes("failed to fetch"))
+    return ar ? "تعذّر الاتصال بالخادم. تحقق من الاتصال." : "Network error — check your connection and try again.";
+  return ar ? "تعذّر إتمام العملية. حاول مرة أخرى." : "Something went wrong. Please try again.";
+}
 
 type Mode = "signin" | "signup" | "magic" | "forgot";
 
