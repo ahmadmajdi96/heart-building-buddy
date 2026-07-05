@@ -43,6 +43,7 @@ import { Route as AppClientsClientIdRouteImport } from './routes/app.clients.$cl
 import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
 import { Route as ApiElevenlabsScribeTokenRouteImport } from './routes/api.elevenlabs.scribe-token'
 import { Route as AppMeetingsJoinRoomRouteImport } from './routes/app.meetings.join.$room'
+import { Route as ApiPublicHooksDebtRemindersRouteImport } from './routes/api.public.hooks.debt-reminders'
 
 const SetPasswordRoute = SetPasswordRouteImport.update({
   id: '/set-password',
@@ -215,6 +216,12 @@ const AppMeetingsJoinRoomRoute = AppMeetingsJoinRoomRouteImport.update({
   path: '/meetings/join/$room',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicHooksDebtRemindersRoute =
+  ApiPublicHooksDebtRemindersRouteImport.update({
+    id: '/api/public/hooks/debt-reminders',
+    path: '/api/public/hooks/debt-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -250,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/app/debt-collection/': typeof AppDebtCollectionIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
+  '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesByTo {
@@ -285,6 +293,7 @@ export interface FileRoutesByTo {
   '/app/debt-collection': typeof AppDebtCollectionIndexRoute
   '/app/meetings': typeof AppMeetingsIndexRoute
   '/app/workspace': typeof AppWorkspaceIndexRoute
+  '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesById {
@@ -322,6 +331,7 @@ export interface FileRoutesById {
   '/app/debt-collection/': typeof AppDebtCollectionIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
+  '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRouteTypes {
@@ -360,6 +370,7 @@ export interface FileRouteTypes {
     | '/app/debt-collection/'
     | '/app/meetings/'
     | '/app/workspace/'
+    | '/api/public/hooks/debt-reminders'
     | '/app/meetings/join/$room'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -395,6 +406,7 @@ export interface FileRouteTypes {
     | '/app/debt-collection'
     | '/app/meetings'
     | '/app/workspace'
+    | '/api/public/hooks/debt-reminders'
     | '/app/meetings/join/$room'
   id:
     | '__root__'
@@ -431,6 +443,7 @@ export interface FileRouteTypes {
     | '/app/debt-collection/'
     | '/app/meetings/'
     | '/app/workspace/'
+    | '/api/public/hooks/debt-reminders'
     | '/app/meetings/join/$room'
   fileRoutesById: FileRoutesById
 }
@@ -441,6 +454,7 @@ export interface RootRouteChildren {
   SetPasswordRoute: typeof SetPasswordRoute
   ShareTokenRoute: typeof ShareTokenRoute
   ApiElevenlabsScribeTokenRoute: typeof ApiElevenlabsScribeTokenRoute
+  ApiPublicHooksDebtRemindersRoute: typeof ApiPublicHooksDebtRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -683,6 +697,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMeetingsJoinRoomRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/hooks/debt-reminders': {
+      id: '/api/public/hooks/debt-reminders'
+      path: '/api/public/hooks/debt-reminders'
+      fullPath: '/api/public/hooks/debt-reminders'
+      preLoaderRoute: typeof ApiPublicHooksDebtRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -767,6 +788,7 @@ const rootRouteChildren: RootRouteChildren = {
   SetPasswordRoute: SetPasswordRoute,
   ShareTokenRoute: ShareTokenRoute,
   ApiElevenlabsScribeTokenRoute: ApiElevenlabsScribeTokenRoute,
+  ApiPublicHooksDebtRemindersRoute: ApiPublicHooksDebtRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
