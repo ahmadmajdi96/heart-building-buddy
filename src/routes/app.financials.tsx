@@ -442,6 +442,9 @@ function InvoicesTab() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
+  const [payTarget, setPayTarget] = useState<Invoice | null>(null);
+  const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
+  const [payBusy, setPayBusy] = useState(false);
 
   async function load() {
     if (!org) return;
@@ -455,6 +458,31 @@ function InvoicesTab() {
   async function changeStatus(id: string, next: "issued" | "void" | "paid") {
     try { await setStatusFn({ data: { id, status: next } }); toast.success(locale === "ar" ? "تم التحديث" : "Updated"); load(); }
     catch (e) { toast.error((e as Error).message); }
+  }
+  async function confirmMarkPaid() {
+    if (!payTarget || !org) return;
+    setPayBusy(true);
+    try {
+      const remaining = Number(payTarget.total) - Number(payTarget.amount_paid || 0);
+      if (remaining > 0) {
+        const { data: sess } = await supabase.auth.getSession();
+        await supabase.from("payments").insert({
+          org_id: org.id,
+          created_by: sess.session!.user.id,
+          invoice_id: payTarget.id,
+          client_name: payTarget.client_name,
+          amount: remaining,
+          method: "bank_transfer",
+          paid_at: payDate,
+        });
+        await supabase.from("tax_invoices").update({ amount_paid: Number(payTarget.total), status: "paid" }).eq("id", payTarget.id);
+      } else {
+        await setStatusFn({ data: { id: payTarget.id, status: "paid" } });
+      }
+      toast.success(locale === "ar" ? "تم تعليمها كمدفوعة" : "Marked as paid");
+      setPayTarget(null); load();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setPayBusy(false); }
   }
 
   const statuses = useMemo(() => ["all", "draft", "issued", "partial", "paid", "overdue", "void"], []);
