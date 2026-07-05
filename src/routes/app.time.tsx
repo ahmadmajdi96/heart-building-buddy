@@ -296,6 +296,9 @@ function TimePage() {
             <div className="ms-auto flex items-center gap-3">
               <span className="text-xs text-muted-foreground">{ar ? `محدد: ${selected.size}` : `${selected.size} selected`}</span>
               <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>{ar ? "مسح" : "Clear"}</Button>
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setPendingBulk(true)}>
+                <Trash2 className="size-4 text-destructive" />{ar ? "حذف المحدد" : "Delete selected"}
+              </Button>
               <Button size="sm" variant="gold" className="gap-1.5" onClick={() => {
                 const sample = filtered.find((e) => selected.has(e.id));
                 setInvoiceForm({
@@ -306,7 +309,7 @@ function TimePage() {
                 });
                 setInvoiceOpen(true);
               }}>
-                <Receipt className="size-4" />{ar ? "إنشاء فاتورة" : "Create invoice"}
+                <Receipt className="size-4" />{ar ? "إنشاء مسودة فاتورة" : "Create draft invoice"}
               </Button>
             </div>
           )}
@@ -354,7 +357,7 @@ function TimePage() {
               </td>
               <td className="px-5 py-3 text-end">
                 <Button variant="ghost" size="icon" onClick={() => { setEditing(e); setEditOpen(true); }}><Pencil className="size-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => remove(e.id)}><Trash2 className="size-4 text-destructive" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => setPendingSingle(e)}><Trash2 className="size-4 text-destructive" /></Button>
               </td>
             </tr>
           );})}</tbody>
