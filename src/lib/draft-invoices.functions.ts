@@ -127,7 +127,7 @@ export const acceptDraftInvoice = createServerFn({ method: "POST" })
         client_name: draft.client_name,
         case_id: draft.case_id,
         issue_date: new Date().toISOString().slice(0, 10),
-        due_date: draft.due_date,
+        due_date: data.due_date ?? draft.due_date,
         status: "issued",
         currency: draft.currency,
         tax_rate: draft.tax_rate,
