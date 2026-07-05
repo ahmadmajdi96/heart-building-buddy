@@ -24,7 +24,10 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export const Route = createFileRoute("/app/time")({ component: TimePage });
+export const Route = createFileRoute("/app/time")({
+  component: TimePage,
+  validateSearch: (s: Record<string, unknown>) => ({ ids: typeof s.ids === "string" ? s.ids : undefined }),
+});
 
 type Entry = {
   id: string; case_id: string | null; client_id: string | null;
@@ -48,6 +51,9 @@ function formatDuration(seconds: number): string {
 function TimePage() {
   const { locale } = useI18n();
   const ar = locale === "ar";
+  const search = Route.useSearch();
+  const filterIds = useMemo(() => new Set((search.ids ?? "").split(",").filter(Boolean)), [search.ids]);
+  const navigate = Route.useNavigate();
   const list = useServerFn(listTimeEntries);
   const save = useServerFn(saveTimeEntry);
   const del = useServerFn(deleteTimeEntry);
@@ -166,12 +172,13 @@ function TimePage() {
   }
 
   const filtered = useMemo(() => entries.filter((e) => {
+    if (filterIds.size > 0 && !filterIds.has(e.id)) return false;
     if (!q) return true;
     const s = q.toLowerCase();
     return e.description.toLowerCase().includes(s)
       || (e.cases?.title ?? "").toLowerCase().includes(s)
       || (e.clients?.name ?? "").toLowerCase().includes(s);
-  }), [entries, q]);
+  }), [entries, q, filterIds]);
 
   const totals = useMemo(() => {
     const total = entries.reduce((acc, e) => acc + (e.duration_seconds || 0), 0);
@@ -210,6 +217,19 @@ function TimePage() {
           </div>
         }
       />
+
+      {filterIds.size > 0 && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-gold/40 bg-gold/5 px-4 py-2.5 text-sm">
+          <div>
+            {ar ? `تصفية إلى ${filterIds.size} سجل من فاتورة المسودة.` : `Filtered to ${filterIds.size} entr${filterIds.size === 1 ? "y" : "ies"} from a draft invoice.`}
+          </div>
+          <Button size="sm" variant="ghost" onClick={() => navigate({ search: {} as any })}>
+            {ar ? "مسح التصفية" : "Clear filter"}
+          </Button>
+        </div>
+      )}
+
+
 
 
       {/* Timer card */}

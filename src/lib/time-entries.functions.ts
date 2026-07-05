@@ -29,6 +29,19 @@ export const listTimeEntries = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+export const getTimeEntriesByIds = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ ids: z.array(z.string().uuid()) }).parse(d))
+  .handler(async ({ data, context }) => {
+    if (data.ids.length === 0) return [];
+    const { data: rows, error } = await context.supabase
+      .from("time_entries")
+      .select("id, description, started_at, duration_seconds, hourly_rate, currency, billable, cases(id, title), clients(id, name)")
+      .in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
 export const saveTimeEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => EntryInput.parse(d))

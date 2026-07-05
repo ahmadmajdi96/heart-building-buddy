@@ -102,7 +102,10 @@ export const deleteDraftInvoice = createServerFn({ method: "POST" })
 
 export const acceptDraftInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({
+    id: z.string().uuid(),
+    due_date: z.string().nullable().optional(),
+  }).parse(d))
   .handler(async ({ data, context }) => {
     const mem = await getCallerOrg(context);
     const { data: draft, error: dErr } = await context.supabase
@@ -124,7 +127,7 @@ export const acceptDraftInvoice = createServerFn({ method: "POST" })
         client_name: draft.client_name,
         case_id: draft.case_id,
         issue_date: new Date().toISOString().slice(0, 10),
-        due_date: draft.due_date,
+        due_date: data.due_date ?? draft.due_date,
         status: "issued",
         currency: draft.currency,
         tax_rate: draft.tax_rate,
@@ -196,6 +199,7 @@ export const createDraftFromTime = createServerFn({ method: "POST" })
       subtotal: t.subtotal, tax_amount: t.tax_amount, total: t.total,
       items,
       notes: data.notes ?? null,
+      time_entry_ids: usable.map((e: any) => e.id),
     }).select().maybeSingle();
     if (error) throw new Error(error.message);
     // Mark entries billed so they don't get re-invoiced from the draft.
