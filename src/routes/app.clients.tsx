@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useI18n } from "@/lib/i18n";
@@ -29,6 +29,7 @@ type Client = {
 
 function ClientsPage() {
   const { locale } = useI18n();
+  const navigate = useNavigate();
   const list = useServerFn(listClients);
   const save = useServerFn(saveClient);
   const del = useServerFn(deleteClient);
@@ -38,6 +39,7 @@ function ClientsPage() {
   const [q, setQ] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<Client> | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [conflictOpen, setConflictOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Client | null>(null);
@@ -55,11 +57,25 @@ function ClientsPage() {
     !q || c.name.toLowerCase().includes(q.toLowerCase()) || (c.email ?? "").toLowerCase().includes(q.toLowerCase()) || (c.company ?? "").toLowerCase().includes(q.toLowerCase()),
   ), [clients, q]);
 
-  function openNew() { setEditing({ type: "individual", status: "active" }); setEditOpen(true); }
-  function openEdit(c: Client) { setEditing(c); setEditOpen(true); }
+  function openNew() { setEmailError(null); setEditing({ type: "individual", status: "active" }); setEditOpen(true); }
+  function openEdit(c: Client) { setEmailError(null); setEditing(c); setEditOpen(true); }
+
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  function validateEmail(v: string): string | null {
+    if (!v) return null;
+    if (!emailRe.test(v.trim())) return locale === "ar" ? "بريد إلكتروني غير صالح" : "Invalid email address";
+    return null;
+  }
 
   async function submit() {
     if (!editing?.name) { toast.error(locale === "ar" ? "الاسم مطلوب" : "Name is required"); return; }
+    const emailErr = validateEmail(editing.email ?? "");
+    if (emailErr) {
+      setEmailError(emailErr);
+      toast.error(locale === "ar" ? "الرجاء تصحيح البريد الإلكتروني قبل الحفظ" : "Please fix the email before saving");
+      return;
+    }
+    setEmailError(null);
     const isNew = !editing.id;
     try {
       await save({ data: {
@@ -71,12 +87,12 @@ function ClientsPage() {
         tax_id: editing.tax_id ?? "",
         status: (editing.status as any) ?? "active",
       }});
-      setEditOpen(false); setEditing(null); refresh();
       toast.success(
         isNew
           ? (locale === "ar" ? "تم إضافة الموكل بنجاح" : "Client added successfully")
           : (locale === "ar" ? "تم حفظ التغييرات بنجاح" : "Client saved successfully"),
       );
+      setEditOpen(false); setEditing(null); refresh();
     } catch (e) {
       toast.error(
         (isNew
