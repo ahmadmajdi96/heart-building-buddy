@@ -36,11 +36,15 @@ function friendlyAuthError(raw: string, mode: Mode, locale: "ar" | "en"): string
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<Mode>("signin");
+  const { locale } = useI18n();
+  const [mode, setModeRaw] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
+
+  const setMode = (m: Mode) => { setErrMsg(null); setModeRaw(m); };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -51,6 +55,7 @@ function AuthPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
+    setErrMsg(null);
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
@@ -58,7 +63,7 @@ function AuthPage() {
           options: { emailRedirectTo: window.location.origin + "/app/dashboard", data: { full_name: name } },
         });
         if (error) throw error;
-        toast.success("Account created. Check your email if confirmation is required.");
+        toast.success(locale === "ar" ? "تم إنشاء الحساب." : "Account created. Check your email if confirmation is required.");
         navigate({ to: "/app/dashboard" });
       } else if (mode === "magic") {
         const { error } = await supabase.auth.signInWithOtp({
@@ -69,13 +74,13 @@ function AuthPage() {
           },
         });
         if (error) throw error;
-        toast.success("Sign-in link sent. Check your email — open it on this device to set your password.");
+        toast.success(locale === "ar" ? "تم إرسال رابط تسجيل الدخول." : "Sign-in link sent. Check your email — open it on this device to set your password.");
       } else if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: window.location.origin + "/set-password",
         });
         if (error) throw error;
-        toast.success("Password reset link sent. Check your email.");
+        toast.success(locale === "ar" ? "تم إرسال رابط إعادة التعيين." : "Password reset link sent. Check your email.");
         setMode("signin");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -83,9 +88,12 @@ function AuthPage() {
         navigate({ to: "/app/dashboard" });
       }
     } catch (e) {
-      toast.error((e as Error).message);
+      const msg = friendlyAuthError((e as Error).message ?? "", mode, locale === "ar" ? "ar" : "en");
+      setErrMsg(msg);
+      toast.error(msg);
     } finally { setBusy(false); }
   }
+
 
   const title =
     mode === "signup" ? "Create your account" :
