@@ -149,6 +149,7 @@ export const getWorkspaceCase = createServerFn({ method: "POST" })
       appointments: appts.data ?? [],
       timeEntries: (timeEntries.data ?? []).map((t: any) => ({ ...t, user_name: nameById[t.user_id] ?? null })),
       invoices: invoices.data ?? [],
+      drafts: drafts.data ?? [],
       deadlines: deadlines.data ?? [],
     };
   });
