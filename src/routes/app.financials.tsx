@@ -25,7 +25,9 @@ import { listDraftInvoices, deleteDraftInvoice, acceptDraftInvoice, rejectDraftI
 import { getTimeEntriesByIds } from "@/lib/time-entries.functions";
 import { listOrgDebtPayments } from "@/lib/debt-collection.functions";
 import { listClients, saveClient } from "@/lib/clients.functions";
-import { listUnpaidInvoicesForClient, createPaymentPlan, markSchedulePaid, deletePaymentPlan } from "@/lib/payment-plans.functions";
+import { listUnpaidInvoicesForClient, createPaymentPlan, markSchedulePaid, deletePaymentPlan, getPaymentPlan, pausePaymentPlan, resumePaymentPlan, cancelPaymentPlan, reschedulePaymentPlan } from "@/lib/payment-plans.functions";
+import { downloadReceiptPdf } from "@/lib/invoice-pdf";
+
 import { ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Layers } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
