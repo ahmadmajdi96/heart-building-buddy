@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BrandMark } from "@/components/brand-mark";
+import { useI18n } from "@/lib/i18n";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
