@@ -11,14 +11,18 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  listTimeEntries, saveTimeEntry, deleteTimeEntry,
+  listTimeEntries, saveTimeEntry, deleteTimeEntry, bulkDeleteTimeEntries,
   startTimer, stopTimer, getRunningTimer, exportTimeEntriesCsv,
 } from "@/lib/time-entries.functions";
-import { createInvoiceFromTime } from "@/lib/invoicing.functions";
+import { createDraftFromTime } from "@/lib/draft-invoices.functions";
 import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
 import { Plus, Loader2, Pencil, Trash2, Play, Square, Clock, Search, Receipt, Download } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/app/time")({ component: TimePage });
 
@@ -52,7 +56,8 @@ function TimePage() {
   const running = useServerFn(getRunningTimer);
   const lCases = useServerFn(listCases);
   const lClients = useServerFn(listClients);
-  const invoiceFromTime = useServerFn(createInvoiceFromTime);
+  const draftFromTime = useServerFn(createDraftFromTime);
+  const bulkDel = useServerFn(bulkDeleteTimeEntries);
   const exportCsv = useServerFn(exportTimeEntriesCsv);
 
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -68,6 +73,9 @@ function TimePage() {
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [invoiceForm, setInvoiceForm] = useState({ client_name: "", client_id: "" as string | "", case_id: "" as string | "", tax_rate: "", due_date: "", notes: "" });
   const [creatingInvoice, setCreatingInvoice] = useState(false);
+  const [pendingSingle, setPendingSingle] = useState<Entry | null>(null);
+  const [pendingBulk, setPendingBulk] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Timer form
   const [tDesc, setTDesc] = useState("");
@@ -136,9 +144,25 @@ function TimePage() {
       toast.success(ar ? "تم الحفظ" : "Saved");
     } catch (e) { toast.error((e as Error).message); }
   }
-  async function remove(id: string) {
-    if (!confirm(ar ? "حذف السجل؟" : "Delete entry?")) return;
-    try { await del({ data: { id } }); refresh(); } catch (e) { toast.error((e as Error).message); }
+  async function confirmSingle() {
+    if (!pendingSingle) return;
+    setDeleting(true);
+    try {
+      await del({ data: { id: pendingSingle.id } });
+      toast.success(ar ? "تم حذف السجل" : "Entry deleted");
+      setPendingSingle(null); refresh();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setDeleting(false); }
+  }
+  async function confirmBulk() {
+    setDeleting(true);
+    try {
+      const ids = Array.from(selected);
+      const r: any = await bulkDel({ data: { ids } });
+      toast.success(ar ? `تم حذف ${r.count} سجل` : `${r.count} entries deleted`);
+      setPendingBulk(false); setSelected(new Set()); refresh();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setDeleting(false); }
   }
 
   const filtered = useMemo(() => entries.filter((e) => {

@@ -35,6 +35,7 @@ import { Route as AppActivityRouteImport } from './routes/app.activity'
 import { Route as AppMeetingsIndexRouteImport } from './routes/app.meetings.index'
 import { Route as AppCasesIndexRouteImport } from './routes/app.cases.index'
 import { Route as AppMeetingsIdRouteImport } from './routes/app.meetings.$id'
+import { Route as AppClientsClientIdRouteImport } from './routes/app.clients.$clientId'
 import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
 import { Route as ApiElevenlabsScribeTokenRouteImport } from './routes/api.elevenlabs.scribe-token'
 import { Route as AppMeetingsJoinRoomRouteImport } from './routes/app.meetings.join.$room'
@@ -169,6 +170,11 @@ const AppMeetingsIdRoute = AppMeetingsIdRouteImport.update({
   path: '/meetings/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppClientsClientIdRoute = AppClientsClientIdRouteImport.update({
+  id: '/$clientId',
+  path: '/$clientId',
+  getParentRoute: () => AppClientsRoute,
+} as any)
 const AppCasesCaseIdRoute = AppCasesCaseIdRouteImport.update({
   id: '/cases/$caseId',
   path: '/cases/$caseId',
@@ -194,7 +200,7 @@ export interface FileRoutesByFullPath {
   '/app/activity': typeof AppActivityRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/calendar': typeof AppCalendarRoute
-  '/app/clients': typeof AppClientsRoute
+  '/app/clients': typeof AppClientsRouteWithChildren
   '/app/courtroom': typeof AppCourtroomRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/deadlines': typeof AppDeadlinesRoute
@@ -212,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
+  '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
@@ -224,7 +231,7 @@ export interface FileRoutesByTo {
   '/app/activity': typeof AppActivityRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/calendar': typeof AppCalendarRoute
-  '/app/clients': typeof AppClientsRoute
+  '/app/clients': typeof AppClientsRouteWithChildren
   '/app/courtroom': typeof AppCourtroomRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/deadlines': typeof AppDeadlinesRoute
@@ -242,6 +249,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
+  '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases': typeof AppCasesIndexRoute
   '/app/meetings': typeof AppMeetingsIndexRoute
@@ -256,7 +264,7 @@ export interface FileRoutesById {
   '/app/activity': typeof AppActivityRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/calendar': typeof AppCalendarRoute
-  '/app/clients': typeof AppClientsRoute
+  '/app/clients': typeof AppClientsRouteWithChildren
   '/app/courtroom': typeof AppCourtroomRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/deadlines': typeof AppDeadlinesRoute
@@ -274,6 +282,7 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
+  '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
@@ -307,6 +316,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
+    | '/app/clients/$clientId'
     | '/app/meetings/$id'
     | '/app/cases/'
     | '/app/meetings/'
@@ -337,6 +347,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
+    | '/app/clients/$clientId'
     | '/app/meetings/$id'
     | '/app/cases'
     | '/app/meetings'
@@ -368,6 +379,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
+    | '/app/clients/$clientId'
     | '/app/meetings/$id'
     | '/app/cases/'
     | '/app/meetings/'
@@ -567,6 +579,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMeetingsIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/clients/$clientId': {
+      id: '/app/clients/$clientId'
+      path: '/$clientId'
+      fullPath: '/app/clients/$clientId'
+      preLoaderRoute: typeof AppClientsClientIdRouteImport
+      parentRoute: typeof AppClientsRoute
+    }
     '/app/cases/$caseId': {
       id: '/app/cases/$caseId'
       path: '/cases/$caseId'
@@ -591,11 +610,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppClientsRouteChildren {
+  AppClientsClientIdRoute: typeof AppClientsClientIdRoute
+}
+
+const AppClientsRouteChildren: AppClientsRouteChildren = {
+  AppClientsClientIdRoute: AppClientsClientIdRoute,
+}
+
+const AppClientsRouteWithChildren = AppClientsRoute._addFileChildren(
+  AppClientsRouteChildren,
+)
+
 interface AppRouteChildren {
   AppActivityRoute: typeof AppActivityRoute
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppCalendarRoute: typeof AppCalendarRoute
-  AppClientsRoute: typeof AppClientsRoute
+  AppClientsRoute: typeof AppClientsRouteWithChildren
   AppCourtroomRoute: typeof AppCourtroomRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppDeadlinesRoute: typeof AppDeadlinesRoute
@@ -621,7 +652,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppActivityRoute: AppActivityRoute,
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppCalendarRoute: AppCalendarRoute,
-  AppClientsRoute: AppClientsRoute,
+  AppClientsRoute: AppClientsRouteWithChildren,
   AppCourtroomRoute: AppCourtroomRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppDeadlinesRoute: AppDeadlinesRoute,
