@@ -16,7 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, Plus, Trash2, MessageSquare, User, DollarSign, Users, Send, Phone } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Trash2, MessageSquare, User, DollarSign, Users, Send, Phone, Settings2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   getDebtCase, saveDebtCase, deleteDebtCase,
