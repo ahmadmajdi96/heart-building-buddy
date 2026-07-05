@@ -258,6 +258,7 @@ export const markSchedulePaid = createServerFn({ method: "POST" })
         org_id: mem.org_id,
         created_by: context.userId,
         invoice_id: sch.invoice_id,
+        schedule_id: sch.id,
         client_id: sch.client_id,
         client_name: sch.client_name,
         amount: Number(sch.amount),
@@ -266,6 +267,7 @@ export const markSchedulePaid = createServerFn({ method: "POST" })
         paid_at: data.paid_at,
         currency: sch.currency,
       });
+
 
       const { data: inv } = await context.supabase
         .from("tax_invoices").select("total, amount_paid, status").eq("id", sch.invoice_id).maybeSingle();
