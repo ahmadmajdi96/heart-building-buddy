@@ -428,8 +428,12 @@ function SchedulesTab() {
           )}
         </div>
       )}
+      <Dialog open={!!detailsPlanId} onOpenChange={(v) => { if (!v) setDetailsPlanId(null); }}>
+        {detailsPlanId && <PlanDetailsDialog planId={detailsPlanId} onClose={() => setDetailsPlanId(null)} onChanged={load} />}
+      </Dialog>
     </Card>
   );
+
 }
 
 function ScheduleDialog({ onSaved, onClose }: { onSaved: () => void; onClose: () => void }) {
