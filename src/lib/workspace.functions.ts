@@ -105,7 +105,7 @@ export const getWorkspaceCase = createServerFn({ method: "POST" })
     return { id };
   })
   .handler(async ({ data, context }) => {
-    const [caseRes, membersRes, docs, appts, timeEntries, invoices, deadlines] = await Promise.all([
+    const [caseRes, membersRes, docs, appts, timeEntries, invoices, drafts, deadlines] = await Promise.all([
       context.supabase.from("cases")
         .select("*, clients(id, name, email, phone)")
         .eq("id", data.id).maybeSingle(),
@@ -115,7 +115,8 @@ export const getWorkspaceCase = createServerFn({ method: "POST" })
       context.supabase.from("documents").select("id, name, file_path, file_type, file_size, created_at, uploaded_by").eq("case_id", data.id).order("created_at", { ascending: false }),
       context.supabase.from("appointments").select("id, title, starts_at, ends_at, location, status").eq("case_id", data.id).order("starts_at", { ascending: true }),
       context.supabase.from("time_entries").select("id, description, duration_seconds, hourly_rate, billable, status, started_at, user_id").eq("case_id", data.id).order("started_at", { ascending: false }),
-      context.supabase.from("tax_invoices").select("id, number, issue_date, due_date, status, total, amount_paid, currency").eq("case_id", data.id).order("issue_date", { ascending: false }),
+      context.supabase.from("tax_invoices").select("id, number, issue_date, due_date, status, total, amount_paid, currency, client_name, notes, items, tax_rate").eq("case_id", data.id).order("issue_date", { ascending: false }),
+      context.supabase.from("draft_invoices").select("*").eq("case_id", data.id).order("created_at", { ascending: false }),
       context.supabase.from("deadlines").select("id, title, due_date, status, priority").eq("case_id", data.id).order("due_date", { ascending: true }),
     ]);
     if (caseRes.error) throw new Error(caseRes.error.message);
@@ -148,6 +149,7 @@ export const getWorkspaceCase = createServerFn({ method: "POST" })
       appointments: appts.data ?? [],
       timeEntries: (timeEntries.data ?? []).map((t: any) => ({ ...t, user_name: nameById[t.user_id] ?? null })),
       invoices: invoices.data ?? [],
+      drafts: drafts.data ?? [],
       deadlines: deadlines.data ?? [],
     };
   });
