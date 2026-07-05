@@ -32,6 +32,7 @@ import { Route as AppClientsRouteImport } from './routes/app.clients'
 import { Route as AppCalendarRouteImport } from './routes/app.calendar'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppActivityRouteImport } from './routes/app.activity'
+import { Route as AppWorkspaceIndexRouteImport } from './routes/app.workspace.index'
 import { Route as AppMeetingsIndexRouteImport } from './routes/app.meetings.index'
 import { Route as AppCasesIndexRouteImport } from './routes/app.cases.index'
 import { Route as AppMeetingsIdRouteImport } from './routes/app.meetings.$id'
@@ -155,6 +156,11 @@ const AppActivityRoute = AppActivityRouteImport.update({
   path: '/activity',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWorkspaceIndexRoute = AppWorkspaceIndexRouteImport.update({
+  id: '/workspace/',
+  path: '/workspace/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMeetingsIndexRoute = AppMeetingsIndexRouteImport.update({
   id: '/meetings/',
   path: '/meetings/',
@@ -222,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
+  '/app/workspace/': typeof AppWorkspaceIndexRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesByTo {
@@ -253,6 +260,7 @@ export interface FileRoutesByTo {
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases': typeof AppCasesIndexRoute
   '/app/meetings': typeof AppMeetingsIndexRoute
+  '/app/workspace': typeof AppWorkspaceIndexRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesById {
@@ -286,6 +294,7 @@ export interface FileRoutesById {
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
+  '/app/workspace/': typeof AppWorkspaceIndexRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRouteTypes {
@@ -320,6 +329,7 @@ export interface FileRouteTypes {
     | '/app/meetings/$id'
     | '/app/cases/'
     | '/app/meetings/'
+    | '/app/workspace/'
     | '/app/meetings/join/$room'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -351,6 +361,7 @@ export interface FileRouteTypes {
     | '/app/meetings/$id'
     | '/app/cases'
     | '/app/meetings'
+    | '/app/workspace'
     | '/app/meetings/join/$room'
   id:
     | '__root__'
@@ -383,6 +394,7 @@ export interface FileRouteTypes {
     | '/app/meetings/$id'
     | '/app/cases/'
     | '/app/meetings/'
+    | '/app/workspace/'
     | '/app/meetings/join/$room'
   fileRoutesById: FileRoutesById
 }
@@ -558,6 +570,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppActivityRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/workspace/': {
+      id: '/app/workspace/'
+      path: '/workspace'
+      fullPath: '/app/workspace/'
+      preLoaderRoute: typeof AppWorkspaceIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/meetings/': {
       id: '/app/meetings/'
       path: '/meetings'
@@ -645,6 +664,7 @@ interface AppRouteChildren {
   AppMeetingsIdRoute: typeof AppMeetingsIdRoute
   AppCasesIndexRoute: typeof AppCasesIndexRoute
   AppMeetingsIndexRoute: typeof AppMeetingsIndexRoute
+  AppWorkspaceIndexRoute: typeof AppWorkspaceIndexRoute
   AppMeetingsJoinRoomRoute: typeof AppMeetingsJoinRoomRoute
 }
 
@@ -671,6 +691,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMeetingsIdRoute: AppMeetingsIdRoute,
   AppCasesIndexRoute: AppCasesIndexRoute,
   AppMeetingsIndexRoute: AppMeetingsIndexRoute,
+  AppWorkspaceIndexRoute: AppWorkspaceIndexRoute,
   AppMeetingsJoinRoomRoute: AppMeetingsJoinRoomRoute,
 }
 
