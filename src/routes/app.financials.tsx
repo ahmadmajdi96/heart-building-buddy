@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { useI18n } from "@/lib/i18n";
 import { useOrg } from "@/lib/org-context";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,19 +12,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Loader2, Trash2, FileText, Eye, X, Search, Send, XCircle, CheckCircle2, Check } from "lucide-react";
+import { Plus, Loader2, Trash2, FileText, Eye, X, Search, Send, XCircle, CheckCircle2, Check, Download } from "lucide-react";
 import { toast } from "sonner";
 import { DocumentHeader, DocumentPreview } from "@/components/financials/document-preview";
+import { downloadInvoicePdf } from "@/lib/invoice-pdf";
 import { useServerFn } from "@tanstack/react-start";
-import { sweepOverdueInvoices, setInvoiceStatus } from "@/lib/invoicing.functions";
-import { listDraftInvoices, deleteDraftInvoice, acceptDraftInvoice, rejectDraftInvoice } from "@/lib/draft-invoices.functions";
+import { sweepOverdueInvoices, setInvoiceStatus, markInvoicePaid } from "@/lib/invoicing.functions";
+import { listDraftInvoices, deleteDraftInvoice, acceptDraftInvoice, rejectDraftInvoice, bulkAcceptDraftInvoices } from "@/lib/draft-invoices.functions";
 import { getTimeEntriesByIds } from "@/lib/time-entries.functions";
 import { ArrowUpDown, ArrowUp, ArrowDown, ExternalLink } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/app/financials")({ component: FinancialsPage });
+const financialsSearchSchema = z.object({
+  tab: fallback(z.enum(["payments", "schedules", "quotes", "drafts", "invoices"]), "payments").default("payments"),
+  q: fallback(z.string(), "").default(""),
+  status: fallback(z.string(), "all").default("all"),
+  dueFrom: fallback(z.string(), "").default(""),
+  dueTo: fallback(z.string(), "").default(""),
+  payment: fallback(z.enum(["all", "paid", "unpaid"]), "all").default("all"),
+});
+
+export const Route = createFileRoute("/app/financials")({
+  validateSearch: zodValidator(financialsSearchSchema),
+  component: FinancialsPage,
+});
 
 type Item = { description: string; quantity: number; unit_price: number };
 type Quote = any; type Invoice = any; type Payment = any; type Schedule = any;
