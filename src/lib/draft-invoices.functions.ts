@@ -225,6 +225,7 @@ const DraftFromTimeInput = z.object({
   client_id: z.string().uuid().nullable().optional(),
   case_id: z.string().uuid().nullable().optional(),
   tax_rate: z.number().nullable().optional(),
+  default_rate: z.number().nullable().optional(),
   due_date: z.string().nullable().optional(),
   notes: z.string().optional(),
 });
@@ -241,11 +242,18 @@ export const createDraftFromTime = createServerFn({ method: "POST" })
     if (eErr) throw new Error(eErr.message);
     const usable = (entries ?? []).filter((e: any) => e.billable && e.status !== "billed");
     if (usable.length === 0) throw new Error("No billable, unbilled entries selected");
-    const items = usable.map((e: any) => ({
-      description: e.description || "Legal services",
-      quantity: Number((e.duration_seconds / 3600).toFixed(2)),
-      unit_price: Number(e.hourly_rate ?? 0),
-    }));
+    const fallbackRate = Number(data.default_rate ?? 0);
+    const items = usable.map((e: any) => {
+      const seconds = Number(e.duration_seconds ?? 0);
+      const hours = seconds > 0 ? Number((seconds / 3600).toFixed(2)) : 0;
+      const rate = e.hourly_rate != null ? Number(e.hourly_rate) : fallbackRate;
+      return {
+        description: e.description || "Legal services",
+        // Guarantee a non-zero line for very short entries so the amount isn't lost.
+        quantity: hours > 0 ? hours : (seconds > 0 ? Number((seconds / 3600).toFixed(4)) : 1),
+        unit_price: rate,
+      };
+    });
     const rate = data.tax_rate ?? (mem.organizations?.default_tax_rate ?? 0);
     const t = totals(items, Number(rate));
     const { data: row, error } = await context.supabase.from("draft_invoices").insert({
