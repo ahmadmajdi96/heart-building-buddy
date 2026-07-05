@@ -325,7 +325,7 @@ function TimePage() {
                   client_name: sample?.clients?.name ?? "",
                   client_id: sample?.client_id ?? "",
                   case_id: sample?.case_id ?? "",
-                  tax_rate: "", due_date: "", notes: "",
+                  tax_rate: "", default_rate: "", due_date: "", notes: "",
                 });
                 setInvoiceOpen(true);
               }}>
