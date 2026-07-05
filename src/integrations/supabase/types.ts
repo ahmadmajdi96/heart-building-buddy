@@ -863,6 +863,63 @@ export type Database = {
           },
         ]
       }
+      debt_reminder_rules: {
+        Row: {
+          active: boolean
+          case_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          label: string
+          message_template: string
+          offset_days: number
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          case_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          label: string
+          message_template: string
+          offset_days?: number
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          case_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          label?: string
+          message_template?: string
+          offset_days?: number
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_reminder_rules_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "debt_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debt_reminder_rules_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       debt_sms_log: {
         Row: {
           assignee_user_id: string | null
