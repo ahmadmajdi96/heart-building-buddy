@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useI18n } from "@/lib/i18n";
@@ -151,21 +151,23 @@ function ClientsPage() {
             </thead>
             <tbody className="divide-y">
               {filtered.map((c) => (
-                <tr key={c.id} className="hover:bg-secondary/40 transition-colors cursor-pointer" onClick={() => navigate({ to: "/app/clients/$clientId", params: { clientId: c.id } })}>
+                <tr key={c.id} className="hover:bg-secondary/40 transition-colors">
                   <td className="px-5 py-4">
-                    <div className="font-medium flex items-center gap-2">
-                      {c.type === "company" ? <Building className="size-4 text-muted-foreground" /> : <User className="size-4 text-muted-foreground" />}
-                      {c.name}
-                      {c.status === "inactive" && <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">inactive</span>}
-                    </div>
-                    {c.company && c.type === "individual" && <div className="text-xs text-muted-foreground mt-0.5">{c.company}</div>}
+                    <Link to="/app/clients/$clientId" params={{ clientId: c.id }} className="block">
+                      <div className="font-medium flex items-center gap-2 hover:text-gold">
+                        {c.type === "company" ? <Building className="size-4 text-muted-foreground" /> : <User className="size-4 text-muted-foreground" />}
+                        {c.name}
+                        {c.status === "inactive" && <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">inactive</span>}
+                      </div>
+                      {c.company && c.type === "individual" && <div className="text-xs text-muted-foreground mt-0.5">{c.company}</div>}
+                    </Link>
                   </td>
                   <td className="px-5 py-4 text-muted-foreground capitalize">{c.type ?? "individual"}</td>
                   <td className="px-5 py-4 text-muted-foreground">{c.country || "—"}</td>
                   <td className="px-5 py-4">{c._active_cases ?? 0}<span className="text-xs text-muted-foreground"> / {c._total_cases ?? 0}</span></td>
                   <td className="px-5 py-4 text-muted-foreground text-xs">{c._last_interaction ? new Date(c._last_interaction).toLocaleDateString() : "—"}</td>
                   <td className="px-5 py-4 text-muted-foreground">{c.email || "—"}</td>
-                  <td className="px-5 py-4 text-end" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-5 py-4 text-end">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="size-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => setPendingDelete(c)}><Trash2 className="size-4 text-destructive" /></Button>
                   </td>
