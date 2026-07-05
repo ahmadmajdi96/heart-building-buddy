@@ -210,6 +210,30 @@ function ClientsPage() {
 
       <ConflictCheckDialog open={conflictOpen} onClose={() => setConflictOpen(false)} />
       <ClientDetailSheet id={detailId} onClose={() => setDetailId(null)} />
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => { if (!o) setPendingDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{locale === "ar" ? "حذف الموكل؟" : "Delete client?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {locale === "ar"
+                ? `سيتم حذف "${pendingDelete?.name ?? ""}" وقد يؤثر ذلك على القضايا المرتبطة. لا يمكن التراجع.`
+                : `"${pendingDelete?.name ?? ""}" will be permanently deleted. This may affect linked matters and cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>{locale === "ar" ? "إلغاء" : "Cancel"}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmDelete(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting && <Loader2 className="size-4 animate-spin me-1.5" />}
+              {locale === "ar" ? "حذف" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
