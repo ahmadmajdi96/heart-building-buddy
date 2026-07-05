@@ -549,6 +549,36 @@ function InvoicesTab() {
         )}
       </Card>
       {preview && <DocumentPreview kind="invoice" doc={preview} onClose={() => setPreview(null)} />}
+
+      <Dialog open={!!payTarget} onOpenChange={(o) => { if (!o) setPayTarget(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{locale === "ar" ? "تعليم الفاتورة كمدفوعة" : "Mark invoice as paid"}</DialogTitle></DialogHeader>
+          {payTarget && (
+            <div className="space-y-3 text-sm">
+              <div className="rounded-lg border bg-secondary/40 p-3 space-y-1">
+                <div className="flex justify-between"><span className="text-muted-foreground">#</span><span className="font-mono">{payTarget.number}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "العميل" : "Client"}</span><span className="font-medium">{payTarget.client_name}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "الاستحقاق" : "Due"}</span><span>{payTarget.due_date || "—"}</span></div>
+                <div className="flex justify-between border-t pt-1 font-semibold"><span>{locale === "ar" ? "المتبقي" : "Remaining"}</span><span className="font-mono">{fmt(Number(payTarget.total) - Number(payTarget.amount_paid || 0), payTarget.currency)}</span></div>
+              </div>
+              <div>
+                <Label>{locale === "ar" ? "تاريخ الدفع" : "Payment date"}</Label>
+                <Input type="date" className="mt-1.5" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {locale === "ar" ? "سيتم تسجيل الدفعة وتحديث حالة الفاتورة إلى مدفوعة." : "A payment will be recorded and the invoice status will be set to paid."}
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPayTarget(null)}>{locale === "ar" ? "إلغاء" : "Cancel"}</Button>
+            <Button variant="gold" onClick={confirmMarkPaid} disabled={payBusy}>
+              {payBusy && <Loader2 className="size-4 animate-spin me-1.5"/>}
+              {locale === "ar" ? "تأكيد الدفع" : "Confirm payment"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
