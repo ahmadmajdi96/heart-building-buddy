@@ -27,7 +27,7 @@ import { ArrowUpDown, ArrowUp, ArrowDown, ExternalLink } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
 const financialsSearchSchema = z.object({
-  tab: fallback(z.enum(["payments", "schedules", "quotes", "drafts", "invoices"]), "payments").default("payments"),
+  tab: fallback(z.enum(["payments", "schedules", "quotes", "drafts", "invoices", "collections"]), "payments").default("payments"),
   q: fallback(z.string(), "").default(""),
   status: fallback(z.string(), "all").default("all"),
   dueFrom: fallback(z.string(), "").default(""),
@@ -105,12 +105,14 @@ function FinancialsPage() {
           <TabsTrigger value="quotes">{locale === "ar" ? "عروض الأسعار" : "Quotes"}</TabsTrigger>
           <TabsTrigger value="drafts">{locale === "ar" ? "الفواتير" : "Invoices"}</TabsTrigger>
           <TabsTrigger value="invoices">{locale === "ar" ? "الفواتير الضريبية" : "Tax invoices"}</TabsTrigger>
+          <TabsTrigger value="collections">{locale === "ar" ? "التحصيل" : "Collections"}</TabsTrigger>
         </TabsList>
         <TabsContent value="payments"><PaymentsTab /></TabsContent>
         <TabsContent value="schedules"><SchedulesTab /></TabsContent>
         <TabsContent value="quotes"><QuotesTab /></TabsContent>
         <TabsContent value="drafts"><DraftInvoicesTab /></TabsContent>
         <TabsContent value="invoices"><InvoicesTab /></TabsContent>
+        <TabsContent value="collections"><CollectionsTab /></TabsContent>
       </Tabs>
     </div>
   );
