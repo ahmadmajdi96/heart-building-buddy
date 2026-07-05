@@ -18,9 +18,11 @@ async function getCallerOrg(ctx: { supabase: any; userId: string }) {
 
 /* ============================ Cases ============================ */
 
+const optUuid = z.preprocess((v) => (v === "" || v == null ? null : v), z.string().uuid().nullable().optional());
+
 const CaseInput = z.object({
   id: z.string().uuid().optional(),
-  client_id: z.string().uuid().nullable().optional(),
+  client_id: optUuid,
   title: z.string().min(1),
   description: z.string().optional(),
   debt_type: z.enum(["rent", "loan", "service", "installment", "other"]).default("other"),
