@@ -72,12 +72,12 @@ export const getDebtCase = createServerFn({ method: "POST" })
     const uids = (assignees.data ?? []).map((a: any) => a.user_id);
     let profiles: any[] = [];
     if (uids.length > 0) {
-      const { data: pdata } = await context.supabase.from("profiles").select("id, full_name, phone").in("id", uids);
+      const { data: pdata } = await context.supabase.from("profiles").select("id, full_name").in("id", uids);
       profiles = pdata ?? [];
     }
     const enrichedAssignees = (assignees.data ?? []).map((a: any) => {
       const p = profiles.find((pr) => pr.id === a.user_id);
-      return { ...a, _name: p?.full_name ?? "Team member", _profile_phone: p?.phone ?? null };
+      return { ...a, _name: p?.full_name ?? "Team member", _profile_phone: null as string | null };
     });
     return {
       case: c.data,
@@ -177,10 +177,10 @@ export const listOrgMembersForAssignment = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     const uids = (data ?? []).map((r: any) => r.user_id);
     if (uids.length === 0) return [];
-    const { data: profiles } = await context.supabase.from("profiles").select("id, full_name, phone").in("id", uids);
+    const { data: profiles } = await context.supabase.from("profiles").select("id, full_name").in("id", uids);
     return (data ?? []).map((r: any) => {
       const p = (profiles ?? []).find((pr: any) => pr.id === r.user_id);
-      return { user_id: r.user_id, role: r.role, full_name: p?.full_name ?? "Team member", phone: p?.phone ?? null };
+      return { user_id: r.user_id, role: r.role, full_name: p?.full_name ?? "Team member", phone: null as string | null };
     });
   });
 
@@ -353,15 +353,9 @@ export const sendDebtSms = createServerFn({ method: "POST" })
     if (data.assignee_user_ids.length > 0) {
       const { data: assignees } = await context.supabase
         .from("debt_case_assignees").select("user_id, phone").eq("case_id", data.case_id).in("user_id", data.assignee_user_ids);
-      const missingPhones = (assignees ?? []).filter((a: any) => !a.phone).map((a: any) => a.user_id);
-      let profiles: any[] = [];
-      if (missingPhones.length > 0) {
-        const { data: pdata } = await context.supabase.from("profiles").select("id, phone").in("id", missingPhones);
-        profiles = pdata ?? [];
-      }
       for (const a of assignees ?? []) {
-        const phone = a.phone || profiles.find((pr) => pr.id === a.user_id)?.phone;
-        if (!phone) { results.push({ user_id: a.user_id, status: "failed", error: "No phone" }); continue; }
+        const phone = a.phone;
+        if (!phone) { results.push({ user_id: a.user_id, status: "failed", error: "No phone on assignee" }); continue; }
         const r = await sendTwilioSms(phone, data.message, data.from);
         await context.supabase.from("debt_sms_log").insert({
           org_id: mem.org_id, case_id: data.case_id, assignee_user_id: a.user_id,
