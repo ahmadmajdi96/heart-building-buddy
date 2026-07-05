@@ -102,7 +102,10 @@ export const deleteDraftInvoice = createServerFn({ method: "POST" })
 
 export const acceptDraftInvoice = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) => z.object({
+    id: z.string().uuid(),
+    due_date: z.string().nullable().optional(),
+  }).parse(d))
   .handler(async ({ data, context }) => {
     const mem = await getCallerOrg(context);
     const { data: draft, error: dErr } = await context.supabase
