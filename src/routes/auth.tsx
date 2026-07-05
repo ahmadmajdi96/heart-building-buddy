@@ -113,6 +113,12 @@ function AuthPage() {
         <h1 className="font-serif text-3xl text-center mb-1">{title}</h1>
         <p className="text-center text-sm text-muted-foreground mb-6">{subtitle}</p>
         <form onSubmit={submit} className="space-y-4">
+          {errMsg && (
+            <Alert variant="destructive" className="border-destructive/40 bg-destructive/5 text-destructive">
+              <AlertCircle className="size-4" />
+              <AlertDescription className="text-[13px] leading-relaxed">{errMsg}</AlertDescription>
+            </Alert>
+          )}
           {mode === "signup" && (
             <div>
               <Label htmlFor="name">Full name</Label>
