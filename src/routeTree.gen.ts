@@ -34,13 +34,16 @@ import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppActivityRouteImport } from './routes/app.activity'
 import { Route as AppWorkspaceIndexRouteImport } from './routes/app.workspace.index'
 import { Route as AppMeetingsIndexRouteImport } from './routes/app.meetings.index'
+import { Route as AppDebtCollectionIndexRouteImport } from './routes/app.debt-collection.index'
 import { Route as AppCasesIndexRouteImport } from './routes/app.cases.index'
 import { Route as AppWorkspaceCaseIdRouteImport } from './routes/app.workspace.$caseId'
 import { Route as AppMeetingsIdRouteImport } from './routes/app.meetings.$id'
+import { Route as AppDebtCollectionIdRouteImport } from './routes/app.debt-collection.$id'
 import { Route as AppClientsClientIdRouteImport } from './routes/app.clients.$clientId'
 import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
 import { Route as ApiElevenlabsScribeTokenRouteImport } from './routes/api.elevenlabs.scribe-token'
 import { Route as AppMeetingsJoinRoomRouteImport } from './routes/app.meetings.join.$room'
+import { Route as ApiPublicHooksDebtRemindersRouteImport } from './routes/api.public.hooks.debt-reminders'
 
 const SetPasswordRoute = SetPasswordRouteImport.update({
   id: '/set-password',
@@ -167,6 +170,11 @@ const AppMeetingsIndexRoute = AppMeetingsIndexRouteImport.update({
   path: '/meetings/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDebtCollectionIndexRoute = AppDebtCollectionIndexRouteImport.update({
+  id: '/debt-collection/',
+  path: '/debt-collection/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCasesIndexRoute = AppCasesIndexRouteImport.update({
   id: '/cases/',
   path: '/cases/',
@@ -180,6 +188,11 @@ const AppWorkspaceCaseIdRoute = AppWorkspaceCaseIdRouteImport.update({
 const AppMeetingsIdRoute = AppMeetingsIdRouteImport.update({
   id: '/meetings/$id',
   path: '/meetings/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDebtCollectionIdRoute = AppDebtCollectionIdRouteImport.update({
+  id: '/debt-collection/$id',
+  path: '/debt-collection/$id',
   getParentRoute: () => AppRoute,
 } as any)
 const AppClientsClientIdRoute = AppClientsClientIdRouteImport.update({
@@ -203,6 +216,12 @@ const AppMeetingsJoinRoomRoute = AppMeetingsJoinRoomRouteImport.update({
   path: '/meetings/join/$room',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicHooksDebtRemindersRoute =
+  ApiPublicHooksDebtRemindersRouteImport.update({
+    id: '/api/public/hooks/debt-reminders',
+    path: '/api/public/hooks/debt-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -231,11 +250,14 @@ export interface FileRoutesByFullPath {
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
+  '/app/debt-collection/$id': typeof AppDebtCollectionIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/workspace/$caseId': typeof AppWorkspaceCaseIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
+  '/app/debt-collection/': typeof AppDebtCollectionIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
+  '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesByTo {
@@ -264,11 +286,14 @@ export interface FileRoutesByTo {
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
+  '/app/debt-collection/$id': typeof AppDebtCollectionIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/workspace/$caseId': typeof AppWorkspaceCaseIdRoute
   '/app/cases': typeof AppCasesIndexRoute
+  '/app/debt-collection': typeof AppDebtCollectionIndexRoute
   '/app/meetings': typeof AppMeetingsIndexRoute
   '/app/workspace': typeof AppWorkspaceIndexRoute
+  '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesById {
@@ -299,11 +324,14 @@ export interface FileRoutesById {
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
+  '/app/debt-collection/$id': typeof AppDebtCollectionIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/workspace/$caseId': typeof AppWorkspaceCaseIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
+  '/app/debt-collection/': typeof AppDebtCollectionIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
+  '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRouteTypes {
@@ -335,11 +363,14 @@ export interface FileRouteTypes {
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
+    | '/app/debt-collection/$id'
     | '/app/meetings/$id'
     | '/app/workspace/$caseId'
     | '/app/cases/'
+    | '/app/debt-collection/'
     | '/app/meetings/'
     | '/app/workspace/'
+    | '/api/public/hooks/debt-reminders'
     | '/app/meetings/join/$room'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -368,11 +399,14 @@ export interface FileRouteTypes {
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
+    | '/app/debt-collection/$id'
     | '/app/meetings/$id'
     | '/app/workspace/$caseId'
     | '/app/cases'
+    | '/app/debt-collection'
     | '/app/meetings'
     | '/app/workspace'
+    | '/api/public/hooks/debt-reminders'
     | '/app/meetings/join/$room'
   id:
     | '__root__'
@@ -402,11 +436,14 @@ export interface FileRouteTypes {
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
+    | '/app/debt-collection/$id'
     | '/app/meetings/$id'
     | '/app/workspace/$caseId'
     | '/app/cases/'
+    | '/app/debt-collection/'
     | '/app/meetings/'
     | '/app/workspace/'
+    | '/api/public/hooks/debt-reminders'
     | '/app/meetings/join/$room'
   fileRoutesById: FileRoutesById
 }
@@ -417,6 +454,7 @@ export interface RootRouteChildren {
   SetPasswordRoute: typeof SetPasswordRoute
   ShareTokenRoute: typeof ShareTokenRoute
   ApiElevenlabsScribeTokenRoute: typeof ApiElevenlabsScribeTokenRoute
+  ApiPublicHooksDebtRemindersRoute: typeof ApiPublicHooksDebtRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -596,6 +634,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMeetingsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/debt-collection/': {
+      id: '/app/debt-collection/'
+      path: '/debt-collection'
+      fullPath: '/app/debt-collection/'
+      preLoaderRoute: typeof AppDebtCollectionIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/cases/': {
       id: '/app/cases/'
       path: '/cases'
@@ -615,6 +660,13 @@ declare module '@tanstack/react-router' {
       path: '/meetings/$id'
       fullPath: '/app/meetings/$id'
       preLoaderRoute: typeof AppMeetingsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/debt-collection/$id': {
+      id: '/app/debt-collection/$id'
+      path: '/debt-collection/$id'
+      fullPath: '/app/debt-collection/$id'
+      preLoaderRoute: typeof AppDebtCollectionIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/clients/$clientId': {
@@ -644,6 +696,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/meetings/join/$room'
       preLoaderRoute: typeof AppMeetingsJoinRoomRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/api/public/hooks/debt-reminders': {
+      id: '/api/public/hooks/debt-reminders'
+      path: '/api/public/hooks/debt-reminders'
+      fullPath: '/api/public/hooks/debt-reminders'
+      preLoaderRoute: typeof ApiPublicHooksDebtRemindersRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -680,9 +739,11 @@ interface AppRouteChildren {
   AppTimeRoute: typeof AppTimeRoute
   AppIndexRoute: typeof AppIndexRoute
   AppCasesCaseIdRoute: typeof AppCasesCaseIdRoute
+  AppDebtCollectionIdRoute: typeof AppDebtCollectionIdRoute
   AppMeetingsIdRoute: typeof AppMeetingsIdRoute
   AppWorkspaceCaseIdRoute: typeof AppWorkspaceCaseIdRoute
   AppCasesIndexRoute: typeof AppCasesIndexRoute
+  AppDebtCollectionIndexRoute: typeof AppDebtCollectionIndexRoute
   AppMeetingsIndexRoute: typeof AppMeetingsIndexRoute
   AppWorkspaceIndexRoute: typeof AppWorkspaceIndexRoute
   AppMeetingsJoinRoomRoute: typeof AppMeetingsJoinRoomRoute
@@ -708,9 +769,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppTimeRoute: AppTimeRoute,
   AppIndexRoute: AppIndexRoute,
   AppCasesCaseIdRoute: AppCasesCaseIdRoute,
+  AppDebtCollectionIdRoute: AppDebtCollectionIdRoute,
   AppMeetingsIdRoute: AppMeetingsIdRoute,
   AppWorkspaceCaseIdRoute: AppWorkspaceCaseIdRoute,
   AppCasesIndexRoute: AppCasesIndexRoute,
+  AppDebtCollectionIndexRoute: AppDebtCollectionIndexRoute,
   AppMeetingsIndexRoute: AppMeetingsIndexRoute,
   AppWorkspaceIndexRoute: AppWorkspaceIndexRoute,
   AppMeetingsJoinRoomRoute: AppMeetingsJoinRoomRoute,
@@ -725,6 +788,7 @@ const rootRouteChildren: RootRouteChildren = {
   SetPasswordRoute: SetPasswordRoute,
   ShareTokenRoute: ShareTokenRoute,
   ApiElevenlabsScribeTokenRoute: ApiElevenlabsScribeTokenRoute,
+  ApiPublicHooksDebtRemindersRoute: ApiPublicHooksDebtRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

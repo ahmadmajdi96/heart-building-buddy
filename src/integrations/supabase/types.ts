@@ -586,6 +586,350 @@ export type Database = {
           },
         ]
       }
+      debt_case_assignees: {
+        Row: {
+          case_id: string
+          created_at: string
+          notify_sms: boolean
+          phone: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          notify_sms?: boolean
+          phone?: string | null
+          role?: string
+          user_id: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          notify_sms?: boolean
+          phone?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_case_assignees_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "debt_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debt_case_payers: {
+        Row: {
+          amount_due: number
+          amount_paid: number
+          case_id: string
+          client_id: string | null
+          created_at: string
+          due_date: string | null
+          email: string | null
+          id: string
+          last_reminder_kind:
+            | Database["public"]["Enums"]["debt_sms_kind"]
+            | null
+          last_reminder_sent_at: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          status: Database["public"]["Enums"]["debt_payer_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount_due?: number
+          amount_paid?: number
+          case_id: string
+          client_id?: string | null
+          created_at?: string
+          due_date?: string | null
+          email?: string | null
+          id?: string
+          last_reminder_kind?:
+            | Database["public"]["Enums"]["debt_sms_kind"]
+            | null
+          last_reminder_sent_at?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["debt_payer_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount_due?: number
+          amount_paid?: number
+          case_id?: string
+          client_id?: string | null
+          created_at?: string
+          due_date?: string | null
+          email?: string | null
+          id?: string
+          last_reminder_kind?:
+            | Database["public"]["Enums"]["debt_sms_kind"]
+            | null
+          last_reminder_sent_at?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["debt_payer_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_case_payers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "debt_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debt_case_payers_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debt_cases: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by: string
+          currency: string
+          debt_type: Database["public"]["Enums"]["debt_type"]
+          description: string | null
+          due_date: string | null
+          forwarder_contact: string | null
+          forwarder_name: string | null
+          id: string
+          org_id: string
+          reference: string | null
+          service_fee_type: string
+          service_fee_value: number
+          status: Database["public"]["Enums"]["debt_case_status"]
+          title: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          currency?: string
+          debt_type?: Database["public"]["Enums"]["debt_type"]
+          description?: string | null
+          due_date?: string | null
+          forwarder_contact?: string | null
+          forwarder_name?: string | null
+          id?: string
+          org_id: string
+          reference?: string | null
+          service_fee_type?: string
+          service_fee_value?: number
+          status?: Database["public"]["Enums"]["debt_case_status"]
+          title: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          currency?: string
+          debt_type?: Database["public"]["Enums"]["debt_type"]
+          description?: string | null
+          due_date?: string | null
+          forwarder_contact?: string | null
+          forwarder_name?: string | null
+          id?: string
+          org_id?: string
+          reference?: string | null
+          service_fee_type?: string
+          service_fee_value?: number
+          status?: Database["public"]["Enums"]["debt_case_status"]
+          title?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_cases_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debt_cases_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debt_collection_payments: {
+        Row: {
+          amount_forwarded: number
+          amount_received: number
+          case_id: string
+          created_at: string
+          created_by: string
+          currency: string
+          forwarder_name: string | null
+          id: string
+          invoice_id: string | null
+          method: string
+          notes: string | null
+          org_id: string
+          paid_at: string
+          payer_id: string | null
+          reference: string | null
+          service_fee: number
+          updated_at: string
+        }
+        Insert: {
+          amount_forwarded?: number
+          amount_received?: number
+          case_id: string
+          created_at?: string
+          created_by: string
+          currency?: string
+          forwarder_name?: string | null
+          id?: string
+          invoice_id?: string | null
+          method?: string
+          notes?: string | null
+          org_id: string
+          paid_at?: string
+          payer_id?: string | null
+          reference?: string | null
+          service_fee?: number
+          updated_at?: string
+        }
+        Update: {
+          amount_forwarded?: number
+          amount_received?: number
+          case_id?: string
+          created_at?: string
+          created_by?: string
+          currency?: string
+          forwarder_name?: string | null
+          id?: string
+          invoice_id?: string | null
+          method?: string
+          notes?: string | null
+          org_id?: string
+          paid_at?: string
+          payer_id?: string | null
+          reference?: string | null
+          service_fee?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_collection_payments_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "debt_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debt_collection_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "tax_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debt_collection_payments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debt_collection_payments_payer_id_fkey"
+            columns: ["payer_id"]
+            isOneToOne: false
+            referencedRelation: "debt_case_payers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debt_sms_log: {
+        Row: {
+          assignee_user_id: string | null
+          case_id: string | null
+          error: string | null
+          id: string
+          kind: Database["public"]["Enums"]["debt_sms_kind"]
+          message: string
+          org_id: string
+          payer_id: string | null
+          phone: string
+          sent_at: string
+          status: string
+          twilio_sid: string | null
+        }
+        Insert: {
+          assignee_user_id?: string | null
+          case_id?: string | null
+          error?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["debt_sms_kind"]
+          message: string
+          org_id: string
+          payer_id?: string | null
+          phone: string
+          sent_at?: string
+          status?: string
+          twilio_sid?: string | null
+        }
+        Update: {
+          assignee_user_id?: string | null
+          case_id?: string | null
+          error?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["debt_sms_kind"]
+          message?: string
+          org_id?: string
+          payer_id?: string | null
+          phone?: string
+          sent_at?: string
+          status?: string
+          twilio_sid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_sms_log_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "debt_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debt_sms_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debt_sms_log_payer_id_fkey"
+            columns: ["payer_id"]
+            isOneToOne: false
+            referencedRelation: "debt_case_payers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_shares: {
         Row: {
           access_count: number
@@ -1649,6 +1993,20 @@ export type Database = {
       }
     }
     Enums: {
+      debt_case_status: "active" | "paid" | "partial" | "overdue" | "cancelled"
+      debt_payer_status:
+        | "pending"
+        | "partial"
+        | "paid"
+        | "overdue"
+        | "cancelled"
+      debt_sms_kind:
+        | "reminder_upcoming"
+        | "reminder_due"
+        | "reminder_overdue"
+        | "assignment"
+        | "manual"
+      debt_type: "rent" | "loan" | "service" | "installment" | "other"
       invoice_status:
         | "draft"
         | "issued"
@@ -1801,6 +2159,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      debt_case_status: ["active", "paid", "partial", "overdue", "cancelled"],
+      debt_payer_status: ["pending", "partial", "paid", "overdue", "cancelled"],
+      debt_sms_kind: [
+        "reminder_upcoming",
+        "reminder_due",
+        "reminder_overdue",
+        "assignment",
+        "manual",
+      ],
+      debt_type: ["rent", "loan", "service", "installment", "other"],
       invoice_status: ["draft", "issued", "partial", "paid", "overdue", "void"],
       member_status: ["active", "invited", "disabled"],
       org_role: [
