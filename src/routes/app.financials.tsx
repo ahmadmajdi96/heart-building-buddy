@@ -453,6 +453,7 @@ function InvoicesTab() {
   const { org, can } = useOrg();
   const sweep = useServerFn(sweepOverdueInvoices);
   const setStatusFn = useServerFn(setInvoiceStatus);
+  const markPaidFn = useServerFn(markInvoicePaid);
   const [rows, setRows] = useState<Invoice[]>([]);
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<Invoice | null>(null);
