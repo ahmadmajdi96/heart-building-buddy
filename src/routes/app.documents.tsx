@@ -40,7 +40,7 @@ function DocsPage() {
   const listCl = useServerFn(listClients);
 
   const [docs, setDocs] = useState<Doc[]>([]);
-  const [cases, setCases] = useState<{ id: string; title: string }[]>([]);
+  const [cases, setCases] = useState<{ id: string; title: string; client_id: string | null }[]>([]);
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -57,12 +57,31 @@ function DocsPage() {
     try {
       const [d, c, cl] = await Promise.all([list(), listC(), listCl()]);
       setDocs(d as Doc[]);
-      setCases((c as any[]).map((x) => ({ id: x.id, title: x.title })));
+      setCases((c as any[]).map((x) => ({ id: x.id, title: x.title, client_id: x.client_id ?? null })));
       setClients((cl as any[]).map((x) => ({ id: x.id, name: x.name })));
     } catch (e) { toast.error((e as Error).message); }
     finally { setLoading(false); }
   }
   useEffect(() => { refresh(); }, []);
+
+  // Keep case/client dropdowns in sync: picking a case auto-fills the linked
+  // client; picking a client narrows the case list to that client's matters.
+  const casesForClient = clientId === "none" ? cases : cases.filter((c) => c.client_id === clientId);
+  function onCaseChange(v: string) {
+    setCaseId(v);
+    if (v !== "none") {
+      const chosen = cases.find((c) => c.id === v);
+      if (chosen?.client_id) setClientId(chosen.client_id);
+    }
+  }
+  function onClientChange(v: string) {
+    setClientId(v);
+    // If the currently-selected case doesn't belong to this client, clear it.
+    if (v !== "none" && caseId !== "none") {
+      const chosen = cases.find((c) => c.id === caseId);
+      if (chosen && chosen.client_id !== v) setCaseId("none");
+    }
+  }
 
   async function upload(file: File) {
     const v = validateDocFile(file);
@@ -143,13 +162,16 @@ function DocsPage() {
             : "Only these types are allowed: PDF, Word (DOC/DOCX), CSV, JPG."}
         </p>
         <div className="grid gap-3 md:grid-cols-3">
-          <Select value={caseId} onValueChange={setCaseId}>
-            <SelectTrigger><SelectValue placeholder={locale === "ar" ? "ربط بقضية" : "Link to case"} /></SelectTrigger>
-            <SelectContent><SelectItem value="none">{locale === "ar" ? "بدون قضية" : "No case"}</SelectItem>{cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent>
-          </Select>
-          <Select value={clientId} onValueChange={setClientId}>
+          <Select value={clientId} onValueChange={onClientChange}>
             <SelectTrigger><SelectValue placeholder={locale === "ar" ? "ربط بموكل" : "Link to client"} /></SelectTrigger>
             <SelectContent><SelectItem value="none">{locale === "ar" ? "بدون موكل" : "No client"}</SelectItem>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={caseId} onValueChange={onCaseChange}>
+            <SelectTrigger><SelectValue placeholder={locale === "ar" ? "ربط بقضية" : "Link to case"} /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">{locale === "ar" ? "بدون قضية" : "No case"}</SelectItem>
+              {casesForClient.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+            </SelectContent>
           </Select>
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-2.5 text-sm text-muted-foreground hover:bg-secondary/40">
             {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
