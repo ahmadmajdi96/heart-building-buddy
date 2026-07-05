@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Search, Users, Briefcase, ChevronRight, Crown } from "lucide-react";
+import { Loader2, Search, Users, Briefcase, ChevronRight, Crown, TrendingUp, Activity, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { getWorkspaceOverview } from "@/lib/workspace.functions";
 
@@ -79,6 +79,35 @@ function WorkspacePage() {
   }, [cases, activeUser, q]);
 
   const activeTeammate = teammates.find((t: any) => t.user_id === activeUser);
+
+  // ── Workspace analytics ──────────────────────────────────────────────
+  const analytics = useMemo(() => {
+    const total = cases.length;
+    const byStatus: Record<string, number> = {};
+    const byPriority: Record<string, number> = {};
+    for (const c of cases as any[]) {
+      byStatus[c.status] = (byStatus[c.status] ?? 0) + 1;
+      byPriority[c.priority] = (byPriority[c.priority] ?? 0) + 1;
+    }
+    const won = byStatus["won"] ?? 0;
+    const lost = byStatus["lost"] ?? 0;
+    const closed = byStatus["closed"] ?? 0;
+    const open = byStatus["open"] ?? 0;
+    const pending = byStatus["pending"] ?? 0;
+    const active = open + pending;
+    const winRate = won + lost > 0 ? Math.round((won / (won + lost)) * 100) : null;
+    // Cases per teammate — top 5
+    const perUser: Record<string, number> = {};
+    for (const c of cases as any[]) for (const m of c.members) perUser[m.user_id] = (perUser[m.user_id] ?? 0) + 1;
+    const nameByUser: Record<string, string | null> = {};
+    for (const t of teammates as any[]) nameByUser[t.user_id] = t.full_name || t.email || null;
+    const leaderboard = Object.entries(perUser)
+      .map(([uid, n]) => ({ uid, n, name: nameByUser[uid] || uid.slice(0, 8) }))
+      .sort((a, b) => b.n - a.n)
+      .slice(0, 5);
+    const maxLB = leaderboard[0]?.n ?? 1;
+    return { total, active, closed, won, lost, byPriority, winRate, leaderboard, maxLB };
+  }, [cases, teammates]);
 
   if (loading) return <div className="grid min-h-[60vh] place-items-center"><Loader2 className="size-6 animate-spin text-gold" /></div>;
 
