@@ -39,6 +39,7 @@ type Mode = "current" | "bilingual";
 
 export function DocumentPreview({ kind, doc, onClose }: { kind: "quote" | "invoice"; doc: any; onClose: () => void }) {
   const { locale } = useI18n();
+  const { org } = useOrg();
   const items = (doc.items as any[]) ?? [];
   const [mode, setMode] = useState<Mode>("current");
 
