@@ -187,7 +187,7 @@ function CasesPage() {
                 <td className="px-5 py-4"><StatusBadge status={c.status} /></td>
                 <td className="px-5 py-4 text-end" onClick={(e) => e.stopPropagation()}>
                   <Button variant="ghost" size="icon" onClick={() => { setEditing(c); setEditOpen(true); }}><Pencil className="size-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => remove(c.id)}><Trash2 className="size-4 text-destructive" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => setPendingDelete(c)}><Trash2 className="size-4 text-destructive" /></Button>
                 </td>
               </tr>
             ))}</tbody>
