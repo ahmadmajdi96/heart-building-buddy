@@ -369,3 +369,57 @@ export const sendDebtSms = createServerFn({ method: "POST" })
     }
     return { results };
   });
+
+/* ============================ Reminder rules ============================ */
+
+const RuleInput = z.object({
+  id: z.string().uuid().optional(),
+  case_id: z.string().uuid(),
+  label: z.string().min(1),
+  offset_days: z.number().int(), // negative = before due, 0 = on due, positive = after due
+  kind: z.enum(["reminder_upcoming", "reminder_due", "reminder_overdue", "manual"]).default("reminder_upcoming"),
+  message_template: z.string().min(1),
+  active: z.boolean().default(true),
+});
+
+export const listReminderRules = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ case_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("debt_reminder_rules")
+      .select("*")
+      .eq("case_id", data.case_id)
+      .order("offset_days", { ascending: true });
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const saveReminderRule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => RuleInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const mem = await getCallerOrg(context);
+    if (data.id) {
+      const { id, ...rest } = data;
+      const { data: row, error } = await context.supabase
+        .from("debt_reminder_rules").update(rest).eq("id", id).select().maybeSingle();
+      if (error) throw new Error(error.message);
+      return row;
+    }
+    const { data: row, error } = await context.supabase
+      .from("debt_reminder_rules")
+      .insert({ ...data, org_id: mem.org_id, created_by: context.userId })
+      .select().maybeSingle();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+export const deleteReminderRule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("debt_reminder_rules").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
