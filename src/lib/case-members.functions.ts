@@ -21,11 +21,17 @@ export const listCaseMembers = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("case_members")
-      .select("id, user_id, role, created_at, profiles:user_id(full_name)")
+      .select("id, user_id, role, created_at")
       .eq("case_id", data.case_id)
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
-    return rows ?? [];
+    const ids = (rows ?? []).map((r: any) => r.user_id).filter(Boolean);
+    if (ids.length === 0) return rows ?? [];
+    const { data: profs } = await context.supabase
+      .from("profiles").select("id, full_name").in("id", ids);
+    const nameById: Record<string, string | null> = {};
+    for (const p of profs ?? []) nameById[p.id] = p.full_name;
+    return (rows ?? []).map((r: any) => ({ ...r, profiles: { full_name: nameById[r.user_id] ?? null } }));
   });
 
 export const addCaseMember = createServerFn({ method: "POST" })
