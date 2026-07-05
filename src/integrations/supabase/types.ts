@@ -737,6 +737,107 @@ export type Database = {
           },
         ]
       }
+      draft_invoices: {
+        Row: {
+          accepted_at: string | null
+          accepted_invoice_id: string | null
+          case_id: string | null
+          client_id: string | null
+          client_name: string
+          created_at: string
+          created_by: string
+          currency: string
+          due_date: string | null
+          id: string
+          issue_date: string
+          items: Json
+          notes: string | null
+          number: string | null
+          org_id: string
+          status: string
+          subtotal: number
+          tax_amount: number
+          tax_rate: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_invoice_id?: string | null
+          case_id?: string | null
+          client_id?: string | null
+          client_name: string
+          created_at?: string
+          created_by: string
+          currency?: string
+          due_date?: string | null
+          id?: string
+          issue_date?: string
+          items?: Json
+          notes?: string | null
+          number?: string | null
+          org_id: string
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_invoice_id?: string | null
+          case_id?: string | null
+          client_id?: string | null
+          client_name?: string
+          created_at?: string
+          created_by?: string
+          currency?: string
+          due_date?: string | null
+          id?: string
+          issue_date?: string
+          items?: Json
+          notes?: string | null
+          number?: string | null
+          org_id?: string
+          status?: string
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_invoices_accepted_invoice_id_fkey"
+            columns: ["accepted_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "tax_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draft_invoices_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draft_invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draft_invoices_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drafts: {
         Row: {
           case_id: string | null
