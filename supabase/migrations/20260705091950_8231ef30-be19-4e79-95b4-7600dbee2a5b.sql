@@ -1,0 +1,1 @@
+ALTER TABLE public.draft_invoices ADD COLUMN IF NOT EXISTS time_entry_ids uuid[] NOT NULL DEFAULT '{}';
