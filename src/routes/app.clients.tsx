@@ -151,8 +151,8 @@ function ClientsPage() {
             </thead>
             <tbody className="divide-y">
               {filtered.map((c) => (
-                <tr key={c.id} className="hover:bg-secondary/40 transition-colors">
-                  <td className="px-5 py-4 cursor-pointer" onClick={() => setDetailId(c.id)}>
+                <tr key={c.id} className="hover:bg-secondary/40 transition-colors cursor-pointer" onClick={() => navigate({ to: "/app/clients/$clientId", params: { clientId: c.id } })}>
+                  <td className="px-5 py-4">
                     <div className="font-medium flex items-center gap-2">
                       {c.type === "company" ? <Building className="size-4 text-muted-foreground" /> : <User className="size-4 text-muted-foreground" />}
                       {c.name}
@@ -165,7 +165,7 @@ function ClientsPage() {
                   <td className="px-5 py-4">{c._active_cases ?? 0}<span className="text-xs text-muted-foreground"> / {c._total_cases ?? 0}</span></td>
                   <td className="px-5 py-4 text-muted-foreground text-xs">{c._last_interaction ? new Date(c._last_interaction).toLocaleDateString() : "—"}</td>
                   <td className="px-5 py-4 text-muted-foreground">{c.email || "—"}</td>
-                  <td className="px-5 py-4 text-end">
+                  <td className="px-5 py-4 text-end" onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="size-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => setPendingDelete(c)}><Trash2 className="size-4 text-destructive" /></Button>
                   </td>
@@ -214,7 +214,18 @@ function ClientsPage() {
               <div><Label>{locale === "ar" ? "الرقم الضريبي" : "Tax ID / VAT"}</Label><Input value={editing?.tax_id ?? ""} onChange={(e) => setEditing({ ...editing!, tax_id: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>{locale === "ar" ? "البريد" : "Email"}</Label><Input type="email" value={editing?.email ?? ""} onChange={(e) => setEditing({ ...editing!, email: e.target.value })} /></div>
+              <div>
+                <Label>{locale === "ar" ? "البريد" : "Email"}</Label>
+                <Input
+                  type="email"
+                  value={editing?.email ?? ""}
+                  onChange={(e) => { setEditing({ ...editing!, email: e.target.value }); if (emailError) setEmailError(null); }}
+                  onBlur={(e) => setEmailError(validateEmail(e.target.value))}
+                  aria-invalid={!!emailError}
+                  className={emailError ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                {emailError && <p className="text-xs text-destructive mt-1">{emailError}</p>}
+              </div>
               <div><Label>{locale === "ar" ? "الهاتف" : "Phone"}</Label><Input value={editing?.phone ?? ""} onChange={(e) => setEditing({ ...editing!, phone: e.target.value })} /></div>
             </div>
             <div><Label>{locale === "ar" ? "العنوان" : "Address"}</Label><Input value={editing?.address ?? ""} onChange={(e) => setEditing({ ...editing!, address: e.target.value })} /></div>
