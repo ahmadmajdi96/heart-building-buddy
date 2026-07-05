@@ -12,11 +12,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Loader2, Trash2, FileText, Eye, X, Search, Send, XCircle, CheckCircle2 } from "lucide-react";
+import { Plus, Loader2, Trash2, FileText, Eye, X, Search, Send, XCircle, CheckCircle2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { DocumentHeader, DocumentPreview } from "@/components/financials/document-preview";
 import { useServerFn } from "@tanstack/react-start";
 import { sweepOverdueInvoices, setInvoiceStatus } from "@/lib/invoicing.functions";
+import { listDraftInvoices, deleteDraftInvoice, acceptDraftInvoice, rejectDraftInvoice } from "@/lib/draft-invoices.functions";
 
 export const Route = createFileRoute("/app/financials")({ component: FinancialsPage });
 
@@ -82,11 +83,13 @@ function FinancialsPage() {
           <TabsTrigger value="payments">{locale === "ar" ? "المدفوعات" : "Payments"}</TabsTrigger>
           <TabsTrigger value="schedules">{locale === "ar" ? "الجدولة" : "Schedules"}</TabsTrigger>
           <TabsTrigger value="quotes">{locale === "ar" ? "عروض الأسعار" : "Quotes"}</TabsTrigger>
+          <TabsTrigger value="drafts">{locale === "ar" ? "الفواتير" : "Invoices"}</TabsTrigger>
           <TabsTrigger value="invoices">{locale === "ar" ? "الفواتير الضريبية" : "Tax invoices"}</TabsTrigger>
         </TabsList>
         <TabsContent value="payments"><PaymentsTab /></TabsContent>
         <TabsContent value="schedules"><SchedulesTab /></TabsContent>
         <TabsContent value="quotes"><QuotesTab /></TabsContent>
+        <TabsContent value="drafts"><DraftInvoicesTab /></TabsContent>
         <TabsContent value="invoices"><InvoicesTab /></TabsContent>
       </Tabs>
     </div>
