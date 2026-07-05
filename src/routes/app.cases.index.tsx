@@ -8,10 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { listCases, saveCase, deleteCase } from "@/lib/cases.functions";
-import { listClients } from "@/lib/clients.functions";
-import { Plus, Loader2, Pencil, Trash2, Search } from "lucide-react";
+import { listClients, saveClient } from "@/lib/clients.functions";
+import { Plus, Loader2, Pencil, Trash2, Search, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/cases/")({ component: CasesPage });
@@ -27,6 +31,8 @@ function CasesPage() {
   const del = useServerFn(deleteCase);
   const listC = useServerFn(listClients);
 
+  const saveC = useServerFn(saveClient);
+
   const [cases, setCases] = useState<CaseRow[]>([]);
   const [clients, setClients] = useState<ClientRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,6 +40,11 @@ function CasesPage() {
   const [status, setStatus] = useState<string>("all");
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<CaseRow> | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<CaseRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [quickClientOpen, setQuickClientOpen] = useState(false);
+  const [quickClient, setQuickClient] = useState<{ name: string; email: string; phone: string; company: string; type: "individual" | "company" }>({ name: "", email: "", phone: "", company: "", type: "individual" });
+  const [quickBusy, setQuickBusy] = useState(false);
 
   async function refresh() {
     setLoading(true);
@@ -54,7 +65,8 @@ function CasesPage() {
   }), [cases, q, status]);
 
   async function submit() {
-    if (!editing?.title) { toast.error(locale === "ar" ? "العنوان مطلوب" : "Title required"); return; }
+    if (!editing?.title) { toast.error(locale === "ar" ? "العنوان مطلوب" : "Title is required"); return; }
+    const isNew = !editing.id;
     try {
       await save({ data: {
         id: editing.id, title: editing.title!, case_number: editing.case_number ?? undefined,
@@ -67,13 +79,54 @@ function CasesPage() {
         opposing_counsel: editing.opposing_counsel ?? undefined,
       }});
       setEditOpen(false); setEditing(null); refresh();
-      toast.success(locale === "ar" ? "تم الحفظ" : "Saved");
-    } catch (e) { toast.error((e as Error).message); }
+      toast.success(
+        isNew
+          ? (locale === "ar" ? "تم إضافة القضية بنجاح" : "Case added successfully")
+          : (locale === "ar" ? "تم حفظ التغييرات بنجاح" : "Case saved successfully"),
+      );
+    } catch (e) {
+      toast.error(
+        (isNew
+          ? (locale === "ar" ? "فشل إضافة القضية: " : "Failed to add case: ")
+          : (locale === "ar" ? "فشل الحفظ: " : "Save failed: ")) + (e as Error).message,
+      );
+    }
   }
 
-  async function remove(id: string) {
-    if (!confirm(locale === "ar" ? "حذف هذه القضية؟" : "Delete this case?")) return;
-    try { await del({ data: { id } }); refresh(); } catch (e) { toast.error((e as Error).message); }
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      await del({ data: { id: pendingDelete.id } });
+      toast.success(locale === "ar" ? "تم حذف القضية بنجاح" : "Case deleted successfully");
+      setPendingDelete(null);
+      refresh();
+    } catch (e) {
+      toast.error((locale === "ar" ? "فشل الحذف: " : "Delete failed: ") + (e as Error).message);
+    } finally { setDeleting(false); }
+  }
+
+  async function submitQuickClient() {
+    if (!quickClient.name.trim()) { toast.error(locale === "ar" ? "الاسم مطلوب" : "Name is required"); return; }
+    setQuickBusy(true);
+    try {
+      const row: any = await saveC({ data: {
+        name: quickClient.name.trim(),
+        email: quickClient.email,
+        phone: quickClient.phone,
+        company: quickClient.company,
+        type: quickClient.type,
+        status: "active",
+      }});
+      const newClient = { id: row.id as string, name: row.name as string };
+      setClients((prev) => [newClient, ...prev]);
+      setEditing((prev) => ({ ...(prev ?? {}), client_id: newClient.id }));
+      setQuickClient({ name: "", email: "", phone: "", company: "", type: "individual" });
+      setQuickClientOpen(false);
+      toast.success(locale === "ar" ? "تم إضافة الموكل بنجاح" : "Client added successfully");
+    } catch (e) {
+      toast.error((locale === "ar" ? "فشل إضافة الموكل: " : "Failed to add client: ") + (e as Error).message);
+    } finally { setQuickBusy(false); }
   }
 
   const STATUS_LABELS: Record<string, { ar: string; en: string }> = {
@@ -134,7 +187,7 @@ function CasesPage() {
                 <td className="px-5 py-4"><StatusBadge status={c.status} /></td>
                 <td className="px-5 py-4 text-end" onClick={(e) => e.stopPropagation()}>
                   <Button variant="ghost" size="icon" onClick={() => { setEditing(c); setEditOpen(true); }}><Pencil className="size-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => remove(c.id)}><Trash2 className="size-4 text-destructive" /></Button>
+                  <Button variant="ghost" size="icon" onClick={() => setPendingDelete(c)}><Trash2 className="size-4 text-destructive" /></Button>
                 </td>
               </tr>
             ))}</tbody>
@@ -160,6 +213,16 @@ function CasesPage() {
                 <Select value={editing?.client_id ?? "none"} onValueChange={(v) => setEditing({ ...editing!, client_id: v === "none" ? null : v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
+                    <div className="p-1 border-b mb-1">
+                      <button
+                        type="button"
+                        onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setQuickClientOpen(true); }}
+                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-gold hover:bg-gold/10 focus:bg-gold/10 outline-none"
+                      >
+                        <UserPlus className="size-4" />
+                        {locale === "ar" ? "إضافة موكل جديد" : "Add new client"}
+                      </button>
+                    </div>
                     <SelectItem value="none">{locale === "ar" ? "بدون" : "None"}</SelectItem>
                     {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
@@ -190,6 +253,62 @@ function CasesPage() {
           <DialogFooter><Button variant="ghost" onClick={() => setEditOpen(false)}>{locale === "ar" ? "إلغاء" : "Cancel"}</Button><Button variant="gold" onClick={submit}>{locale === "ar" ? "حفظ" : "Save"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={quickClientOpen} onOpenChange={setQuickClientOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{locale === "ar" ? "موكل جديد" : "New client"}</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5"><Label>{locale === "ar" ? "النوع" : "Type"}</Label>
+                <Select value={quickClient.type} onValueChange={(v) => setQuickClient({ ...quickClient, type: v as any })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="individual">{locale === "ar" ? "فرد" : "Individual"}</SelectItem>
+                    <SelectItem value="company">{locale === "ar" ? "شركة" : "Company"}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5"><Label>{locale === "ar" ? "الشركة" : "Company"}</Label><Input value={quickClient.company} onChange={(e) => setQuickClient({ ...quickClient, company: e.target.value })} /></div>
+            </div>
+            <div className="space-y-1.5"><Label>{locale === "ar" ? "الاسم *" : "Name *"}</Label><Input value={quickClient.name} onChange={(e) => setQuickClient({ ...quickClient, name: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5"><Label>{locale === "ar" ? "البريد" : "Email"}</Label><Input type="email" value={quickClient.email} onChange={(e) => setQuickClient({ ...quickClient, email: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>{locale === "ar" ? "الهاتف" : "Phone"}</Label><Input value={quickClient.phone} onChange={(e) => setQuickClient({ ...quickClient, phone: e.target.value })} /></div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setQuickClientOpen(false)} disabled={quickBusy}>{locale === "ar" ? "إلغاء" : "Cancel"}</Button>
+            <Button variant="gold" onClick={submitQuickClient} disabled={quickBusy}>
+              {quickBusy && <Loader2 className="size-4 animate-spin me-1.5" />}
+              {locale === "ar" ? "إضافة الموكل" : "Add client"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => { if (!o) setPendingDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{locale === "ar" ? "حذف القضية؟" : "Delete case?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {locale === "ar"
+                ? `سيتم حذف "${pendingDelete?.title ?? ""}" وجميع بياناتها المرتبطة نهائياً. لا يمكن التراجع.`
+                : `"${pendingDelete?.title ?? ""}" and all its related data will be permanently deleted. This cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>{locale === "ar" ? "إلغاء" : "Cancel"}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmDelete(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting && <Loader2 className="size-4 animate-spin me-1.5" />}
+              {locale === "ar" ? "حذف" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

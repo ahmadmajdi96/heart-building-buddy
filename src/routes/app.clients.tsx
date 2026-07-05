@@ -8,6 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { listClients, saveClient, deleteClient, getClient, addInteraction, deleteInteraction, conflictCheck } from "@/lib/clients.functions";
 import { Plus, Search, Loader2, Pencil, Trash2, Phone, Mail, Building, User, MessageSquare, ShieldAlert, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
@@ -36,6 +40,8 @@ function ClientsPage() {
   const [editing, setEditing] = useState<Partial<Client> | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [conflictOpen, setConflictOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Client | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function refresh() {
     setLoading(true);
@@ -54,6 +60,7 @@ function ClientsPage() {
 
   async function submit() {
     if (!editing?.name) { toast.error(locale === "ar" ? "الاسم مطلوب" : "Name is required"); return; }
+    const isNew = !editing.id;
     try {
       await save({ data: {
         id: editing.id, name: editing.name!, email: editing.email ?? "",
@@ -65,13 +72,31 @@ function ClientsPage() {
         status: (editing.status as any) ?? "active",
       }});
       setEditOpen(false); setEditing(null); refresh();
-      toast.success(locale === "ar" ? "تم الحفظ" : "Saved");
-    } catch (e) { toast.error((e as Error).message); }
+      toast.success(
+        isNew
+          ? (locale === "ar" ? "تم إضافة الموكل بنجاح" : "Client added successfully")
+          : (locale === "ar" ? "تم حفظ التغييرات بنجاح" : "Client saved successfully"),
+      );
+    } catch (e) {
+      toast.error(
+        (isNew
+          ? (locale === "ar" ? "فشل إضافة الموكل: " : "Failed to add client: ")
+          : (locale === "ar" ? "فشل الحفظ: " : "Save failed: ")) + (e as Error).message,
+      );
+    }
   }
 
-  async function remove(id: string) {
-    if (!confirm(locale === "ar" ? "حذف هذا الموكل؟" : "Delete this client?")) return;
-    try { await del({ data: { id } }); refresh(); } catch (e) { toast.error((e as Error).message); }
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      await del({ data: { id: pendingDelete.id } });
+      toast.success(locale === "ar" ? "تم حذف الموكل بنجاح" : "Client deleted successfully");
+      setPendingDelete(null);
+      refresh();
+    } catch (e) {
+      toast.error((locale === "ar" ? "فشل الحذف: " : "Delete failed: ") + (e as Error).message);
+    } finally { setDeleting(false); }
   }
 
   return (
@@ -126,7 +151,7 @@ function ClientsPage() {
                   <td className="px-5 py-4 text-muted-foreground">{c.email || "—"}</td>
                   <td className="px-5 py-4 text-end">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="size-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => remove(c.id)}><Trash2 className="size-4 text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setPendingDelete(c)}><Trash2 className="size-4 text-destructive" /></Button>
                   </td>
                 </tr>
               ))}
@@ -185,6 +210,30 @@ function ClientsPage() {
 
       <ConflictCheckDialog open={conflictOpen} onClose={() => setConflictOpen(false)} />
       <ClientDetailSheet id={detailId} onClose={() => setDetailId(null)} />
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => { if (!o) setPendingDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{locale === "ar" ? "حذف الموكل؟" : "Delete client?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {locale === "ar"
+                ? `سيتم حذف "${pendingDelete?.name ?? ""}" وقد يؤثر ذلك على القضايا المرتبطة. لا يمكن التراجع.`
+                : `"${pendingDelete?.name ?? ""}" will be permanently deleted. This may affect linked matters and cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>{locale === "ar" ? "إلغاء" : "Cancel"}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmDelete(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting && <Loader2 className="size-4 animate-spin me-1.5" />}
+              {locale === "ar" ? "حذف" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

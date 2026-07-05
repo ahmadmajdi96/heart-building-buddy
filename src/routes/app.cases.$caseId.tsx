@@ -111,6 +111,7 @@ function OverviewTab({ data }: { data: NonNullable<Awaited<ReturnType<typeof get
       <div className="card-elev rounded-xl border bg-card p-5 md:col-span-2">
         <h3 className="font-serif text-lg mb-3">{locale === "ar" ? "تفاصيل القضية" : "Case details"}</h3>
         <Row label={locale === "ar" ? "الرقم" : "Reference"} value={c.case_number} />
+        <Row label={locale === "ar" ? "الموكل" : "Client"} value={c.clients?.name} />
         <Row label={locale === "ar" ? "المحكمة" : "Court"} value={c.court} />
         <Row label={locale === "ar" ? "القاعة" : "Court room"} value={c.court_room} />
         <Row label={locale === "ar" ? "الاختصاص" : "Jurisdiction"} value={c.jurisdiction} />
@@ -119,7 +120,6 @@ function OverviewTab({ data }: { data: NonNullable<Awaited<ReturnType<typeof get
         <Row label={locale === "ar" ? "محامي الخصم" : "Opposing counsel"} value={c.opposing_counsel} />
         <Row label={locale === "ar" ? "الأولوية" : "Priority"} value={c.priority} />
         <Row label={locale === "ar" ? "تاريخ الفتح" : "Opened"} value={c.opened_at ? new Date(c.opened_at).toLocaleDateString() : null} />
-        <Row label={locale === "ar" ? "الموكل" : "Client"} value={c.clients?.name} />
         <Row label={locale === "ar" ? "الوصف" : "Description"} value={c.description ? <p className="whitespace-pre-wrap">{c.description}</p> : null} />
       </div>
       <div className="card-elev rounded-xl border bg-card p-5">

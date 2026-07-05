@@ -6,12 +6,17 @@ import { PageHeader } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { listDocuments, createDocument, getSignedDownloadUrl, deleteDocument } from "@/lib/documents.functions";
 import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { extractTextFromFile, validateDocFile, ALLOWED_DOC_EXT, MAX_DOC_BYTES } from "@/lib/extract-text";
-import { FileText, Upload, Download, Trash2, Loader2, Search, BookMarked, ExternalLink } from "lucide-react";
+import { FileText, Upload, Download, Trash2, Loader2, Search, BookMarked, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/documents")({ component: DocsPage });
@@ -41,6 +46,10 @@ function DocsPage() {
   const [q, setQ] = useState("");
   const [caseId, setCaseId] = useState<string>("none");
   const [clientId, setClientId] = useState<string>("none");
+  const [pendingDelete, setPendingDelete] = useState<Doc | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [preview, setPreview] = useState<{ url: string; name: string; mime: string | null } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   async function refresh() {
     setLoading(true);
@@ -65,7 +74,6 @@ function DocsPage() {
       const path = `${u.user.id}/${folder}/${Date.now()}-${file.name}`;
       const { error } = await supabase.storage.from("documents").upload(path, file);
       if (error) throw error;
-      // Extract text client-side for PDF / DOCX / text — used by AI drafting.
       const extracted = await extractTextFromFile(file);
       const cId = caseId === "none" ? null : caseId;
       const clId = clientId === "none" ? null : clientId;
@@ -76,10 +84,14 @@ function DocsPage() {
         case_id: cId, client_id: clId, is_template: isTemplate,
       }});
       toast.success(isTemplate
-        ? (locale === "ar" ? "تم الرفع كقالب" : "Uploaded as template")
-        : (locale === "ar" ? "تم الرفع" : "Uploaded"));
+        ? (locale === "ar" ? "تم رفع المستند كقالب بنجاح" : "Document uploaded as template")
+        : (locale === "ar" ? "تم رفع المستند بنجاح" : "Document uploaded successfully"));
       refresh();
-    } catch (e) { toast.error((e as Error).message); }
+    } catch (e) {
+      toast.error(locale === "ar"
+        ? `فشل رفع المستند: ${(e as Error).message}`
+        : `Upload failed: ${(e as Error).message}`);
+    }
     finally { setUploading(false); }
   }
 
@@ -87,17 +99,33 @@ function DocsPage() {
     try { const { url, name } = await signed({ data: { id } }); const a = document.createElement("a"); a.href = url; a.download = name; a.click(); }
     catch (e) { toast.error((e as Error).message); }
   }
-  async function openDoc(id: string) {
-    try { const { url } = await signed({ data: { id } }); window.open(url, "_blank", "noopener,noreferrer"); }
-    catch (e) { toast.error((e as Error).message); }
+  async function openPreview(d: Doc) {
+    setPreviewLoading(true);
+    try {
+      const { url, name, mime_type } = await signed({ data: { id: d.id } });
+      setPreview({ url, name, mime: mime_type ?? d.mime_type ?? null });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally { setPreviewLoading(false); }
   }
-  async function remove(id: string) {
-    if (!confirm(locale === "ar" ? "حذف المستند؟" : "Delete document?")) return;
-    try { await del({ data: { id } }); refresh(); } catch (e) { toast.error((e as Error).message); }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      await del({ data: { id: pendingDelete.id } });
+      toast.success(locale === "ar" ? "تم حذف المستند بنجاح" : "Document deleted successfully");
+      setPendingDelete(null);
+      refresh();
+    } catch (e) {
+      toast.error(locale === "ar"
+        ? `فشل حذف المستند: ${(e as Error).message}`
+        : `Delete failed: ${(e as Error).message}`);
+    } finally { setDeleting(false); }
   }
 
   const filtered = docs.filter((d) => !q || d.name.toLowerCase().includes(q.toLowerCase()));
-  const accept = "." + ALLOWED_DOC_EXT.join(",.");
+  const accept = ".pdf,.doc,.docx,.csv,.jpg,.jpeg";
 
   return (
     <div className="space-y-6">
@@ -110,8 +138,8 @@ function DocsPage() {
         <div className="text-sm font-semibold">{locale === "ar" ? "رفع مستند جديد" : "Upload a new document"}</div>
         <p className="text-xs text-muted-foreground">
           {locale === "ar"
-            ? "ملاحظة: المستند المُحمَّل بدون قضية أو موكل سيُعتبر قالبًا متاحًا في الصياغة الذكية."
-            : "Tip: a document uploaded without a case AND client will be saved as a template available in AI Drafting."}
+            ? "الأنواع المسموح بها فقط: PDF, Word (DOC/DOCX), CSV, JPG."
+            : "Only these types are allowed: PDF, Word (DOC/DOCX), CSV, JPG."}
         </p>
         <div className="grid gap-3 md:grid-cols-3">
           <Select value={caseId} onValueChange={setCaseId}>
@@ -162,15 +190,74 @@ function DocsPage() {
                 </div>
                 <div className="text-[11px] text-muted-foreground">{new Date(d.created_at).toLocaleDateString()}</div>
               </div>
-              <div className="flex flex-col gap-1">
-                <Button variant="ghost" size="icon" onClick={() => openDoc(d.id)} title={locale === "ar" ? "فتح" : "Open"}><ExternalLink className="size-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => download(d.id)}><Download className="size-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => remove(d.id)}><Trash2 className="size-4 text-destructive" /></Button>
+              <div className={`flex flex-col gap-1 ${d.is_template ? "mt-7" : ""}`}>
+                <Button variant="ghost" size="icon" onClick={() => openPreview(d)} title={locale === "ar" ? "عرض" : "Preview"} disabled={previewLoading}><Eye className="size-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => download(d.id)} title={locale === "ar" ? "تنزيل" : "Download"}><Download className="size-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => setPendingDelete(d)} title={locale === "ar" ? "حذف" : "Delete"}><Trash2 className="size-4 text-destructive" /></Button>
               </div>
             </div>
           ))}
         </div>}
       </div>
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => { if (!o) setPendingDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{locale === "ar" ? "حذف المستند؟" : "Delete document?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {locale === "ar"
+                ? `سيتم حذف "${pendingDelete?.name ?? ""}" نهائياً. لا يمكن التراجع عن هذا الإجراء.`
+                : `"${pendingDelete?.name ?? ""}" will be permanently deleted. This cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>{locale === "ar" ? "إلغاء" : "Cancel"}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmDelete(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting && <Loader2 className="size-4 animate-spin me-1.5" />}
+              {locale === "ar" ? "حذف" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={!!preview} onOpenChange={(o) => { if (!o) setPreview(null); }}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="truncate pe-6">{preview?.name}</DialogTitle>
+          </DialogHeader>
+          {preview && <DocumentPreviewBody url={preview.url} name={preview.name} mime={preview.mime} locale={locale} />}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function DocumentPreviewBody({ url, name, mime, locale }: { url: string; name: string; mime: string | null; locale: string }) {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  const isImage = (mime ?? "").startsWith("image/") || ["jpg", "jpeg", "png", "gif", "webp"].includes(ext);
+  const isPdf = mime === "application/pdf" || ext === "pdf";
+  if (isImage) {
+    return (
+      <div className="grid place-items-center bg-muted/30 rounded-md overflow-hidden">
+        <img src={url} alt={name} className="max-h-[75vh] w-auto" />
+      </div>
+    );
+  }
+  if (isPdf) {
+    return <iframe src={url} title={name} className="w-full h-[75vh] rounded-md border bg-muted/20" />;
+  }
+  return (
+    <div className="p-6 text-center text-sm text-muted-foreground space-y-3">
+      <p>{locale === "ar"
+        ? "لا يمكن عرض هذا النوع من الملفات في المتصفح. يمكنك تنزيله لعرضه."
+        : "This file type can't be previewed in the browser. Download it to view."}</p>
+      <a href={url} download={name} className="inline-flex items-center gap-1.5 text-gold hover:underline">
+        <Download className="size-4" />{locale === "ar" ? "تنزيل الملف" : "Download file"}
+      </a>
     </div>
   );
 }
@@ -183,3 +270,4 @@ function formatBytes(n: number | null) {
 }
 
 void MAX_DOC_BYTES;
+void ALLOWED_DOC_EXT;
