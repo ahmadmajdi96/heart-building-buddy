@@ -174,14 +174,14 @@ function PayersTab({ caseId, caseData, payers, assignees, ar }: any) {
             <Dialog open={openSms} onOpenChange={setOpenSms}>
               <DialogTrigger asChild><Button size="sm" variant="outline"><MessageSquare className="size-4" />{ar ? "إرسال SMS" : "Send SMS"} ({selected.length})</Button></DialogTrigger>
               <SendSmsDialog caseId={caseId} caseData={caseData} payerIds={selected} assigneeUserIds={[]}
-                onSubmit={(v) => send.mutate(v)} pending={send.isPending} ar={ar} />
+                onSubmit={(v: any) => send.mutate(v)} pending={send.isPending} ar={ar} />
             </Dialog>
           )}
           <Dialog open={openAdd} onOpenChange={setOpenAdd}>
             <DialogTrigger asChild>
               <Button size="sm" variant="gold" disabled={payers.length >= 25}><Plus className="size-4" />{ar ? "إضافة دافع" : "Add payer"}</Button>
             </DialogTrigger>
-            <PayerDialog caseId={caseId} clients={clients ?? []} onSubmit={(v) => save.mutate(v)} pending={save.isPending} ar={ar} />
+            <PayerDialog caseId={caseId} clients={clients ?? []} onSubmit={(v: any) => save.mutate(v)} pending={save.isPending} ar={ar} />
           </Dialog>
         </div>
       </div>
@@ -316,12 +316,12 @@ function TeamTab({ caseId, assignees, ar }: any) {
             <Dialog open={openSms} onOpenChange={setOpenSms}>
               <DialogTrigger asChild><Button size="sm" variant="outline"><MessageSquare className="size-4" />{ar ? "إرسال إشعار SMS" : "Notify by SMS"}</Button></DialogTrigger>
               <SendSmsDialog caseId={caseId} caseData={{ title: "" }} payerIds={[]} assigneeUserIds={selected}
-                onSubmit={(v) => send.mutate(v)} pending={send.isPending} ar={ar} defaultKind="assignment" />
+                onSubmit={(v: any) => send.mutate(v)} pending={send.isPending} ar={ar} defaultKind="assignment" />
             </Dialog>
           )}
           <Dialog open={openAdd} onOpenChange={setOpenAdd}>
             <DialogTrigger asChild><Button size="sm" variant="gold"><Plus className="size-4" />{ar ? "تعيين عضو" : "Assign member"}</Button></DialogTrigger>
-            <AssignDialog caseId={caseId} members={availableMembers} onSubmit={(v) => add.mutate(v)} pending={add.isPending} ar={ar} />
+            <AssignDialog caseId={caseId} members={availableMembers} onSubmit={(v: any) => add.mutate(v)} pending={add.isPending} ar={ar} />
           </Dialog>
         </div>
       </div>
@@ -415,7 +415,7 @@ function PaymentsTab({ caseId, caseData, payers, payments, ar }: any) {
         <div className="text-sm text-muted-foreground">{ar ? "المدفوعات المُستلمة (المُحوَّل + رسوم الخدمة)" : "Received payments (forwarded + service fee)"}</div>
         <Dialog open={openAdd} onOpenChange={setOpenAdd}>
           <DialogTrigger asChild><Button size="sm" variant="gold"><Plus className="size-4" />{ar ? "تسجيل دفعة" : "Record payment"}</Button></DialogTrigger>
-          <PaymentDialog caseId={caseId} caseData={caseData} payers={payers} onSubmit={(v) => record.mutate(v)} pending={record.isPending} ar={ar} />
+          <PaymentDialog caseId={caseId} caseData={caseData} payers={payers} onSubmit={(v: any) => record.mutate(v)} pending={record.isPending} ar={ar} />
         </Dialog>
       </div>
       {payments.length === 0 ? (

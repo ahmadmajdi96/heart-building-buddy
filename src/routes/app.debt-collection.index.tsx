@@ -77,7 +77,7 @@ function DebtCollectionListPage() {
             <DialogTrigger asChild>
               <Button variant="gold"><Plus className="size-4" />{ar ? "قضية جديدة" : "New case"}</Button>
             </DialogTrigger>
-            <NewCaseDialog clients={clients ?? []} onSubmit={(v) => create.mutate(v)} pending={create.isPending} ar={ar} />
+            <NewCaseDialog clients={clients ?? []} onSubmit={(v: any) => create.mutate(v)} pending={create.isPending} ar={ar} />
           </Dialog>
         }
       />
