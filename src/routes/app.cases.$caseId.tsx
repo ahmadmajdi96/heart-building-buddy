@@ -15,6 +15,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { getCase, addCaseEvent, deleteCaseEvent } from "@/lib/cases.functions";
+import { saveDraftInvoice } from "@/lib/draft-invoices.functions";
 import { createDocument, getSignedDownloadUrl, deleteDocument } from "@/lib/documents.functions";
 import { saveAppointment } from "@/lib/appointments.functions";
 import { listParties, saveParty, deleteParty, listNotes, addNote, deleteNote } from "@/lib/case-extras.functions";
@@ -83,7 +84,7 @@ function CaseProfilePage() {
           <DocumentsTab caseId={caseId} docs={data.documents} onChange={refresh} />
         </TabsContent>
         <TabsContent value="invoices" className="mt-6">
-          <InvoicesTab data={data} />
+          <InvoicesTab data={data} onChange={refresh} />
         </TabsContent>
         <TabsContent value="parties" className="mt-6">
           <PartiesTab caseId={caseId} />
@@ -144,40 +145,155 @@ function OverviewTab({ data }: { data: NonNullable<Awaited<ReturnType<typeof get
   );
 }
 
-function InvoicesTab({ data }: { data: NonNullable<Awaited<ReturnType<typeof getCase>>> }) {
+function InvoicesTab({ data, onChange }: { data: NonNullable<Awaited<ReturnType<typeof getCase>>>; onChange: () => void }) {
   const { locale } = useI18n();
+  const ar = locale === "ar";
   const invoices = data.invoices ?? [];
-  if (invoices.length === 0) {
-    return <div className="card-elev rounded-xl border bg-card p-12 text-center text-sm text-muted-foreground">
-      {locale === "ar" ? "لا توجد فواتير لهذه القضية بعد. أنشئ واحدة من صفحة الماليات أو من تتبع الوقت." : "No invoices yet for this matter. Create one from Financials or from Time tracking."}
-    </div>;
+  const c = data.case as any;
+  const save = useServerFn(saveDraftInvoice);
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  type Line = { description: string; quantity: number; unit_price: number };
+  const [form, setForm] = useState<{ due_date: string; tax_rate: string; notes: string; items: Line[] }>({
+    due_date: "",
+    tax_rate: "",
+    notes: "",
+    items: [{ description: "", quantity: 1, unit_price: 0 }],
+  });
+
+  function update(i: number, patch: Partial<Line>) {
+    setForm((f) => ({ ...f, items: f.items.map((it, idx) => (idx === i ? { ...it, ...patch } : it)) }));
   }
+  const subtotal = form.items.reduce((s, it) => s + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0);
+  const taxAmt = subtotal * (Number(form.tax_rate) || 0) / 100;
+  const total = subtotal + taxAmt;
+
+  async function submit() {
+    if (!c.clients?.name) {
+      toast.error(ar ? "أضف موكلاً للقضية أولاً" : "Link this case to a client first");
+      return;
+    }
+    if (form.items.every((it) => !it.description && !it.quantity && !it.unit_price)) {
+      toast.error(ar ? "أضف بنداً واحداً على الأقل" : "Add at least one line item");
+      return;
+    }
+    setSaving(true);
+    try {
+      await save({ data: {
+        client_name: c.clients.name,
+        client_id: c.client_id || null,
+        case_id: c.id,
+        due_date: form.due_date || null,
+        tax_rate: form.tax_rate ? Number(form.tax_rate) : 0,
+        items: form.items.map((it) => ({
+          description: it.description || "",
+          quantity: Number(it.quantity) || 0,
+          unit_price: Number(it.unit_price) || 0,
+        })),
+        notes: form.notes || undefined,
+      }});
+      toast.success(ar ? "تم إنشاء مسودة الفاتورة" : "Draft invoice created");
+      setOpen(false);
+      setForm({ due_date: "", tax_rate: "", notes: "", items: [{ description: "", quantity: 1, unit_price: 0 }] });
+      onChange();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setSaving(false); }
+  }
+
   return (
-    <div className="card-elev rounded-xl border bg-card overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
-          <tr>
-            <th className="px-5 py-3 text-start font-medium">#</th>
-            <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "الإصدار" : "Issued"}</th>
-            <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "الاستحقاق" : "Due"}</th>
-            <th className="px-5 py-3 text-end font-medium">{locale === "ar" ? "الإجمالي" : "Total"}</th>
-            <th className="px-5 py-3 text-end font-medium">{locale === "ar" ? "المدفوع" : "Paid"}</th>
-            <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "الحالة" : "Status"}</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {invoices.map((iv: any) => (
-            <tr key={iv.id} className="hover:bg-secondary/40">
-              <td className="px-5 py-3 font-mono text-xs">{iv.number}</td>
-              <td className="px-5 py-3">{iv.issue_date}</td>
-              <td className={`px-5 py-3 ${iv.status === "overdue" ? "text-destructive font-semibold" : "text-muted-foreground"}`}>{iv.due_date || "—"}</td>
-              <td className="px-5 py-3 text-end font-mono">{Number(iv.total).toFixed(2)} {iv.currency}</td>
-              <td className="px-5 py-3 text-end font-mono">{Number(iv.amount_paid).toFixed(2)} {iv.currency}</td>
-              <td className="px-5 py-3"><StatusBadge status={iv.status} /></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          {ar ? "المسودات تُقبل من صفحة الماليات لتصبح فواتير ضريبية." : "Drafts are accepted from Financials to become tax invoices."}
+        </p>
+        <Button size="sm" variant="gold" className="gap-1.5" onClick={() => setOpen(true)}>
+          <Plus className="size-4" />{ar ? "مسودة فاتورة" : "New draft invoice"}
+        </Button>
+      </div>
+
+      {invoices.length === 0 ? (
+        <div className="card-elev rounded-xl border bg-card p-12 text-center text-sm text-muted-foreground">
+          {ar ? "لا توجد فواتير لهذه القضية بعد." : "No invoices for this matter yet."}
+        </div>
+      ) : (
+        <div className="card-elev rounded-xl border bg-card overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="px-5 py-3 text-start font-medium">#</th>
+                <th className="px-5 py-3 text-start font-medium">{ar ? "الإصدار" : "Issued"}</th>
+                <th className="px-5 py-3 text-start font-medium">{ar ? "الاستحقاق" : "Due"}</th>
+                <th className="px-5 py-3 text-end font-medium">{ar ? "الإجمالي" : "Total"}</th>
+                <th className="px-5 py-3 text-end font-medium">{ar ? "المدفوع" : "Paid"}</th>
+                <th className="px-5 py-3 text-start font-medium">{ar ? "الحالة" : "Status"}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {invoices.map((iv: any) => (
+                <tr key={iv.id} className="hover:bg-secondary/40">
+                  <td className="px-5 py-3 font-mono text-xs">{iv.number}</td>
+                  <td className="px-5 py-3">{iv.issue_date}</td>
+                  <td className={`px-5 py-3 ${iv.status === "overdue" ? "text-destructive font-semibold" : "text-muted-foreground"}`}>{iv.due_date || "—"}</td>
+                  <td className="px-5 py-3 text-end font-mono">{Number(iv.total).toFixed(2)} {iv.currency}</td>
+                  <td className="px-5 py-3 text-end font-mono">{Number(iv.amount_paid).toFixed(2)} {iv.currency}</td>
+                  <td className="px-5 py-3"><StatusBadge status={iv.status} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{ar ? "مسودة فاتورة جديدة" : "New draft invoice"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3 max-h-[70vh] overflow-y-auto pr-1">
+            <div className="rounded-md border bg-secondary/40 p-3 text-sm">
+              <div className="text-xs text-muted-foreground">{ar ? "الموكل" : "Client"}</div>
+              <div className="font-medium">{c.clients?.name ?? (ar ? "غير مرتبط" : "Not linked")}</div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>{ar ? "الاستحقاق" : "Due date"}</Label><Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></div>
+              <div><Label>{ar ? "الضريبة %" : "Tax %"}</Label><Input type="number" step="0.01" value={form.tax_rate} onChange={(e) => setForm({ ...form, tax_rate: e.target.value })} /></div>
+            </div>
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <Label>{ar ? "البنود" : "Line items"}</Label>
+                <Button size="sm" variant="ghost" onClick={() => setForm({ ...form, items: [...form.items, { description: "", quantity: 1, unit_price: 0 }] })}>
+                  <Plus className="size-4" />
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {form.items.map((it, i) => (
+                  <div key={i} className="grid grid-cols-[1fr_90px_110px_36px] gap-2">
+                    <Input placeholder={ar ? "الوصف" : "Description"} value={it.description} onChange={(e) => update(i, { description: e.target.value })} />
+                    <Input type="number" step="0.01" placeholder={ar ? "الكمية" : "Qty"} value={it.quantity} onChange={(e) => update(i, { quantity: Number(e.target.value) })} />
+                    <Input type="number" step="0.01" placeholder={ar ? "السعر" : "Unit price"} value={it.unit_price} onChange={(e) => update(i, { unit_price: Number(e.target.value) })} />
+                    <Button size="icon" variant="ghost" onClick={() => setForm({ ...form, items: form.items.filter((_, idx) => idx !== i) })} disabled={form.items.length === 1}>
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-md border bg-muted/30 p-3 text-sm space-y-1">
+              <div className="flex justify-between"><span className="text-muted-foreground">{ar ? "المجموع الفرعي" : "Subtotal"}</span><span className="font-mono">{subtotal.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{ar ? "الضريبة" : "Tax"}</span><span className="font-mono">{taxAmt.toFixed(2)}</span></div>
+              <div className="flex justify-between border-t pt-1 font-semibold"><span>{ar ? "الإجمالي" : "Total"}</span><span className="font-mono">{total.toFixed(2)}</span></div>
+            </div>
+            <div><Label>{ar ? "ملاحظات" : "Notes"}</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" onClick={() => setOpen(false)}>{ar ? "إلغاء" : "Cancel"}</Button>
+            <Button variant="gold" disabled={saving} onClick={submit}>
+              {saving && <Loader2 className="size-4 animate-spin me-1.5" />}
+              {ar ? "إنشاء المسودة" : "Create draft"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

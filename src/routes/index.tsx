@@ -3,7 +3,7 @@ import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/brand-mark";
 import { LangToggle } from "@/components/lang-toggle";
-import { motion } from "framer-motion";
+import { motion } from "@/components/motion-lite";
 import logoSrc from "@/assets/mohkam-logo.jpeg";
 import {
   ArrowLeft,

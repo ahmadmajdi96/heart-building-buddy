@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Search, Users, Briefcase, ChevronRight, Crown } from "lucide-react";
+import { Loader2, Search, Users, Briefcase, ChevronRight, Crown, TrendingUp, Activity, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { getWorkspaceOverview } from "@/lib/workspace.functions";
 
@@ -80,6 +80,35 @@ function WorkspacePage() {
 
   const activeTeammate = teammates.find((t: any) => t.user_id === activeUser);
 
+  // ── Workspace analytics ──────────────────────────────────────────────
+  const analytics = useMemo(() => {
+    const total = cases.length;
+    const byStatus: Record<string, number> = {};
+    const byPriority: Record<string, number> = {};
+    for (const c of cases as any[]) {
+      byStatus[c.status] = (byStatus[c.status] ?? 0) + 1;
+      byPriority[c.priority] = (byPriority[c.priority] ?? 0) + 1;
+    }
+    const won = byStatus["won"] ?? 0;
+    const lost = byStatus["lost"] ?? 0;
+    const closed = byStatus["closed"] ?? 0;
+    const open = byStatus["open"] ?? 0;
+    const pending = byStatus["pending"] ?? 0;
+    const active = open + pending;
+    const winRate = won + lost > 0 ? Math.round((won / (won + lost)) * 100) : null;
+    // Cases per teammate — top 5
+    const perUser: Record<string, number> = {};
+    for (const c of cases as any[]) for (const m of c.members) perUser[m.user_id] = (perUser[m.user_id] ?? 0) + 1;
+    const nameByUser: Record<string, string | null> = {};
+    for (const t of teammates as any[]) nameByUser[t.user_id] = t.full_name || t.email || null;
+    const leaderboard = Object.entries(perUser)
+      .map(([uid, n]) => ({ uid, n, name: nameByUser[uid] || uid.slice(0, 8) }))
+      .sort((a, b) => b.n - a.n)
+      .slice(0, 5);
+    const maxLB = leaderboard[0]?.n ?? 1;
+    return { total, active, closed, won, lost, byPriority, winRate, leaderboard, maxLB };
+  }, [cases, teammates]);
+
   if (loading) return <div className="grid min-h-[60vh] place-items-center"><Loader2 className="size-6 animate-spin text-gold" /></div>;
 
   return (
@@ -90,6 +119,89 @@ function WorkspacePage() {
           ? "دليل الفريق والقضايا المشتركة ومواردها في مكان واحد."
           : "Team directory, shared cases and their resources — in one place."}
       />
+
+      {/* Analytics strip */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">{ar ? "قضايا" : "Total cases"}</div>
+              <div className="mt-1 text-2xl font-serif">{analytics.total}</div>
+            </div>
+            <div className="grid size-10 place-items-center rounded-full bg-gold/15 text-gold"><Briefcase className="size-4" /></div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">{ar ? "نشطة" : "Active"}</div>
+              <div className="mt-1 text-2xl font-serif">{analytics.active}</div>
+              <div className="text-xs text-muted-foreground">{ar ? "مفتوحة + قيد الانتظار" : "open + pending"}</div>
+            </div>
+            <div className="grid size-10 place-items-center rounded-full bg-emerald-500/15 text-emerald-700"><Activity className="size-4" /></div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">{ar ? "معدل الفوز" : "Win rate"}</div>
+              <div className="mt-1 text-2xl font-serif">{analytics.winRate == null ? "—" : `${analytics.winRate}%`}</div>
+              <div className="text-xs text-muted-foreground">{analytics.won} {ar ? "فوز" : "won"} · {analytics.lost} {ar ? "خسارة" : "lost"}</div>
+            </div>
+            <div className="grid size-10 place-items-center rounded-full bg-sky-500/15 text-sky-700"><TrendingUp className="size-4" /></div>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">{ar ? "مغلقة" : "Closed"}</div>
+              <div className="mt-1 text-2xl font-serif">{analytics.closed}</div>
+              <div className="text-xs text-muted-foreground">{teammates.length} {ar ? "زميل" : "teammates"}</div>
+            </div>
+            <div className="grid size-10 place-items-center rounded-full bg-slate-500/15 text-slate-700"><CheckCircle2 className="size-4" /></div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Case-load leaderboard + priority mix */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="p-5 lg:col-span-2">
+          <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <Users className="size-4 text-gold" />
+            {ar ? "عبء القضايا لكل زميل" : "Case load per teammate"}
+          </div>
+          {analytics.leaderboard.length === 0 ? (
+            <div className="py-6 text-center text-xs text-muted-foreground">{ar ? "لا توجد بيانات بعد" : "No data yet"}</div>
+          ) : (
+            <ul className="space-y-2.5">
+              {analytics.leaderboard.map((r) => (
+                <li key={r.uid} className="flex items-center gap-3">
+                  <div className="w-32 truncate text-sm">{r.name}</div>
+                  <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-secondary">
+                    <div className="absolute inset-y-0 left-0 bg-gold" style={{ width: `${(r.n / analytics.maxLB) * 100}%` }} />
+                  </div>
+                  <div className="w-8 text-end text-sm font-mono tabular-nums">{r.n}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card className="p-5">
+          <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <AlertCircle className="size-4 text-gold" />
+            {ar ? "الأولوية" : "Priority mix"}
+          </div>
+          <div className="space-y-2 text-sm">
+            {(["urgent", "high", "medium", "low"] as const).map((p) => (
+              <div key={p} className="flex items-center justify-between">
+                <span className="capitalize text-muted-foreground">{p}</span>
+                <span className="font-mono tabular-nums">{analytics.byPriority[p] ?? 0}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
 
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
         {/* Left: teammates directory */}

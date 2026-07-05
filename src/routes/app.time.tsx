@@ -77,7 +77,7 @@ function TimePage() {
   const [editing, setEditing] = useState<Partial<Entry> | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [invoiceOpen, setInvoiceOpen] = useState(false);
-  const [invoiceForm, setInvoiceForm] = useState({ client_name: "", client_id: "" as string | "", case_id: "" as string | "", tax_rate: "", due_date: "", notes: "" });
+  const [invoiceForm, setInvoiceForm] = useState({ client_name: "", client_id: "" as string | "", case_id: "" as string | "", tax_rate: "", default_rate: "", due_date: "", notes: "" });
   const [creatingInvoice, setCreatingInvoice] = useState(false);
   const [pendingSingle, setPendingSingle] = useState<Entry | null>(null);
   const [pendingBulk, setPendingBulk] = useState(false);
@@ -325,7 +325,7 @@ function TimePage() {
                   client_name: sample?.clients?.name ?? "",
                   client_id: sample?.client_id ?? "",
                   case_id: sample?.case_id ?? "",
-                  tax_rate: "", due_date: "", notes: "",
+                  tax_rate: "", default_rate: "", due_date: "", notes: "",
                 });
                 setInvoiceOpen(true);
               }}>
@@ -415,7 +415,10 @@ function TimePage() {
                 </Select>
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-1.5"><Label>{ar ? "السعر الافتراضي/س" : "Default rate / hr"}</Label>
+                <Input type="number" step="0.01" value={invoiceForm.default_rate} onChange={(e) => setInvoiceForm({ ...invoiceForm, default_rate: e.target.value })} placeholder={ar ? "يُستخدم إذا كان السجل بدون سعر" : "Used when entry has no rate"} />
+              </div>
               <div className="space-y-1.5"><Label>{ar ? "الضريبة %" : "Tax %"}</Label>
                 <Input type="number" step="0.01" value={invoiceForm.tax_rate} onChange={(e) => setInvoiceForm({ ...invoiceForm, tax_rate: e.target.value })} placeholder={ar ? "افتراضي المؤسسة" : "Org default"} />
               </div>
@@ -438,6 +441,7 @@ function TimePage() {
                   client_id: invoiceForm.client_id || null,
                   case_id: invoiceForm.case_id || null,
                   tax_rate: invoiceForm.tax_rate ? Number(invoiceForm.tax_rate) : null,
+                  default_rate: invoiceForm.default_rate ? Number(invoiceForm.default_rate) : null,
                   due_date: invoiceForm.due_date || null,
                   notes: invoiceForm.notes || undefined,
                 }});
