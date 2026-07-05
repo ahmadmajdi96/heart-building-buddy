@@ -113,6 +113,7 @@ function DebtCaseDetail() {
           <TabsTrigger value="team">{ar ? "الفريق" : "Team"} ({data.assignees.length})</TabsTrigger>
           <TabsTrigger value="payments">{ar ? "المدفوعات" : "Payments"} ({data.payments.length})</TabsTrigger>
           <TabsTrigger value="sms">{ar ? "الرسائل" : "SMS log"} ({data.sms.length})</TabsTrigger>
+          <TabsTrigger value="settings"><Settings2 className="size-4" />{ar ? "الإعدادات" : "Settings"}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="payers">
@@ -126,6 +127,9 @@ function DebtCaseDetail() {
         </TabsContent>
         <TabsContent value="sms">
           <SmsTab sms={data.sms} ar={ar} />
+        </TabsContent>
+        <TabsContent value="settings">
+          <SettingsTab caseId={id} caseData={c} ar={ar} />
         </TabsContent>
       </Tabs>
     </div>
