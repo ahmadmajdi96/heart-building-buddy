@@ -63,6 +63,15 @@ export const deleteTimeEntry = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const bulkDeleteTimeEntries = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ ids: z.array(z.string().uuid()).min(1) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("time_entries").delete().in("id", data.ids);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: data.ids.length };
+  });
+
 const TimerStart = z.object({
   case_id: z.string().uuid().nullable().optional(),
   client_id: z.string().uuid().nullable().optional(),
