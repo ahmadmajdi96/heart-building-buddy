@@ -144,6 +144,17 @@ export const acceptDraftInvoice = createServerFn({ method: "POST" })
       .update({ status: "accepted", accepted_invoice_id: inv!.id, accepted_at: new Date().toISOString() })
       .eq("id", data.id);
 
+    try {
+      await context.supabase.from("activity_log").insert([
+        { org_id: mem.org_id, actor_id: context.userId, entity_type: "draft_invoice", entity_id: data.id,
+          case_id: draft.case_id ?? null, action: "accepted",
+          summary: `Draft accepted for ${draft.client_name}` },
+        { org_id: mem.org_id, actor_id: context.userId, entity_type: "invoice", entity_id: inv!.id,
+          case_id: draft.case_id ?? null, action: "converted_from_draft",
+          summary: `Invoice ${(inv as any).number} converted from draft` },
+      ]);
+    } catch { /* non-fatal */ }
+
     return inv;
   });
 
