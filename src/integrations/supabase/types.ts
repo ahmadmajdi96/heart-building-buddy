@@ -1676,6 +1676,7 @@ export type Database = {
           org_id: string
           paid_at: string
           reference: string | null
+          schedule_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1692,6 +1693,7 @@ export type Database = {
           org_id: string
           paid_at?: string
           reference?: string | null
+          schedule_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1708,6 +1710,7 @@ export type Database = {
           org_id?: string
           paid_at?: string
           reference?: string | null
+          schedule_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1730,6 +1733,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "payment_schedules"
             referencedColumns: ["id"]
           },
         ]
@@ -2107,7 +2117,13 @@ export type Database = {
         | "rejected"
         | "expired"
         | "converted"
-      schedule_status: "upcoming" | "due" | "paid" | "overdue" | "cancelled"
+      schedule_status:
+        | "upcoming"
+        | "due"
+        | "paid"
+        | "overdue"
+        | "cancelled"
+        | "paused"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2265,7 +2281,14 @@ export const Constants = {
         "expired",
         "converted",
       ],
-      schedule_status: ["upcoming", "due", "paid", "overdue", "cancelled"],
+      schedule_status: [
+        "upcoming",
+        "due",
+        "paid",
+        "overdue",
+        "cancelled",
+        "paused",
+      ],
     },
   },
 } as const

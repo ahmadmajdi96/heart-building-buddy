@@ -258,6 +258,7 @@ export const markSchedulePaid = createServerFn({ method: "POST" })
         org_id: mem.org_id,
         created_by: context.userId,
         invoice_id: sch.invoice_id,
+        schedule_id: sch.id,
         client_id: sch.client_id,
         client_name: sch.client_name,
         amount: Number(sch.amount),
@@ -266,6 +267,7 @@ export const markSchedulePaid = createServerFn({ method: "POST" })
         paid_at: data.paid_at,
         currency: sch.currency,
       });
+
 
       const { data: inv } = await context.supabase
         .from("tax_invoices").select("total, amount_paid, status").eq("id", sch.invoice_id).maybeSingle();
@@ -341,4 +343,215 @@ export const deletePaymentPlan = createServerFn({ method: "POST" })
       .delete().eq("plan_id", data.plan_id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+/* -------- plan details -------- */
+export const getPaymentPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ plan_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const mem = await getCallerOrg(context);
+
+    const { data: schedules, error: sErr } = await context.supabase
+      .from("payment_schedules")
+      .select("*, tax_invoices(id,number,total,amount_paid,status,due_date,issue_date)")
+      .eq("org_id", mem.org_id)
+      .eq("plan_id", data.plan_id)
+      .order("installment_no", { ascending: true });
+    if (sErr) throw new Error(sErr.message);
+    if (!schedules || schedules.length === 0) throw new Error("Plan not found");
+
+    const anchor = schedules[0] as any;
+    const invoiceIds = Array.from(new Set(schedules.map((s: any) => s.invoice_id).filter(Boolean)));
+
+    const { data: invoices } = invoiceIds.length
+      ? await context.supabase.from("tax_invoices")
+          .select("id, number, total, amount_paid, status, issue_date, due_date, currency, client_name")
+          .in("id", invoiceIds)
+      : { data: [] as any[] };
+
+    // payment ledger: all payments recorded for this plan's schedules
+    const scheduleIds = schedules.map((s: any) => s.id);
+    const { data: paymentsRaw } = await context.supabase
+      .from("payments")
+      .select("id, amount, currency, method, reference, paid_at, created_at, invoice_id, schedule_id, tax_invoices(number)")
+      .in("schedule_id", scheduleIds)
+      .order("paid_at", { ascending: false });
+
+    // debt case + reminder rules
+    let debt_case: any = null;
+    let reminder_rules: any[] = [];
+    if (anchor.debt_case_id) {
+      const { data: dc } = await context.supabase.from("debt_cases")
+        .select("id, title, status, total_amount, currency, due_date")
+        .eq("id", anchor.debt_case_id).maybeSingle();
+      debt_case = dc ?? null;
+      const { data: rr } = await context.supabase.from("debt_reminder_rules")
+        .select("*").eq("case_id", anchor.debt_case_id).eq("active", true);
+      reminder_rules = rr ?? [];
+    }
+
+    // compute next scheduled reminder date across unpaid installments
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const upcomingReminders: { installment_no: number; due_date: string; rule_label: string; kind: string; fire_at: string }[] = [];
+    for (const s of schedules as any[]) {
+      if (s.status === "paid" || s.status === "cancelled") continue;
+      const due = new Date(s.due_date + "T00:00:00Z");
+      for (const rule of reminder_rules) {
+        if (rule.kind === "reminder_manual") continue;
+        const fire = new Date(due);
+        fire.setUTCDate(fire.getUTCDate() + Number(rule.offset_days || 0));
+        if (fire.getTime() >= today.getTime()) {
+          upcomingReminders.push({
+            installment_no: s.installment_no,
+            due_date: s.due_date,
+            rule_label: rule.label,
+            kind: rule.kind,
+            fire_at: fire.toISOString().slice(0, 10),
+          });
+        }
+      }
+    }
+    upcomingReminders.sort((a, b) => a.fire_at.localeCompare(b.fire_at));
+
+    const total = schedules.reduce((a: number, s: any) => a + Number(s.amount), 0);
+    const paid = schedules.filter((s: any) => s.status === "paid").reduce((a: number, s: any) => a + Number(s.amount), 0);
+    const remaining = Number((total - paid).toFixed(2));
+
+    // derive plan-level status from installments
+    const statuses = new Set(schedules.map((s: any) => s.status));
+    let plan_status: "active" | "paused" | "cancelled" | "completed" = "active";
+    if (statuses.size === 1 && statuses.has("paid")) plan_status = "completed";
+    else if (Array.from(statuses).every((s) => s === "paid" || s === "cancelled") && statuses.has("cancelled")) plan_status = "cancelled";
+    else if (statuses.has("paused")) plan_status = "paused";
+
+    return {
+      plan_id: data.plan_id,
+      client_id: anchor.client_id,
+      client_name: anchor.client_name,
+      currency: anchor.currency,
+      description: anchor.description,
+      debt_case,
+      schedules,
+      invoices: invoices ?? [],
+      payments: paymentsRaw ?? [],
+      reminder_rules,
+      upcoming_reminders: upcomingReminders,
+      next_reminder: upcomingReminders[0] ?? null,
+      total: Number(total.toFixed(2)),
+      paid: Number(paid.toFixed(2)),
+      remaining,
+      plan_status,
+    };
+  });
+
+/* -------- pause / resume / cancel -------- */
+async function logPlan(ctx: any, org_id: string, plan_id: string, action: string, summary: string) {
+  try {
+    await ctx.supabase.from("activity_log").insert({
+      org_id, actor_id: ctx.userId,
+      entity_type: "payment_plan", entity_id: plan_id, action, summary,
+    });
+  } catch { /* non-fatal */ }
+}
+
+export const pausePaymentPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ plan_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const mem = await getCallerOrg(context);
+    const { error } = await context.supabase.from("payment_schedules")
+      .update({ status: "paused" })
+      .eq("plan_id", data.plan_id)
+      .in("status", ["upcoming", "due", "overdue"]);
+    if (error) throw new Error(error.message);
+    await logPlan(context, mem.org_id, data.plan_id, "paused", "Payment plan paused");
+    return { ok: true };
+  });
+
+export const resumePaymentPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ plan_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const mem = await getCallerOrg(context);
+    const { error } = await context.supabase.from("payment_schedules")
+      .update({ status: "upcoming" })
+      .eq("plan_id", data.plan_id)
+      .eq("status", "paused");
+    if (error) throw new Error(error.message);
+    await logPlan(context, mem.org_id, data.plan_id, "resumed", "Payment plan resumed");
+    return { ok: true };
+  });
+
+export const cancelPaymentPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ plan_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const mem = await getCallerOrg(context);
+    const { error } = await context.supabase.from("payment_schedules")
+      .update({ status: "cancelled" })
+      .eq("plan_id", data.plan_id)
+      .in("status", ["upcoming", "due", "overdue", "paused"]);
+    if (error) throw new Error(error.message);
+    if (mem) {
+      // best-effort: mark linked debt case cancelled if no payments were made and plan is now fully cancelled
+      const { data: rows } = await context.supabase.from("payment_schedules")
+        .select("debt_case_id, status").eq("plan_id", data.plan_id);
+      const anyPaid = (rows ?? []).some((r: any) => r.status === "paid");
+      const dc = (rows ?? [])[0]?.debt_case_id;
+      if (dc && !anyPaid) {
+        await context.supabase.from("debt_cases").update({ status: "cancelled" }).eq("id", dc);
+      }
+    }
+    await logPlan(context, mem.org_id, data.plan_id, "cancelled", "Payment plan cancelled");
+    return { ok: true };
+  });
+
+/* -------- reschedule remaining installments -------- */
+function addMonthsIso(iso: string, months: number) {
+  const d = new Date(iso + "T00:00:00Z");
+  const day = d.getUTCDate();
+  d.setUTCMonth(d.getUTCMonth() + months);
+  if (d.getUTCDate() < day) d.setUTCDate(0);
+  return d.toISOString().slice(0, 10);
+}
+
+export const reschedulePaymentPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    plan_id: z.string().uuid(),
+    first_due_date: z.string().min(1),
+    gap_months: z.number().int().min(1).max(6).default(1),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const mem = await getCallerOrg(context);
+
+    const { data: schedules, error } = await context.supabase
+      .from("payment_schedules").select("id, installment_no, status, due_date, debt_case_id")
+      .eq("plan_id", data.plan_id)
+      .order("installment_no", { ascending: true });
+    if (error) throw new Error(error.message);
+    if (!schedules || schedules.length === 0) throw new Error("Plan not found");
+
+    const remaining = schedules.filter((s: any) => s.status !== "paid" && s.status !== "cancelled");
+    if (remaining.length === 0) throw new Error("Nothing to reschedule");
+
+    for (let i = 0; i < remaining.length; i++) {
+      const newDue = addMonthsIso(data.first_due_date, i * data.gap_months);
+      const status = remaining[i].status === "paused" ? "upcoming" : remaining[i].status;
+      const { error: uErr } = await context.supabase.from("payment_schedules")
+        .update({ due_date: newDue, status }).eq("id", remaining[i].id);
+      if (uErr) throw new Error(uErr.message);
+    }
+
+    // stretch linked debt case due_date to last installment
+    const dc = schedules[0].debt_case_id;
+    if (dc) {
+      const lastDue = addMonthsIso(data.first_due_date, (remaining.length - 1) * data.gap_months);
+      await context.supabase.from("debt_cases").update({ due_date: lastDue, status: "active" }).eq("id", dc);
+    }
+
+    await logPlan(context, mem.org_id, data.plan_id, "rescheduled",
+      `Rescheduled ${remaining.length} installment(s) starting ${data.first_due_date} (gap ${data.gap_months}m)`);
+    return { ok: true, updated: remaining.length };
   });

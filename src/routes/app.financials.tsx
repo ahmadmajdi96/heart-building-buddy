@@ -18,14 +18,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Loader2, Trash2, FileText, Eye, X, Search, Send, XCircle, CheckCircle2, Check, Download } from "lucide-react";
 import { toast } from "sonner";
 import { DocumentHeader, DocumentPreview } from "@/components/financials/document-preview";
-import { downloadInvoicePdf } from "@/lib/invoice-pdf";
+import { downloadInvoicePdf, downloadReceiptPdf } from "@/lib/invoice-pdf";
 import { useServerFn } from "@tanstack/react-start";
 import { sweepOverdueInvoices, setInvoiceStatus, markInvoicePaid } from "@/lib/invoicing.functions";
 import { listDraftInvoices, deleteDraftInvoice, acceptDraftInvoice, rejectDraftInvoice, bulkAcceptDraftInvoices } from "@/lib/draft-invoices.functions";
 import { getTimeEntriesByIds } from "@/lib/time-entries.functions";
 import { listOrgDebtPayments } from "@/lib/debt-collection.functions";
 import { listClients, saveClient } from "@/lib/clients.functions";
-import { listUnpaidInvoicesForClient, createPaymentPlan, markSchedulePaid, deletePaymentPlan } from "@/lib/payment-plans.functions";
+import { listUnpaidInvoicesForClient, createPaymentPlan, markSchedulePaid, deletePaymentPlan, getPaymentPlan, pausePaymentPlan, resumePaymentPlan, cancelPaymentPlan, reschedulePaymentPlan } from "@/lib/payment-plans.functions";
+
+
 import { ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Layers } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
@@ -260,6 +262,8 @@ function PaymentDialog({ onSaved, onClose }: { onSaved: () => void; onClose: () 
 
 // ---------- SCHEDULES / PAYMENT PLANS ----------
 function SchedulesTab() {
+  const [detailsPlanId, setDetailsPlanId] = useState<string | null>(null);
+
   const { locale } = useI18n();
   const { org, can } = useOrg();
   const [rows, setRows] = useState<any[]>([]);
@@ -355,9 +359,13 @@ function SchedulesTab() {
                         <ExternalLink className="size-3"/>{locale === "ar" ? "ملف التحصيل" : "Debt case"}
                       </Link>
                     )}
+                    <Button size="sm" variant="outline" onClick={() => setDetailsPlanId(planId)}>
+                      <Eye className="size-4"/>{locale === "ar" ? "التفاصيل" : "Details"}
+                    </Button>
                     {can("delete_financials") && <Button size="icon" variant="ghost" onClick={() => removePlan(planId)}><Trash2 className="size-4 text-destructive"/></Button>}
                   </div>
                 </div>
+
                 <table className="w-full text-sm">
                   <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
                     <tr><Th>#</Th><Th>{locale === "ar" ? "الاستحقاق" : "Due"}</Th><Th>{locale === "ar" ? "الفاتورة" : "Invoice"}</Th><Th className="text-end">{locale === "ar" ? "المبلغ" : "Amount"}</Th><Th>{locale === "ar" ? "الحالة" : "Status"}</Th><Th></Th></tr>
@@ -420,9 +428,285 @@ function SchedulesTab() {
           )}
         </div>
       )}
+      <Dialog open={!!detailsPlanId} onOpenChange={(v) => { if (!v) setDetailsPlanId(null); }}>
+        {detailsPlanId && <PlanDetailsDialog planId={detailsPlanId} onClose={() => setDetailsPlanId(null)} onChanged={load} />}
+      </Dialog>
     </Card>
   );
+
 }
+
+function PlanDetailsDialog({ planId, onClose, onChanged }: { planId: string; onClose: () => void; onChanged: () => void }) {
+  const { locale } = useI18n();
+  const { org, can } = useOrg();
+  const getPlan = useServerFn(getPaymentPlan);
+  const pauseFn = useServerFn(pausePaymentPlan);
+  const resumeFn = useServerFn(resumePaymentPlan);
+  const cancelFn = useServerFn(cancelPaymentPlan);
+  const rescheduleFn = useServerFn(reschedulePaymentPlan);
+  const markPaidFn = useServerFn(markSchedulePaid);
+  const [plan, setPlan] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [reschedOpen, setReschedOpen] = useState(false);
+  const [reschedDate, setReschedDate] = useState(new Date().toISOString().slice(0, 10));
+  const [reschedGap, setReschedGap] = useState(1);
+
+  async function load() {
+    setLoading(true);
+    try { setPlan(await getPlan({ data: { plan_id: planId } })); }
+    catch (e: any) { toast.error(e.message); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { load(); }, [planId]);
+
+  async function doAction(fn: () => Promise<any>, label: string) {
+    setBusy(true);
+    try { await fn(); toast.success(label); await load(); onChanged(); }
+    catch (e: any) { toast.error(e.message); }
+    finally { setBusy(false); }
+  }
+
+  const t = (en: string, ar: string) => (locale === "ar" ? ar : en);
+
+  return (
+    <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>{t("Payment plan details", "تفاصيل خطة السداد")}</DialogTitle>
+      </DialogHeader>
+      {loading || !plan ? <div className="grid place-items-center py-10"><Loader2 className="size-6 animate-spin text-gold"/></div> : (
+        <div className="space-y-5">
+          {/* Summary */}
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="rounded-md border p-3">
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">{t("Client", "العميل")}</div>
+              <div className="mt-1 truncate text-sm font-semibold">{plan.client_name}</div>
+            </div>
+            <div className="rounded-md border p-3">
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">{t("Installments", "الأقساط")}</div>
+              <div className="mt-1 text-sm font-semibold">{plan.schedules.length}</div>
+            </div>
+            <div className="rounded-md border p-3">
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">{t("Remaining", "المتبقي")}</div>
+              <div className="mt-1 font-mono text-sm tabular-nums">{fmt(plan.remaining, plan.currency)}</div>
+            </div>
+            <div className="rounded-md border p-3">
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">{t("Plan status", "حالة الخطة")}</div>
+              <div className="mt-1"><StatusBadge status={plan.plan_status}/></div>
+            </div>
+          </div>
+
+          {/* Debt case + next reminder */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="rounded-md border p-3">
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">{t("Debt case", "ملف التحصيل")}</div>
+              {plan.debt_case ? (
+                <div className="mt-1 flex items-center justify-between">
+                  <Link to="/app/debt-collection/$id" params={{ id: plan.debt_case.id }} className="text-sm text-gold hover:underline inline-flex items-center gap-1">
+                    <ExternalLink className="size-3"/>{plan.debt_case.title}
+                  </Link>
+                  <StatusBadge status={plan.debt_case.status}/>
+                </div>
+              ) : <div className="mt-1 text-sm text-muted-foreground">—</div>}
+            </div>
+            <div className="rounded-md border p-3">
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">{t("Next scheduled reminder", "التذكير التالي")}</div>
+              {plan.next_reminder ? (
+                <div className="mt-1 text-sm">
+                  <span className="font-mono tabular-nums">{plan.next_reminder.fire_at}</span>
+                  <span className="ms-2 text-xs text-muted-foreground">
+                    {plan.next_reminder.rule_label} · {t("installment", "قسط")} {plan.next_reminder.installment_no} ({plan.next_reminder.due_date})
+                  </span>
+                </div>
+              ) : <div className="mt-1 text-sm text-muted-foreground">{t("None scheduled", "لا يوجد")}</div>}
+            </div>
+          </div>
+
+          {/* Invoices */}
+          <div>
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("Invoices in this plan", "الفواتير")}</div>
+            <div className="rounded-md border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
+                  <tr><Th>#</Th><Th>{t("Due", "الاستحقاق")}</Th><Th className="text-end">{t("Total", "الإجمالي")}</Th><Th className="text-end">{t("Paid", "المدفوع")}</Th><Th>{t("Status", "الحالة")}</Th></tr>
+                </thead>
+                <tbody className="divide-y">
+                  {plan.invoices.map((inv: any) => (
+                    <tr key={inv.id}>
+                      <Td className="font-medium">{inv.number}</Td>
+                      <Td>{inv.due_date ?? "—"}</Td>
+                      <Td className="text-end font-mono tabular-nums">{fmt(inv.total, inv.currency)}</Td>
+                      <Td className="text-end font-mono tabular-nums">{fmt(inv.amount_paid, inv.currency)}</Td>
+                      <Td><StatusBadge status={inv.status}/></Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Schedule */}
+          <div>
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("Installment schedule", "جدول الأقساط")}</div>
+            <div className="rounded-md border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
+                  <tr><Th>#</Th><Th>{t("Due", "الاستحقاق")}</Th><Th className="text-end">{t("Amount", "المبلغ")}</Th><Th>{t("Status", "الحالة")}</Th><Th></Th></tr>
+                </thead>
+                <tbody className="divide-y">
+                  {plan.schedules.map((s: any) => (
+                    <tr key={s.id}>
+                      <Td>{s.installment_no}/{s.installment_count}</Td>
+                      <Td>{s.due_date}</Td>
+                      <Td className="text-end font-mono tabular-nums">{fmt(s.amount, s.currency)}</Td>
+                      <Td><StatusBadge status={s.status}/></Td>
+                      <Td className="text-end">
+                        {can("edit_financials") && s.status !== "paid" && s.status !== "cancelled" && (
+                          <Button size="sm" variant="ghost" disabled={busy} onClick={async () => {
+                            setBusy(true);
+                            try {
+                              await markPaidFn({ data: { id: s.id, paid_at: new Date().toISOString().slice(0, 10), method: "bank_transfer" } });
+                              toast.success(t("Payment recorded", "تم تسجيل الدفع"));
+                              await load(); onChanged();
+                            } catch (e: any) { toast.error(e.message); }
+                            finally { setBusy(false); }
+                          }}>{t("Mark paid", "تم الدفع")}</Button>
+                        )}
+                      </Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Ledger */}
+          <div>
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("Invoice split ledger", "سجل توزيع الدفعات")}</div>
+            <div className="rounded-md border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <Th>{t("Paid at", "تاريخ")}</Th>
+                    <Th>{t("Invoice", "الفاتورة")}</Th>
+                    <Th>{t("Method", "الطريقة")}</Th>
+                    <Th>{t("Reference", "المرجع")}</Th>
+                    <Th className="text-end">{t("Amount", "المبلغ")}</Th>
+                    <Th></Th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {plan.payments.length === 0 && (
+                    <tr><td colSpan={6} className="px-5 py-4 text-center text-xs text-muted-foreground">{t("No payments recorded yet.", "لا توجد مدفوعات بعد.")}</td></tr>
+                  )}
+                  {plan.payments.map((p: any, idx: number) => {
+                    const sch = plan.schedules.find((x: any) => x.id === p.schedule_id);
+                    const invNumber = p.tax_invoices?.number ?? sch?.tax_invoices?.number ?? "—";
+                    const receiptNo = `RCPT-${(p.id as string).slice(0, 8).toUpperCase()}`;
+                    return (
+                      <tr key={p.id}>
+                        <Td>{p.paid_at}</Td>
+                        <Td>{invNumber}{sch ? <span className="ms-2 text-xs text-muted-foreground">({t("inst", "قسط")} {sch.installment_no}/{sch.installment_count})</span> : null}</Td>
+                        <Td className="capitalize">{String(p.method ?? "").replace(/_/g, " ")}</Td>
+                        <Td className="text-muted-foreground">{p.reference ?? "—"}</Td>
+                        <Td className="text-end font-mono tabular-nums">{fmt(p.amount, p.currency)}</Td>
+                        <Td className="text-end">
+                          <Button size="sm" variant="ghost" onClick={() => downloadReceiptPdf({
+                            receipt_no: receiptNo,
+                            paid_at: p.paid_at,
+                            amount: Number(p.amount),
+                            currency: p.currency,
+                            method: p.method,
+                            reference: p.reference,
+                            client_name: plan.client_name,
+                            invoice_number: invNumber === "—" ? null : invNumber,
+                            installment_label: sch ? `${sch.installment_no}/${sch.installment_count}` : null,
+                            plan_id: plan.plan_id,
+                          }, org)}>
+                            <Download className="size-4"/>{t("Receipt", "إيصال")}
+                          </Button>
+                        </Td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Reminder rules */}
+          <div>
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("Reminder rules (per installment)", "قواعد التذكير")}</div>
+            <div className="rounded-md border p-3 text-sm">
+              {plan.reminder_rules.length === 0 && <div className="text-xs text-muted-foreground">{t("No active reminder rules on the linked debt case.", "لا توجد قواعد نشطة.")}</div>}
+              {plan.reminder_rules.map((r: any) => (
+                <div key={r.id} className="flex items-center justify-between border-b py-1.5 last:border-0">
+                  <div>
+                    <div className="text-sm">{r.label}</div>
+                    <div className="text-xs text-muted-foreground">{r.kind} · offset {r.offset_days}d</div>
+                  </div>
+                </div>
+              ))}
+              {plan.upcoming_reminders.length > 0 && (
+                <div className="mt-2 border-t pt-2">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("Next 5 upcoming", "التذكيرات القادمة")}</div>
+                  <ul className="mt-1 space-y-0.5 text-xs">
+                    {plan.upcoming_reminders.slice(0, 5).map((u: any, i: number) => (
+                      <li key={i} className="flex justify-between"><span className="font-mono tabular-nums">{u.fire_at}</span><span className="text-muted-foreground">{u.rule_label} · inst {u.installment_no}</span></li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          {can("edit_financials") && (
+            <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+              {plan.plan_status !== "paused" && plan.plan_status !== "completed" && plan.plan_status !== "cancelled" && (
+                <Button size="sm" variant="outline" disabled={busy} onClick={() => doAction(() => pauseFn({ data: { plan_id: planId } }), t("Plan paused", "تم إيقاف الخطة"))}>{t("Pause", "إيقاف مؤقت")}</Button>
+              )}
+              {plan.plan_status === "paused" && (
+                <Button size="sm" variant="outline" disabled={busy} onClick={() => doAction(() => resumeFn({ data: { plan_id: planId } }), t("Plan resumed", "تم استئناف الخطة"))}>{t("Resume", "استئناف")}</Button>
+              )}
+              <Button size="sm" variant="outline" disabled={busy} onClick={() => setReschedOpen((v) => !v)}>{t("Reschedule remaining", "إعادة جدولة")}</Button>
+              {plan.plan_status !== "cancelled" && plan.plan_status !== "completed" && (
+                <Button size="sm" variant="destructive" disabled={busy} onClick={async () => {
+                  if (!confirm(t("Cancel remaining installments? Paid installments are kept in the ledger.", "إلغاء الأقساط المتبقية؟"))) return;
+                  await doAction(() => cancelFn({ data: { plan_id: planId } }), t("Plan cancelled", "تم إلغاء الخطة"));
+                }}>{t("Cancel plan", "إلغاء الخطة")}</Button>
+              )}
+              <div className="ms-auto"><Button size="sm" variant="ghost" onClick={onClose}>{t("Close", "إغلاق")}</Button></div>
+            </div>
+          )}
+
+          {reschedOpen && (
+            <div className="rounded-md border bg-muted/30 p-3">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("Reschedule remaining installments", "إعادة جدولة الأقساط المتبقية")}</div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <div>
+                  <Label>{t("New first due date", "تاريخ أول قسط")}</Label>
+                  <Input type="date" className="mt-1.5" value={reschedDate} onChange={(e) => setReschedDate(e.target.value)}/>
+                </div>
+                <div>
+                  <Label>{t("Gap (months)", "الفاصل بالشهور")}</Label>
+                  <Input type="number" min={1} max={6} className="mt-1.5" value={reschedGap} onChange={(e) => setReschedGap(Math.max(1, Math.min(6, Number(e.target.value) || 1)))}/>
+                </div>
+                <div className="flex items-end">
+                  <Button size="sm" variant="gold" disabled={busy || !reschedDate} onClick={() =>
+                    doAction(() => rescheduleFn({ data: { plan_id: planId, first_due_date: reschedDate, gap_months: reschedGap } }), t("Rescheduled", "تمت إعادة الجدولة"))
+                  }>{t("Apply", "تطبيق")}</Button>
+                </div>
+              </div>
+              <div className="mt-2 text-xs text-muted-foreground">{t("Paid installments are not affected — full audit trail is preserved via the activity log.", "الأقساط المدفوعة لا تتأثر ويتم الحفاظ على سجل التدقيق.")}</div>
+            </div>
+          )}
+        </div>
+      )}
+    </DialogContent>
+  );
+}
+
 
 function ScheduleDialog({ onSaved, onClose }: { onSaved: () => void; onClose: () => void }) {
   const { locale } = useI18n();
