@@ -154,7 +154,7 @@ export const markInvoicePaid = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({
     id: z.string().uuid(),
     paid_at: z.string(),
-    method: z.string().default("bank_transfer"),
+    method: z.enum(["bank_transfer", "card", "cash", "cheque", "other"]).default("bank_transfer"),
     reference: z.string().optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
