@@ -253,6 +253,62 @@ function CasesPage() {
           <DialogFooter><Button variant="ghost" onClick={() => setEditOpen(false)}>{locale === "ar" ? "إلغاء" : "Cancel"}</Button><Button variant="gold" onClick={submit}>{locale === "ar" ? "حفظ" : "Save"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={quickClientOpen} onOpenChange={setQuickClientOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{locale === "ar" ? "موكل جديد" : "New client"}</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5"><Label>{locale === "ar" ? "النوع" : "Type"}</Label>
+                <Select value={quickClient.type} onValueChange={(v) => setQuickClient({ ...quickClient, type: v as any })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="individual">{locale === "ar" ? "فرد" : "Individual"}</SelectItem>
+                    <SelectItem value="company">{locale === "ar" ? "شركة" : "Company"}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5"><Label>{locale === "ar" ? "الشركة" : "Company"}</Label><Input value={quickClient.company} onChange={(e) => setQuickClient({ ...quickClient, company: e.target.value })} /></div>
+            </div>
+            <div className="space-y-1.5"><Label>{locale === "ar" ? "الاسم *" : "Name *"}</Label><Input value={quickClient.name} onChange={(e) => setQuickClient({ ...quickClient, name: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5"><Label>{locale === "ar" ? "البريد" : "Email"}</Label><Input type="email" value={quickClient.email} onChange={(e) => setQuickClient({ ...quickClient, email: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>{locale === "ar" ? "الهاتف" : "Phone"}</Label><Input value={quickClient.phone} onChange={(e) => setQuickClient({ ...quickClient, phone: e.target.value })} /></div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setQuickClientOpen(false)} disabled={quickBusy}>{locale === "ar" ? "إلغاء" : "Cancel"}</Button>
+            <Button variant="gold" onClick={submitQuickClient} disabled={quickBusy}>
+              {quickBusy && <Loader2 className="size-4 animate-spin me-1.5" />}
+              {locale === "ar" ? "إضافة الموكل" : "Add client"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => { if (!o) setPendingDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{locale === "ar" ? "حذف القضية؟" : "Delete case?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {locale === "ar"
+                ? `سيتم حذف "${pendingDelete?.title ?? ""}" وجميع بياناتها المرتبطة نهائياً. لا يمكن التراجع.`
+                : `"${pendingDelete?.title ?? ""}" and all its related data will be permanently deleted. This cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>{locale === "ar" ? "إلغاء" : "Cancel"}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); confirmDelete(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting && <Loader2 className="size-4 animate-spin me-1.5" />}
+              {locale === "ar" ? "حذف" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
