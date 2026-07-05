@@ -18,9 +18,11 @@ async function getCallerOrg(ctx: { supabase: any; userId: string }) {
 
 /* ============================ Cases ============================ */
 
+const optUuid = z.preprocess((v) => (v === "" || v == null ? null : v), z.string().uuid().nullable().optional());
+
 const CaseInput = z.object({
   id: z.string().uuid().optional(),
-  client_id: z.string().uuid().nullable().optional(),
+  client_id: optUuid,
   title: z.string().min(1),
   description: z.string().optional(),
   debt_type: z.enum(["rent", "loan", "service", "installment", "other"]).default("other"),
@@ -126,7 +128,7 @@ export const deleteDebtCase = createServerFn({ method: "POST" })
 const PayerInput = z.object({
   id: z.string().uuid().optional(),
   case_id: z.string().uuid(),
-  client_id: z.string().uuid().nullable().optional(),
+  client_id: optUuid,
   name: z.string().min(1),
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
@@ -217,7 +219,7 @@ export const removeAssignee = createServerFn({ method: "POST" })
 const PaymentInput = z.object({
   id: z.string().uuid().optional(),
   case_id: z.string().uuid(),
-  payer_id: z.string().uuid().nullable().optional(),
+  payer_id: optUuid,
   amount_received: z.number().min(0),
   service_fee: z.number().min(0).default(0),
   amount_forwarded: z.number().min(0).default(0),
@@ -366,4 +368,58 @@ export const sendDebtSms = createServerFn({ method: "POST" })
       }
     }
     return { results };
+  });
+
+/* ============================ Reminder rules ============================ */
+
+const RuleInput = z.object({
+  id: z.string().uuid().optional(),
+  case_id: z.string().uuid(),
+  label: z.string().min(1),
+  offset_days: z.number().int(), // negative = before due, 0 = on due, positive = after due
+  kind: z.enum(["reminder_upcoming", "reminder_due", "reminder_overdue", "manual"]).default("reminder_upcoming"),
+  message_template: z.string().min(1),
+  active: z.boolean().default(true),
+});
+
+export const listReminderRules = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ case_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("debt_reminder_rules")
+      .select("*")
+      .eq("case_id", data.case_id)
+      .order("offset_days", { ascending: true });
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const saveReminderRule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => RuleInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const mem = await getCallerOrg(context);
+    if (data.id) {
+      const { id, ...rest } = data;
+      const { data: row, error } = await context.supabase
+        .from("debt_reminder_rules").update(rest).eq("id", id).select().maybeSingle();
+      if (error) throw new Error(error.message);
+      return row;
+    }
+    const { data: row, error } = await context.supabase
+      .from("debt_reminder_rules")
+      .insert({ ...data, org_id: mem.org_id, created_by: context.userId })
+      .select().maybeSingle();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+export const deleteReminderRule = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("debt_reminder_rules").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
