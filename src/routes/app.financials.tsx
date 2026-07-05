@@ -97,7 +97,7 @@ function FinancialsPage() {
         title={locale === "ar" ? "الماليات" : "Financials"}
         subtitle={locale === "ar" ? "المدفوعات، الجدولة، عروض الأسعار، والفواتير الضريبية." : "Payments, schedules, quotes, and tax invoices."}
       />
-      <Tabs defaultValue="payments" className="space-y-6">
+      <Tabs value={search.tab} onValueChange={(v) => navigate({ to: "/app/financials", search: { ...search, tab: v as any } })} className="space-y-6">
         <TabsList className="bg-secondary/60">
           <TabsTrigger value="payments">{locale === "ar" ? "المدفوعات" : "Payments"}</TabsTrigger>
           <TabsTrigger value="schedules">{locale === "ar" ? "الجدولة" : "Schedules"}</TabsTrigger>
