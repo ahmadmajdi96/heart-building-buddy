@@ -611,6 +611,26 @@ function Loading() { return <div className="grid place-items-center p-12"><Loade
 function Empty({ msg }: { msg: string }) { return <div className="p-12 text-center text-sm text-muted-foreground">{msg}</div>; }
 
 // ---------- DRAFT INVOICES (proforma) ----------
+type SortKey = "issue_date" | "due_date" | "client_name" | "total" | "status";
+type SortDir = "asc" | "desc";
+
+function SortableTh({ label, k, sort, setSort }: { label: string; k: SortKey; sort: { key: SortKey; dir: SortDir }; setSort: (s: { key: SortKey; dir: SortDir }) => void }) {
+  const active = sort.key === k;
+  return (
+    <th className="px-5 py-3 text-start font-medium">
+      <button
+        type="button"
+        className="inline-flex items-center gap-1 hover:text-foreground"
+        onClick={() => setSort({ key: k, dir: active && sort.dir === "asc" ? "desc" : "asc" })}
+      >
+        {label}
+        {!active && <ArrowUpDown className="size-3 opacity-50" />}
+        {active && (sort.dir === "asc" ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />)}
+      </button>
+    </th>
+  );
+}
+
 function DraftInvoicesTab() {
   const { locale } = useI18n();
   const ar = locale === "ar";
@@ -619,13 +639,17 @@ function DraftInvoicesTab() {
   const acceptFn = useServerFn(acceptDraftInvoice);
   const rejectFn = useServerFn(rejectDraftInvoice);
   const deleteFn = useServerFn(deleteDraftInvoice);
+  const getEntries = useServerFn(getTimeEntriesByIds);
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
+  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: "issue_date", dir: "desc" });
   const [busyId, setBusyId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<any | null>(null);
   const [pendingAccept, setPendingAccept] = useState<any | null>(null);
+  const [acceptDueDate, setAcceptDueDate] = useState("");
+  const [acceptEntries, setAcceptEntries] = useState<any[] | null>(null);
   const [preview, setPreview] = useState<any | null>(null);
 
   async function load() {
@@ -636,17 +660,40 @@ function DraftInvoicesTab() {
   }
   useEffect(() => { load(); }, []);
 
-  const filtered = useMemo(() => rows.filter((r) => {
-    if (status !== "all" && r.status !== status) return false;
-    if (!q.trim()) return true;
-    const s = q.toLowerCase();
-    return (r.client_name ?? "").toLowerCase().includes(s);
-  }), [rows, q, status]);
+  useEffect(() => {
+    if (!pendingAccept) { setAcceptEntries(null); setAcceptDueDate(""); return; }
+    setAcceptDueDate(pendingAccept.due_date ?? "");
+    const ids: string[] = pendingAccept.time_entry_ids ?? [];
+    if (ids.length === 0) { setAcceptEntries([]); return; }
+    setAcceptEntries(null);
+    getEntries({ data: { ids } })
+      .then((r) => setAcceptEntries(r as any[]))
+      .catch(() => setAcceptEntries([]));
+  }, [pendingAccept]);
+
+  const filtered = useMemo(() => {
+    let out = rows.filter((r) => {
+      if (status !== "all" && r.status !== status) return false;
+      if (!q.trim()) return true;
+      const s = q.toLowerCase();
+      return (r.client_name ?? "").toLowerCase().includes(s) || (r.notes ?? "").toLowerCase().includes(s);
+    });
+    const dir = sort.dir === "asc" ? 1 : -1;
+    out = [...out].sort((a, b) => {
+      const av = a[sort.key]; const bv = b[sort.key];
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir;
+      return String(av).localeCompare(String(bv)) * dir;
+    });
+    return out;
+  }, [rows, q, status, sort]);
 
   async function accept(row: any) {
     setBusyId(row.id);
     try {
-      await acceptFn({ data: { id: row.id } });
+      await acceptFn({ data: { id: row.id, due_date: acceptDueDate || null } });
       toast.success(ar ? "تم قبول الفاتورة وتحويلها إلى فاتورة ضريبية" : "Accepted — moved to Tax invoices");
       setPendingAccept(null); load();
     } catch (e) { toast.error((e as Error).message); }
@@ -665,6 +712,8 @@ function DraftInvoicesTab() {
     finally { setBusyId(null); }
   }
 
+  const acceptEntryIds = (pendingAccept?.time_entry_ids ?? []) as string[];
+
   return (
     <>
       <Card className="overflow-hidden">
@@ -675,17 +724,17 @@ function DraftInvoicesTab() {
           </div>
           <TableFilter q={q} setQ={setQ} status={status} setStatus={setStatus}
             statuses={["all", "draft", "accepted", "rejected"]}
-            placeholder={ar ? "ابحث بالعميل…" : "Search by client…"} locale={locale as any} />
+            placeholder={ar ? "ابحث بالعميل أو الملاحظات…" : "Search by client or notes…"} locale={locale as any} />
         </div>
         {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={ar ? "لا مسودات. أنشئ واحدة من تتبع الوقت." : "No drafts yet. Create one from Time tracking."}/> : (
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
-                <Th>{ar ? "الإصدار" : "Issued"}</Th>
-                <Th>{ar ? "العميل" : "Client"}</Th>
-                <Th>{ar ? "الاستحقاق" : "Due"}</Th>
-                <Th className="text-end">{ar ? "الإجمالي" : "Total"}</Th>
-                <Th>{ar ? "الحالة" : "Status"}</Th>
+                <SortableTh label={ar ? "الإصدار" : "Issued"} k="issue_date" sort={sort} setSort={setSort} />
+                <SortableTh label={ar ? "العميل" : "Client"} k="client_name" sort={sort} setSort={setSort} />
+                <SortableTh label={ar ? "الاستحقاق" : "Due"} k="due_date" sort={sort} setSort={setSort} />
+                <SortableTh label={ar ? "الإجمالي" : "Total"} k="total" sort={sort} setSort={setSort} />
+                <SortableTh label={ar ? "الحالة" : "Status"} k="status" sort={sort} setSort={setSort} />
                 <Th></Th>
               </tr>
             </thead>
@@ -723,13 +772,84 @@ function DraftInvoicesTab() {
       {preview && <DocumentPreview kind="invoice" doc={{ ...preview, tax_rate: preview.tax_rate ?? 0 }} onClose={() => setPreview(null)} />}
 
       <Dialog open={!!pendingAccept} onOpenChange={(o) => { if (!o) setPendingAccept(null); }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{ar ? "قبول المسودة؟" : "Accept draft?"}</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            {ar ? "سيتم تحويل هذه المسودة إلى فاتورة ضريبية رسمية ولن يمكن التراجع." : "This draft will be converted to an official tax invoice. This cannot be undone."}
-          </p>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{ar ? "قبول المسودة وتحويلها إلى فاتورة ضريبية" : "Accept draft & convert to tax invoice"}</DialogTitle>
+          </DialogHeader>
+          {pendingAccept && (
+            <div className="max-h-[70vh] space-y-4 overflow-y-auto pr-1">
+              <div className="rounded-lg border bg-secondary/40 p-4 text-sm space-y-1">
+                <div className="flex justify-between"><span className="text-muted-foreground">{ar ? "العميل" : "Client"}</span><span className="font-medium">{pendingAccept.client_name}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">{ar ? "الإصدار" : "Issued"}</span><span>{pendingAccept.issue_date}</span></div>
+                <div className="flex justify-between border-t pt-1 font-semibold"><span>{ar ? "الإجمالي" : "Total"}</span><span className="font-mono">{fmt(pendingAccept.total, pendingAccept.currency)}</span></div>
+              </div>
+
+              <div>
+                <Label>{ar ? "تاريخ الاستحقاق (اختياري)" : "Due date (optional)"}</Label>
+                <Input type="date" className="mt-1.5" value={acceptDueDate} onChange={(e) => setAcceptDueDate(e.target.value)} />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {ar ? "يمكنك تعديل تاريخ الاستحقاق قبل الإصدار. ستتمكن من وضع علامة مدفوعة بعد القبول." : "You can adjust the due date before issuing. You'll be able to mark it as paid after acceptance."}
+                </p>
+              </div>
+
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <Label>{ar ? "البنود" : "Line items"}</Label>
+                  <span className="text-xs text-muted-foreground">{(pendingAccept.items ?? []).length}</span>
+                </div>
+                <div className="rounded-lg border divide-y">
+                  {(pendingAccept.items ?? []).map((it: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between px-3 py-2 text-sm">
+                      <div className="min-w-0 flex-1"><div className="truncate">{it.description || "—"}</div><div className="text-xs text-muted-foreground">{it.quantity} × {fmt(Number(it.unit_price), pendingAccept.currency)}</div></div>
+                      <div className="font-mono tabular-nums">{fmt(Number(it.quantity) * Number(it.unit_price), pendingAccept.currency)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {acceptEntryIds.length > 0 && (
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <Label>{ar ? "سجلات الوقت المصدر" : "Source time entries"}</Label>
+                    <Link
+                      to="/app/time"
+                      search={{ ids: acceptEntryIds.join(",") } as any}
+                      onClick={() => setPendingAccept(null)}
+                      className="inline-flex items-center gap-1 text-xs text-gold hover:underline"
+                    >
+                      <ExternalLink className="size-3" /> {ar ? "عرض في تتبع الوقت" : "View in Time tracking"}
+                    </Link>
+                  </div>
+                  <div className="rounded-lg border divide-y max-h-48 overflow-y-auto">
+                    {acceptEntries === null ? (
+                      <div className="p-4 text-center text-xs text-muted-foreground"><Loader2 className="mx-auto size-4 animate-spin" /></div>
+                    ) : acceptEntries.length === 0 ? (
+                      <div className="p-4 text-center text-xs text-muted-foreground">{ar ? "لم يعد بالإمكان الوصول للسجلات." : "Source entries no longer available."}</div>
+                    ) : acceptEntries.map((e: any) => (
+                      <div key={e.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate">{e.description || "—"}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(e.started_at).toLocaleDateString()} · {e.cases?.title ?? "—"} · {e.clients?.name ?? "—"}
+                          </div>
+                        </div>
+                        <div className="text-xs tabular-nums text-muted-foreground">{(e.duration_seconds / 3600).toFixed(2)} h</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <p className="text-xs text-muted-foreground">
+                {ar ? "سيتم إنشاء فاتورة ضريبية رسمية برقم متسلسل. لا يمكن التراجع." : "An official tax invoice will be created with a sequential number. This cannot be undone."}
+              </p>
+            </div>
+          )}
           <DialogFooter>
             <Button variant="ghost" onClick={() => setPendingAccept(null)}>{ar ? "إلغاء" : "Cancel"}</Button>
+            <Button variant="outline" onClick={() => pendingAccept && setPreview({ ...pendingAccept, number: pendingAccept.id.slice(0, 8).toUpperCase() })}>
+              <Eye className="size-4"/> {ar ? "معاينة كاملة" : "Full preview"}
+            </Button>
             <Button variant="gold" onClick={() => pendingAccept && accept(pendingAccept)} disabled={busyId === pendingAccept?.id}>
               {busyId === pendingAccept?.id && <Loader2 className="size-4 animate-spin me-1.5"/>}
               {ar ? "قبول وتحويل" : "Accept & convert"}
@@ -756,5 +876,6 @@ function DraftInvoicesTab() {
     </>
   );
 }
+
 
 export { DocumentHeader };
