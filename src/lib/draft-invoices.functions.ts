@@ -199,6 +199,7 @@ export const createDraftFromTime = createServerFn({ method: "POST" })
       subtotal: t.subtotal, tax_amount: t.tax_amount, total: t.total,
       items,
       notes: data.notes ?? null,
+      time_entry_ids: usable.map((e: any) => e.id),
     }).select().maybeSingle();
     if (error) throw new Error(error.message);
     // Mark entries billed so they don't get re-invoiced from the draft.
