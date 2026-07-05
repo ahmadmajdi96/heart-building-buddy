@@ -534,6 +534,7 @@ function InvoicesTab() {
                   <Td><StatusBadge status={r.status}/></Td>
                   <Td className="text-end whitespace-nowrap">
                     <Button size="icon" variant="ghost" onClick={() => setPreview(r)} title="Preview"><Eye className="size-4"/></Button>
+                    <Button size="icon" variant="ghost" onClick={() => downloadInvoicePdf("invoice", r, org as any)} title={locale === "ar" ? "تنزيل PDF" : "Download PDF"}><Download className="size-4"/></Button>
                     {can("edit_financials") && r.status === "draft" && (
                       <Button size="icon" variant="ghost" onClick={() => changeStatus(r.id, "issued")} title={locale === "ar" ? "إرسال" : "Send"}><Send className="size-4 text-primary" /></Button>
                     )}
