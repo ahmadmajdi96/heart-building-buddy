@@ -56,6 +56,7 @@ export function DocumentPreview({ kind, doc, onClose }: { kind: "quote" | "invoi
           <Button size="sm" variant="outline" onClick={() => setMode(mode === "bilingual" ? "current" : "bilingual")}>
             <Languages className="size-4"/>{mode === "bilingual" ? L("لغة واحدة","Single language") : L("عرض ثنائي اللغة","Bilingual")}
           </Button>
+          <Button size="sm" variant="outline" onClick={() => downloadInvoicePdf(kind, doc, org as any)}><Download className="size-4"/>{L("تنزيل PDF","Download PDF")}</Button>
           <Button size="sm" variant="outline" onClick={() => window.print()}><Printer className="size-4"/>{L("طباعة","Print")}</Button>
         </div>
         <div className="bg-card p-2 print:p-0">
