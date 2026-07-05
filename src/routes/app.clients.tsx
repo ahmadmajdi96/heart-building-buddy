@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useI18n } from "@/lib/i18n";
@@ -29,7 +29,7 @@ type Client = {
 
 function ClientsPage() {
   const { locale } = useI18n();
-  const navigate = useNavigate();
+  
   const list = useServerFn(listClients);
   const save = useServerFn(saveClient);
   const del = useServerFn(deleteClient);
