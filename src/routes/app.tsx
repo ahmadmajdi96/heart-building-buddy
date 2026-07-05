@@ -14,7 +14,7 @@ import {
   LayoutDashboard, Briefcase, FileText, Search, Sparkles, CalendarDays,
   Receipt, GraduationCap, BarChart3, Building2, Settings, Clock,
   ArrowLeft, Gavel, LogOut, Loader2, Mic, Video, Menu, ChevronDown, MoreHorizontal,
-  AlertTriangle, History, Users,
+  AlertTriangle, History, Users, Network,
 } from "lucide-react";
 
 export const Route = createFileRoute("/app")({
@@ -38,6 +38,7 @@ const navItems: NavItem[] = [
   { to: "/app/financials", key: "m_financials", icon: Receipt, perm: "view_financials" },
   { to: "/app/clients", key: "m_clients", icon: Building2, perm: "view_clients" },
   { to: "/app/team", key: "m_team", icon: Users, firmOnly: true },
+  { to: "/app/workspace", key: "m_workspace", icon: Network, perm: "view_cases" },
   { to: "/app/education", key: "m_education", icon: GraduationCap },
   { to: "/app/analytics", key: "m_analytics", icon: BarChart3, perm: "view_financials" },
   { to: "/app/activity", key: "m_activity", icon: History, perm: "manage_members" },

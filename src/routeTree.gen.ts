@@ -32,8 +32,10 @@ import { Route as AppClientsRouteImport } from './routes/app.clients'
 import { Route as AppCalendarRouteImport } from './routes/app.calendar'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppActivityRouteImport } from './routes/app.activity'
+import { Route as AppWorkspaceIndexRouteImport } from './routes/app.workspace.index'
 import { Route as AppMeetingsIndexRouteImport } from './routes/app.meetings.index'
 import { Route as AppCasesIndexRouteImport } from './routes/app.cases.index'
+import { Route as AppWorkspaceCaseIdRouteImport } from './routes/app.workspace.$caseId'
 import { Route as AppMeetingsIdRouteImport } from './routes/app.meetings.$id'
 import { Route as AppClientsClientIdRouteImport } from './routes/app.clients.$clientId'
 import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
@@ -155,6 +157,11 @@ const AppActivityRoute = AppActivityRouteImport.update({
   path: '/activity',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWorkspaceIndexRoute = AppWorkspaceIndexRouteImport.update({
+  id: '/workspace/',
+  path: '/workspace/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMeetingsIndexRoute = AppMeetingsIndexRouteImport.update({
   id: '/meetings/',
   path: '/meetings/',
@@ -163,6 +170,11 @@ const AppMeetingsIndexRoute = AppMeetingsIndexRouteImport.update({
 const AppCasesIndexRoute = AppCasesIndexRouteImport.update({
   id: '/cases/',
   path: '/cases/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWorkspaceCaseIdRoute = AppWorkspaceCaseIdRouteImport.update({
+  id: '/workspace/$caseId',
+  path: '/workspace/$caseId',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMeetingsIdRoute = AppMeetingsIdRouteImport.update({
@@ -220,8 +232,10 @@ export interface FileRoutesByFullPath {
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
+  '/app/workspace/$caseId': typeof AppWorkspaceCaseIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
+  '/app/workspace/': typeof AppWorkspaceIndexRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesByTo {
@@ -251,8 +265,10 @@ export interface FileRoutesByTo {
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
+  '/app/workspace/$caseId': typeof AppWorkspaceCaseIdRoute
   '/app/cases': typeof AppCasesIndexRoute
   '/app/meetings': typeof AppMeetingsIndexRoute
+  '/app/workspace': typeof AppWorkspaceIndexRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesById {
@@ -284,8 +300,10 @@ export interface FileRoutesById {
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
+  '/app/workspace/$caseId': typeof AppWorkspaceCaseIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
+  '/app/workspace/': typeof AppWorkspaceIndexRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRouteTypes {
@@ -318,8 +336,10 @@ export interface FileRouteTypes {
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
     | '/app/meetings/$id'
+    | '/app/workspace/$caseId'
     | '/app/cases/'
     | '/app/meetings/'
+    | '/app/workspace/'
     | '/app/meetings/join/$room'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -349,8 +369,10 @@ export interface FileRouteTypes {
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
     | '/app/meetings/$id'
+    | '/app/workspace/$caseId'
     | '/app/cases'
     | '/app/meetings'
+    | '/app/workspace'
     | '/app/meetings/join/$room'
   id:
     | '__root__'
@@ -381,8 +403,10 @@ export interface FileRouteTypes {
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
     | '/app/meetings/$id'
+    | '/app/workspace/$caseId'
     | '/app/cases/'
     | '/app/meetings/'
+    | '/app/workspace/'
     | '/app/meetings/join/$room'
   fileRoutesById: FileRoutesById
 }
@@ -558,6 +582,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppActivityRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/workspace/': {
+      id: '/app/workspace/'
+      path: '/workspace'
+      fullPath: '/app/workspace/'
+      preLoaderRoute: typeof AppWorkspaceIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/meetings/': {
       id: '/app/meetings/'
       path: '/meetings'
@@ -570,6 +601,13 @@ declare module '@tanstack/react-router' {
       path: '/cases'
       fullPath: '/app/cases/'
       preLoaderRoute: typeof AppCasesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/workspace/$caseId': {
+      id: '/app/workspace/$caseId'
+      path: '/workspace/$caseId'
+      fullPath: '/app/workspace/$caseId'
+      preLoaderRoute: typeof AppWorkspaceCaseIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/meetings/$id': {
@@ -643,8 +681,10 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppCasesCaseIdRoute: typeof AppCasesCaseIdRoute
   AppMeetingsIdRoute: typeof AppMeetingsIdRoute
+  AppWorkspaceCaseIdRoute: typeof AppWorkspaceCaseIdRoute
   AppCasesIndexRoute: typeof AppCasesIndexRoute
   AppMeetingsIndexRoute: typeof AppMeetingsIndexRoute
+  AppWorkspaceIndexRoute: typeof AppWorkspaceIndexRoute
   AppMeetingsJoinRoomRoute: typeof AppMeetingsJoinRoomRoute
 }
 
@@ -669,8 +709,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppCasesCaseIdRoute: AppCasesCaseIdRoute,
   AppMeetingsIdRoute: AppMeetingsIdRoute,
+  AppWorkspaceCaseIdRoute: AppWorkspaceCaseIdRoute,
   AppCasesIndexRoute: AppCasesIndexRoute,
   AppMeetingsIndexRoute: AppMeetingsIndexRoute,
+  AppWorkspaceIndexRoute: AppWorkspaceIndexRoute,
   AppMeetingsJoinRoomRoute: AppMeetingsJoinRoomRoute,
 }
 
