@@ -23,6 +23,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { sweepOverdueInvoices, setInvoiceStatus, markInvoicePaid } from "@/lib/invoicing.functions";
 import { listDraftInvoices, deleteDraftInvoice, acceptDraftInvoice, rejectDraftInvoice, bulkAcceptDraftInvoices } from "@/lib/draft-invoices.functions";
 import { getTimeEntriesByIds } from "@/lib/time-entries.functions";
+import { listOrgDebtPayments } from "@/lib/debt-collection.functions";
 import { ArrowUpDown, ArrowUp, ArrowDown, ExternalLink } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
@@ -1043,5 +1044,94 @@ function DraftInvoicesTab() {
   );
 }
 
+
+function CollectionsTab() {
+  const { locale } = useI18n();
+  const ar = locale === "ar";
+  const listFn = useServerFn(listOrgDebtPayments);
+  const { data: rows, isLoading } = useCollectionsQuery(listFn);
+  const [q, setQ] = useState("");
+
+  const totals = (rows ?? []).reduce((a, r: any) => ({
+    received: a.received + Number(r.amount_received || 0),
+    fee: a.fee + Number(r.service_fee || 0),
+    forwarded: a.forwarded + Number(r.amount_forwarded || 0),
+  }), { received: 0, fee: 0, forwarded: 0 });
+
+  const filtered = (rows ?? []).filter((r: any) =>
+    !q || r.debt_cases?.title?.toLowerCase().includes(q.toLowerCase())
+      || r.debt_case_payers?.name?.toLowerCase().includes(q.toLowerCase())
+      || r.forwarder_name?.toLowerCase().includes(q.toLowerCase())
+  );
+
+  return (
+    <Card className="overflow-hidden">
+      <div className="flex flex-wrap items-center gap-3 border-b p-4">
+        <div className="text-sm font-semibold mr-auto">
+          {ar ? "مدفوعات تحصيل الديون" : "Debt collection payments"}
+          <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length})</span>
+        </div>
+        <div className="text-xs text-muted-foreground flex gap-4">
+          <span>{ar ? "المُستلم" : "Received"}: <b className="text-foreground">{totals.received.toFixed(2)}</b></span>
+          <span>{ar ? "المُحوَّل" : "Forwarded"}: <b className="text-foreground">{totals.forwarded.toFixed(2)}</b></span>
+          <span>{ar ? "الرسوم" : "Fees"}: <b className="text-gold">{totals.fee.toFixed(2)}</b></span>
+        </div>
+        <div className="relative w-56">
+          <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={ar ? "بحث…" : "Search…"} className="h-9 ps-9" />
+        </div>
+        <Button size="sm" variant="outline" asChild>
+          <Link to="/app/debt-collection">{ar ? "إدارة القضايا" : "Manage cases"}</Link>
+        </Button>
+      </div>
+      {isLoading ? <Loading /> : filtered.length === 0 ? <Empty msg={ar ? "لا مدفوعات تحصيل" : "No collection payments yet"} /> : (
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <Th>{ar ? "التاريخ" : "Date"}</Th>
+              <Th>{ar ? "القضية" : "Case"}</Th>
+              <Th>{ar ? "الدافع" : "Payer"}</Th>
+              <Th className="text-end">{ar ? "المُستلم" : "Received"}</Th>
+              <Th className="text-end">{ar ? "الرسوم" : "Fee"}</Th>
+              <Th className="text-end">{ar ? "المُحوَّل" : "Forwarded"}</Th>
+              <Th>{ar ? "المستلم النهائي" : "Forwarder"}</Th>
+              <Th>{ar ? "الطريقة" : "Method"}</Th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {filtered.map((r: any) => (
+              <tr key={r.id} className="hover:bg-secondary/40">
+                <Td>{r.paid_at}</Td>
+                <Td>
+                  {r.debt_cases ? (
+                    <Link to="/app/debt-collection/$id" params={{ id: r.debt_cases.id }} className="font-medium hover:text-gold">{r.debt_cases.title}</Link>
+                  ) : "—"}
+                </Td>
+                <Td>{r.debt_case_payers?.name ?? "—"}</Td>
+                <Td className="text-end font-mono tabular-nums">{Number(r.amount_received).toFixed(2)} {r.currency}</Td>
+                <Td className="text-end font-mono tabular-nums text-gold">{Number(r.service_fee).toFixed(2)}</Td>
+                <Td className="text-end font-mono tabular-nums">{Number(r.amount_forwarded).toFixed(2)}</Td>
+                <Td>{r.forwarder_name ?? "—"}</Td>
+                <Td className="capitalize">{r.method.replace("_", " ")}</Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Card>
+  );
+}
+
+function useCollectionsQuery(fn: () => Promise<any>) {
+  const [data, setData] = useState<any[] | null>(null);
+  const [isLoading, setLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    fn().then((rows) => { if (!cancelled) { setData(rows); setLoading(false); } })
+      .catch(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+  return { data, isLoading };
+}
 
 export { DocumentHeader };
