@@ -35,6 +35,7 @@ import { Route as AppActivityRouteImport } from './routes/app.activity'
 import { Route as AppWorkspaceIndexRouteImport } from './routes/app.workspace.index'
 import { Route as AppMeetingsIndexRouteImport } from './routes/app.meetings.index'
 import { Route as AppCasesIndexRouteImport } from './routes/app.cases.index'
+import { Route as AppWorkspaceCaseIdRouteImport } from './routes/app.workspace.$caseId'
 import { Route as AppMeetingsIdRouteImport } from './routes/app.meetings.$id'
 import { Route as AppClientsClientIdRouteImport } from './routes/app.clients.$clientId'
 import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
@@ -171,6 +172,11 @@ const AppCasesIndexRoute = AppCasesIndexRouteImport.update({
   path: '/cases/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWorkspaceCaseIdRoute = AppWorkspaceCaseIdRouteImport.update({
+  id: '/workspace/$caseId',
+  path: '/workspace/$caseId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMeetingsIdRoute = AppMeetingsIdRouteImport.update({
   id: '/meetings/$id',
   path: '/meetings/$id',
@@ -226,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
+  '/app/workspace/$caseId': typeof AppWorkspaceCaseIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
@@ -258,6 +265,7 @@ export interface FileRoutesByTo {
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
+  '/app/workspace/$caseId': typeof AppWorkspaceCaseIdRoute
   '/app/cases': typeof AppCasesIndexRoute
   '/app/meetings': typeof AppMeetingsIndexRoute
   '/app/workspace': typeof AppWorkspaceIndexRoute
@@ -292,6 +300,7 @@ export interface FileRoutesById {
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
+  '/app/workspace/$caseId': typeof AppWorkspaceCaseIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
@@ -327,6 +336,7 @@ export interface FileRouteTypes {
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
     | '/app/meetings/$id'
+    | '/app/workspace/$caseId'
     | '/app/cases/'
     | '/app/meetings/'
     | '/app/workspace/'
@@ -359,6 +369,7 @@ export interface FileRouteTypes {
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
     | '/app/meetings/$id'
+    | '/app/workspace/$caseId'
     | '/app/cases'
     | '/app/meetings'
     | '/app/workspace'
@@ -392,6 +403,7 @@ export interface FileRouteTypes {
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
     | '/app/meetings/$id'
+    | '/app/workspace/$caseId'
     | '/app/cases/'
     | '/app/meetings/'
     | '/app/workspace/'
@@ -591,6 +603,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCasesIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/workspace/$caseId': {
+      id: '/app/workspace/$caseId'
+      path: '/workspace/$caseId'
+      fullPath: '/app/workspace/$caseId'
+      preLoaderRoute: typeof AppWorkspaceCaseIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/meetings/$id': {
       id: '/app/meetings/$id'
       path: '/meetings/$id'
@@ -662,6 +681,7 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppCasesCaseIdRoute: typeof AppCasesCaseIdRoute
   AppMeetingsIdRoute: typeof AppMeetingsIdRoute
+  AppWorkspaceCaseIdRoute: typeof AppWorkspaceCaseIdRoute
   AppCasesIndexRoute: typeof AppCasesIndexRoute
   AppMeetingsIndexRoute: typeof AppMeetingsIndexRoute
   AppWorkspaceIndexRoute: typeof AppWorkspaceIndexRoute
@@ -689,6 +709,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppCasesCaseIdRoute: AppCasesCaseIdRoute,
   AppMeetingsIdRoute: AppMeetingsIdRoute,
+  AppWorkspaceCaseIdRoute: AppWorkspaceCaseIdRoute,
   AppCasesIndexRoute: AppCasesIndexRoute,
   AppMeetingsIndexRoute: AppMeetingsIndexRoute,
   AppWorkspaceIndexRoute: AppWorkspaceIndexRoute,
