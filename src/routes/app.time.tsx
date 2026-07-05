@@ -11,14 +11,18 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  listTimeEntries, saveTimeEntry, deleteTimeEntry,
+  listTimeEntries, saveTimeEntry, deleteTimeEntry, bulkDeleteTimeEntries,
   startTimer, stopTimer, getRunningTimer, exportTimeEntriesCsv,
 } from "@/lib/time-entries.functions";
-import { createInvoiceFromTime } from "@/lib/invoicing.functions";
+import { createDraftFromTime } from "@/lib/draft-invoices.functions";
 import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
 import { Plus, Loader2, Pencil, Trash2, Play, Square, Clock, Search, Receipt, Download } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/app/time")({ component: TimePage });
 
@@ -52,7 +56,8 @@ function TimePage() {
   const running = useServerFn(getRunningTimer);
   const lCases = useServerFn(listCases);
   const lClients = useServerFn(listClients);
-  const invoiceFromTime = useServerFn(createInvoiceFromTime);
+  const draftFromTime = useServerFn(createDraftFromTime);
+  const bulkDel = useServerFn(bulkDeleteTimeEntries);
   const exportCsv = useServerFn(exportTimeEntriesCsv);
 
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -68,6 +73,9 @@ function TimePage() {
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [invoiceForm, setInvoiceForm] = useState({ client_name: "", client_id: "" as string | "", case_id: "" as string | "", tax_rate: "", due_date: "", notes: "" });
   const [creatingInvoice, setCreatingInvoice] = useState(false);
+  const [pendingSingle, setPendingSingle] = useState<Entry | null>(null);
+  const [pendingBulk, setPendingBulk] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Timer form
   const [tDesc, setTDesc] = useState("");
@@ -136,9 +144,25 @@ function TimePage() {
       toast.success(ar ? "تم الحفظ" : "Saved");
     } catch (e) { toast.error((e as Error).message); }
   }
-  async function remove(id: string) {
-    if (!confirm(ar ? "حذف السجل؟" : "Delete entry?")) return;
-    try { await del({ data: { id } }); refresh(); } catch (e) { toast.error((e as Error).message); }
+  async function confirmSingle() {
+    if (!pendingSingle) return;
+    setDeleting(true);
+    try {
+      await del({ data: { id: pendingSingle.id } });
+      toast.success(ar ? "تم حذف السجل" : "Entry deleted");
+      setPendingSingle(null); refresh();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setDeleting(false); }
+  }
+  async function confirmBulk() {
+    setDeleting(true);
+    try {
+      const ids = Array.from(selected);
+      const r: any = await bulkDel({ data: { ids } });
+      toast.success(ar ? `تم حذف ${r.count} سجل` : `${r.count} entries deleted`);
+      setPendingBulk(false); setSelected(new Set()); refresh();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setDeleting(false); }
   }
 
   const filtered = useMemo(() => entries.filter((e) => {
@@ -272,6 +296,9 @@ function TimePage() {
             <div className="ms-auto flex items-center gap-3">
               <span className="text-xs text-muted-foreground">{ar ? `محدد: ${selected.size}` : `${selected.size} selected`}</span>
               <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>{ar ? "مسح" : "Clear"}</Button>
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setPendingBulk(true)}>
+                <Trash2 className="size-4 text-destructive" />{ar ? "حذف المحدد" : "Delete selected"}
+              </Button>
               <Button size="sm" variant="gold" className="gap-1.5" onClick={() => {
                 const sample = filtered.find((e) => selected.has(e.id));
                 setInvoiceForm({
@@ -282,7 +309,7 @@ function TimePage() {
                 });
                 setInvoiceOpen(true);
               }}>
-                <Receipt className="size-4" />{ar ? "إنشاء فاتورة" : "Create invoice"}
+                <Receipt className="size-4" />{ar ? "إنشاء مسودة فاتورة" : "Create draft invoice"}
               </Button>
             </div>
           )}
@@ -330,7 +357,7 @@ function TimePage() {
               </td>
               <td className="px-5 py-3 text-end">
                 <Button variant="ghost" size="icon" onClick={() => { setEditing(e); setEditOpen(true); }}><Pencil className="size-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => remove(e.id)}><Trash2 className="size-4 text-destructive" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => setPendingSingle(e)}><Trash2 className="size-4 text-destructive" /></Button>
               </td>
             </tr>
           );})}</tbody>
@@ -340,10 +367,10 @@ function TimePage() {
       {/* Create invoice from time */}
       <Dialog open={invoiceOpen} onOpenChange={setInvoiceOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{ar ? "إنشاء فاتورة من الوقت" : "Create invoice from time"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{ar ? "إنشاء مسودة فاتورة" : "Create draft invoice"}</DialogTitle></DialogHeader>
           <div className="grid gap-4">
             <div className="rounded-md border bg-secondary/40 p-3 text-sm">
-              {ar ? `سيتم تضمين ${selected.size} سجل قابل للفوترة.` : `${selected.size} billable entries will be included.`}
+              {ar ? `سيتم تضمين ${selected.size} سجل. ستذهب إلى تبويب "الفواتير" وتصبح فاتورة ضريبية بعد قبولها.` : `${selected.size} entries will be included. Sent to the Invoices tab — accept it to become a tax invoice.`}
             </div>
             <div className="space-y-1.5"><Label>{ar ? "اسم العميل *" : "Client name *"}</Label>
               <Input value={invoiceForm.client_name} onChange={(e) => setInvoiceForm({ ...invoiceForm, client_name: e.target.value })} />
@@ -385,7 +412,7 @@ function TimePage() {
             <Button variant="gold" disabled={creatingInvoice || !invoiceForm.client_name} onClick={async () => {
               setCreatingInvoice(true);
               try {
-                await invoiceFromTime({ data: {
+                await draftFromTime({ data: {
                   entry_ids: Array.from(selected),
                   client_name: invoiceForm.client_name,
                   client_id: invoiceForm.client_id || null,
@@ -394,7 +421,7 @@ function TimePage() {
                   due_date: invoiceForm.due_date || null,
                   notes: invoiceForm.notes || undefined,
                 }});
-                toast.success(ar ? "تم إنشاء الفاتورة" : "Invoice created");
+                toast.success(ar ? "تم إنشاء مسودة الفاتورة" : "Draft invoice created");
                 setInvoiceOpen(false); setSelected(new Set()); refresh();
               } catch (e) { toast.error((e as Error).message); }
               finally { setCreatingInvoice(false); }
@@ -469,6 +496,36 @@ function TimePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!pendingSingle} onOpenChange={(o) => { if (!o) setPendingSingle(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{ar ? "حذف السجل؟" : "Delete entry?"}</AlertDialogTitle>
+            <AlertDialogDescription>{ar ? "سيتم حذف هذا السجل نهائياً." : "This entry will be permanently deleted."}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>{ar ? "إلغاء" : "Cancel"}</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmSingle(); }} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting && <Loader2 className="size-4 animate-spin me-1.5" />}{ar ? "حذف" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={pendingBulk} onOpenChange={(o) => { if (!o) setPendingBulk(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{ar ? `حذف ${selected.size} سجل؟` : `Delete ${selected.size} entries?`}</AlertDialogTitle>
+            <AlertDialogDescription>{ar ? "سيتم حذف جميع السجلات المحددة نهائياً." : "All selected entries will be permanently deleted."}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>{ar ? "إلغاء" : "Cancel"}</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmBulk(); }} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting && <Loader2 className="size-4 animate-spin me-1.5" />}{ar ? "حذف الكل" : "Delete all"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

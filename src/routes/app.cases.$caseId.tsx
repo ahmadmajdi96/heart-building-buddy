@@ -9,13 +9,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { getCase, addCaseEvent, deleteCaseEvent } from "@/lib/cases.functions";
 import { createDocument, getSignedDownloadUrl, deleteDocument } from "@/lib/documents.functions";
 import { saveAppointment } from "@/lib/appointments.functions";
 import { listParties, saveParty, deleteParty, listNotes, addNote, deleteNote } from "@/lib/case-extras.functions";
 import { listCaseMembers, addCaseMember, removeCaseMember, updateCaseMemberRole, listAssignableUsers } from "@/lib/case-members.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Loader2, Trash2, Upload, Download, Plus, Calendar as CalIcon, FileText, Users, StickyNote, ClipboardList, UserPlus, Receipt } from "lucide-react";
+import { DocumentPreviewBody } from "@/components/documents/preview-body";
+import { ArrowLeft, Loader2, Trash2, Upload, Download, Eye, Plus, Calendar as CalIcon, FileText, Users, StickyNote, ClipboardList, UserPlus, Receipt } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/cases/$caseId")({ component: CaseProfilePage });
@@ -254,6 +260,13 @@ function DocumentsTab({ caseId, docs, onChange }: { caseId: string; docs: any[];
   const [uploading, setUploading] = useState(false);
   const [category, setCategory] = useState<string>("other");
   const [filter, setFilter] = useState<string>("all");
+  const [pendingDelete, setPendingDelete] = useState<any | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [preview, setPreview] = useState<{ url: string; name: string; mime: string | null } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const ALLOWED_EXT = ["pdf", "doc", "docx", "csv", "jpg", "jpeg"];
+  const MAX_BYTES = 4 * 1024 * 1024;
 
   const categories = [
     { v: "pleading", ar: "مذكرات", en: "Pleadings" },
@@ -267,6 +280,15 @@ function DocumentsTab({ caseId, docs, onChange }: { caseId: string; docs: any[];
   const catLabel = (v: string | null) => categories.find((c) => c.v === v)?.[locale === "ar" ? "ar" : "en"] ?? (locale === "ar" ? "أخرى" : "Other");
 
   async function upload(file: File) {
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+    if (!ALLOWED_EXT.includes(ext)) {
+      toast.error(locale === "ar" ? "أنواع مسموحة فقط: PDF, Word, CSV, JPG" : "Allowed: PDF, Word, CSV, JPG");
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      toast.error(locale === "ar" ? "الحد الأقصى 4 ميغابايت" : "Max size 4 MB");
+      return;
+    }
     setUploading(true);
     try {
       const { data: u } = await supabase.auth.getUser();
@@ -275,14 +297,36 @@ function DocumentsTab({ caseId, docs, onChange }: { caseId: string; docs: any[];
       const { error } = await supabase.storage.from("documents").upload(path, file);
       if (error) throw error;
       await createDoc({ data: { name: file.name, mime_type: file.type, size: file.size, storage_path: path, case_id: caseId, category } });
-      toast.success(locale === "ar" ? "تم الرفع" : "Uploaded");
+      toast.success(locale === "ar" ? "تم رفع المستند بنجاح" : "Document uploaded successfully");
       onChange();
-    } catch (e) { toast.error((e as Error).message); }
+    } catch (e) {
+      toast.error(locale === "ar" ? `فشل الرفع: ${(e as Error).message}` : `Upload failed: ${(e as Error).message}`);
+    }
     finally { setUploading(false); }
   }
   async function dl(id: string) {
     try { const { url, name } = await signedUrl({ data: { id } }); const a = document.createElement("a"); a.href = url; a.download = name; a.target = "_blank"; a.click(); }
     catch (e) { toast.error((e as Error).message); }
+  }
+  async function openPreview(d: any) {
+    setPreviewLoading(true);
+    try {
+      const { url, name, mime_type } = await signedUrl({ data: { id: d.id } });
+      setPreview({ url, name, mime: mime_type ?? d.mime_type ?? null });
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setPreviewLoading(false); }
+  }
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      await delDoc({ data: { id: pendingDelete.id } });
+      toast.success(locale === "ar" ? "تم حذف المستند بنجاح" : "Document deleted");
+      setPendingDelete(null);
+      onChange();
+    } catch (e) {
+      toast.error((locale === "ar" ? "فشل الحذف: " : "Delete failed: ") + (e as Error).message);
+    } finally { setDeleting(false); }
   }
 
   const filtered = filter === "all" ? docs : docs.filter((d) => (d.category ?? "other") === filter);
@@ -292,8 +336,8 @@ function DocumentsTab({ caseId, docs, onChange }: { caseId: string; docs: any[];
       <div className="grid gap-3 sm:grid-cols-[1fr_200px]">
         <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed bg-card p-6 text-sm text-muted-foreground hover:bg-secondary/40">
           {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-          <span>{locale === "ar" ? "رفع مستند جديد" : "Upload a document"}</span>
-          <input type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); }} />
+          <span>{locale === "ar" ? "رفع مستند (PDF · Word · CSV · JPG)" : "Upload a document (PDF · Word · CSV · JPG)"}</span>
+          <input type="file" accept=".pdf,.doc,.docx,.csv,.jpg,.jpeg" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
         </label>
         <div className="space-y-1.5">
           <Label className="text-xs uppercase tracking-wider text-muted-foreground">{locale === "ar" ? "الفئة" : "Category"}</Label>
@@ -326,13 +370,39 @@ function DocumentsTab({ caseId, docs, onChange }: { caseId: string; docs: any[];
                 </div>
               </div>
               <div className="flex gap-1">
-                <Button variant="ghost" size="icon" onClick={() => dl(d.id)}><Download className="size-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={async () => { if (confirm(locale === "ar" ? "حذف المستند؟" : "Delete document?")) { try { await delDoc({ data: { id: d.id } }); toast.success(locale === "ar" ? "تم الحذف" : "Deleted"); onChange(); } catch (e) { toast.error((e as Error).message); } } }}><Trash2 className="size-4 text-destructive" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => openPreview(d)} disabled={previewLoading} title={locale === "ar" ? "عرض" : "Preview"}><Eye className="size-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => dl(d.id)} title={locale === "ar" ? "تنزيل" : "Download"}><Download className="size-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => setPendingDelete(d)} title={locale === "ar" ? "حذف" : "Delete"}><Trash2 className="size-4 text-destructive" /></Button>
               </div>
             </li>
           ))}
         </ul>}
       </div>
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => { if (!o) setPendingDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{locale === "ar" ? "حذف المستند؟" : "Delete document?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {locale === "ar" ? `سيتم حذف "${pendingDelete?.name ?? ""}" نهائياً.` : `"${pendingDelete?.name ?? ""}" will be permanently deleted.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>{locale === "ar" ? "إلغاء" : "Cancel"}</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmDelete(); }} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting && <Loader2 className="size-4 animate-spin me-1.5" />}
+              {locale === "ar" ? "حذف" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={!!preview} onOpenChange={(o) => { if (!o) setPreview(null); }}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader><DialogTitle className="truncate pe-6">{preview?.name}</DialogTitle></DialogHeader>
+          {preview && <DocumentPreviewBody url={preview.url} name={preview.name} mime={preview.mime} locale={locale} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

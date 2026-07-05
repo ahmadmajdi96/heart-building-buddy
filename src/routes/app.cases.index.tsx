@@ -172,8 +172,8 @@ function CasesPage() {
         : <div className="overflow-x-auto"><table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground"><tr>
               <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "الرقم" : "Ref"}</th>
-              <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "العنوان" : "Title"}</th>
               <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "الموكل" : "Client"}</th>
+              <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "العنوان" : "Title"}</th>
               <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "المحكمة" : "Court"}</th>
               <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "الحالة" : "Status"}</th>
               <th className="px-5 py-3 text-end"></th>
@@ -181,8 +181,8 @@ function CasesPage() {
             <tbody className="divide-y">{filtered.map((c) => (
               <tr key={c.id} className="hover:bg-secondary/40 cursor-pointer" onClick={() => navigate({ to: "/app/cases/$caseId", params: { caseId: c.id } })}>
                 <td className="px-5 py-4 font-mono text-xs text-muted-foreground">{c.case_number || "—"}</td>
-                <td className="px-5 py-4 font-medium">{c.title}</td>
                 <td className="px-5 py-4 text-muted-foreground">{c.clients?.name ?? "—"}</td>
+                <td className="px-5 py-4 font-medium">{c.title}</td>
                 <td className="px-5 py-4 text-muted-foreground">{c.court ?? "—"}</td>
                 <td className="px-5 py-4"><StatusBadge status={c.status} /></td>
                 <td className="px-5 py-4 text-end" onClick={(e) => e.stopPropagation()}>
