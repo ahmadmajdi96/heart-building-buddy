@@ -9,13 +9,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { getCase, addCaseEvent, deleteCaseEvent } from "@/lib/cases.functions";
 import { createDocument, getSignedDownloadUrl, deleteDocument } from "@/lib/documents.functions";
 import { saveAppointment } from "@/lib/appointments.functions";
 import { listParties, saveParty, deleteParty, listNotes, addNote, deleteNote } from "@/lib/case-extras.functions";
 import { listCaseMembers, addCaseMember, removeCaseMember, updateCaseMemberRole, listAssignableUsers } from "@/lib/case-members.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Loader2, Trash2, Upload, Download, Plus, Calendar as CalIcon, FileText, Users, StickyNote, ClipboardList, UserPlus, Receipt } from "lucide-react";
+import { DocumentPreviewBody } from "@/components/documents/preview-body";
+import { ArrowLeft, Loader2, Trash2, Upload, Download, Eye, Plus, Calendar as CalIcon, FileText, Users, StickyNote, ClipboardList, UserPlus, Receipt } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/cases/$caseId")({ component: CaseProfilePage });
