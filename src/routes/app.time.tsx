@@ -24,7 +24,10 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export const Route = createFileRoute("/app/time")({ component: TimePage });
+export const Route = createFileRoute("/app/time")({
+  component: TimePage,
+  validateSearch: (s: Record<string, unknown>) => ({ ids: typeof s.ids === "string" ? s.ids : undefined }),
+});
 
 type Entry = {
   id: string; case_id: string | null; client_id: string | null;
