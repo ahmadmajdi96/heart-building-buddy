@@ -24,7 +24,9 @@ import { sweepOverdueInvoices, setInvoiceStatus, markInvoicePaid } from "@/lib/i
 import { listDraftInvoices, deleteDraftInvoice, acceptDraftInvoice, rejectDraftInvoice, bulkAcceptDraftInvoices } from "@/lib/draft-invoices.functions";
 import { getTimeEntriesByIds } from "@/lib/time-entries.functions";
 import { listOrgDebtPayments } from "@/lib/debt-collection.functions";
-import { ArrowUpDown, ArrowUp, ArrowDown, ExternalLink } from "lucide-react";
+import { listClients, saveClient } from "@/lib/clients.functions";
+import { listUnpaidInvoicesForClient, createPaymentPlan, markSchedulePaid, deletePaymentPlan } from "@/lib/payment-plans.functions";
+import { ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Layers } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
 const financialsSearchSchema = z.object({
