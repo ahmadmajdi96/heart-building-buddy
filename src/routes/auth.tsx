@@ -33,7 +33,6 @@ function friendlyAuthError(raw: string, mode: Mode, locale: "ar" | "en"): string
   return ar ? "تعذّر إتمام العملية. حاول مرة أخرى." : "Something went wrong. Please try again.";
 }
 
-type Mode = "signin" | "signup" | "magic" | "forgot";
 
 function AuthPage() {
   const navigate = useNavigate();
