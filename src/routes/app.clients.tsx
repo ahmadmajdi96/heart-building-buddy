@@ -8,6 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { listClients, saveClient, deleteClient, getClient, addInteraction, deleteInteraction, conflictCheck } from "@/lib/clients.functions";
 import { Plus, Search, Loader2, Pencil, Trash2, Phone, Mail, Building, User, MessageSquare, ShieldAlert, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
