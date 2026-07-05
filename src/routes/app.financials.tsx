@@ -709,16 +709,17 @@ function SortableTh({ label, k, sort, setSort }: { label: string; k: SortKey; so
 function DraftInvoicesTab() {
   const { locale } = useI18n();
   const ar = locale === "ar";
-  const { can } = useOrg();
+  const { can, org } = useOrg();
+  const navigate = useNavigate();
+  const search = Route.useSearch();
   const listFn = useServerFn(listDraftInvoices);
   const acceptFn = useServerFn(acceptDraftInvoice);
+  const bulkAcceptFn = useServerFn(bulkAcceptDraftInvoices);
   const rejectFn = useServerFn(rejectDraftInvoice);
   const deleteFn = useServerFn(deleteDraftInvoice);
   const getEntries = useServerFn(getTimeEntriesByIds);
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [q, setQ] = useState("");
-  const [status, setStatus] = useState("all");
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: "issue_date", dir: "desc" });
   const [busyId, setBusyId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<any | null>(null);
@@ -726,6 +727,18 @@ function DraftInvoicesTab() {
   const [acceptDueDate, setAcceptDueDate] = useState("");
   const [acceptEntries, setAcceptEntries] = useState<any[] | null>(null);
   const [preview, setPreview] = useState<any | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkDue, setBulkDue] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  const q = search.q;
+  const status = search.status;
+  const dueFrom = search.dueFrom;
+  const dueTo = search.dueTo;
+  const payment = search.payment;
+  const setSearch = (patch: Partial<typeof search>) =>
+    navigate({ to: "/app/financials", search: { ...search, ...patch } });
 
   async function load() {
     setLoading(true);
@@ -749,6 +762,10 @@ function DraftInvoicesTab() {
   const filtered = useMemo(() => {
     let out = rows.filter((r) => {
       if (status !== "all" && r.status !== status) return false;
+      if (dueFrom && (!r.due_date || r.due_date < dueFrom)) return false;
+      if (dueTo && (!r.due_date || r.due_date > dueTo)) return false;
+      if (payment === "paid" && r.status !== "accepted") return false;
+      if (payment === "unpaid" && r.status === "accepted") return false;
       if (!q.trim()) return true;
       const s = q.toLowerCase();
       return (r.client_name ?? "").toLowerCase().includes(s) || (r.notes ?? "").toLowerCase().includes(s);
@@ -763,7 +780,20 @@ function DraftInvoicesTab() {
       return String(av).localeCompare(String(bv)) * dir;
     });
     return out;
-  }, [rows, q, status, sort]);
+  }, [rows, q, status, dueFrom, dueTo, payment, sort]);
+
+  const selectableIds = useMemo(() => filtered.filter((r) => r.status === "draft").map((r) => r.id), [filtered]);
+  const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
+  const someSelected = selectableIds.some((id) => selected.has(id));
+  function toggleAll() {
+    if (allSelected) setSelected(new Set());
+    else setSelected(new Set(selectableIds));
+  }
+  function toggleOne(id: string) {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelected(next);
+  }
 
   async function accept(row: any) {
     setBusyId(row.id);
@@ -786,6 +816,18 @@ function DraftInvoicesTab() {
     catch (e) { toast.error((e as Error).message); }
     finally { setBusyId(null); }
   }
+  async function runBulkAccept() {
+    setBulkBusy(true);
+    try {
+      const ids = Array.from(selected).filter((id) => selectableIds.includes(id));
+      const res = (await bulkAcceptFn({ data: { ids, due_date: bulkDue || null } })) as any[];
+      const ok = res.filter((r) => r.ok).length;
+      const fail = res.length - ok;
+      toast.success(ar ? `تم قبول ${ok} من ${res.length}` : `Accepted ${ok} of ${res.length}${fail ? ` (${fail} failed)` : ""}`);
+      setSelected(new Set()); setBulkOpen(false); setBulkDue(""); load();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setBulkBusy(false); }
+  }
 
   const acceptEntryIds = (pendingAccept?.time_entry_ids ?? []) as string[];
 
@@ -797,14 +839,41 @@ function DraftInvoicesTab() {
             {ar ? "الفواتير (مسودات)" : "Invoices (drafts)"}
             <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span>
           </div>
-          <TableFilter q={q} setQ={setQ} status={status} setStatus={setStatus}
+          {selected.size > 0 && can("edit_financials") && (
+            <Button size="sm" variant="gold" onClick={() => setBulkOpen(true)}>
+              <Check className="size-4" /> {ar ? `قبول ${selected.size}` : `Accept ${selected.size}`}
+            </Button>
+          )}
+          <TableFilter q={q} setQ={(v) => setSearch({ q: v })} status={status} setStatus={(v) => setSearch({ status: v })}
             statuses={["all", "draft", "accepted", "rejected"]}
             placeholder={ar ? "ابحث بالعميل أو الملاحظات…" : "Search by client or notes…"} locale={locale as any} />
+        </div>
+        <div className="flex flex-wrap items-center gap-3 border-b bg-secondary/20 px-4 py-2 text-xs">
+          <span className="text-muted-foreground">{ar ? "الاستحقاق" : "Due"}</span>
+          <Input type="date" value={dueFrom} onChange={(e) => setSearch({ dueFrom: e.target.value })} className="h-8 w-40" />
+          <span className="text-muted-foreground">→</span>
+          <Input type="date" value={dueTo} onChange={(e) => setSearch({ dueTo: e.target.value })} className="h-8 w-40" />
+          <span className="ms-4 text-muted-foreground">{ar ? "الدفع" : "Payment"}</span>
+          <div className="flex gap-1">
+            {(["all", "paid", "unpaid"] as const).map((p) => (
+              <Button key={p} size="sm" variant={payment === p ? "default" : "ghost"} className="h-7 px-2 capitalize" onClick={() => setSearch({ payment: p })}>
+                {p === "all" ? (ar ? "الكل" : "All") : p === "paid" ? (ar ? "مدفوعة" : "Paid") : (ar ? "غير مدفوعة" : "Unpaid")}
+              </Button>
+            ))}
+          </div>
+          {(dueFrom || dueTo || payment !== "all" || status !== "all" || q) && (
+            <Button size="sm" variant="ghost" className="h-7 px-2 ms-auto" onClick={() => setSearch({ q: "", status: "all", dueFrom: "", dueTo: "", payment: "all" })}>
+              <X className="size-3" /> {ar ? "مسح" : "Clear"}
+            </Button>
+          )}
         </div>
         {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={ar ? "لا مسودات. أنشئ واحدة من تتبع الوقت." : "No drafts yet. Create one from Time tracking."}/> : (
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
+                <th className="px-5 py-3 w-8">
+                  <Checkbox checked={allSelected ? true : someSelected ? ("indeterminate" as any) : false} onCheckedChange={toggleAll} disabled={selectableIds.length === 0} />
+                </th>
                 <SortableTh label={ar ? "الإصدار" : "Issued"} k="issue_date" sort={sort} setSort={setSort} />
                 <SortableTh label={ar ? "العميل" : "Client"} k="client_name" sort={sort} setSort={setSort} />
                 <SortableTh label={ar ? "الاستحقاق" : "Due"} k="due_date" sort={sort} setSort={setSort} />
@@ -816,6 +885,13 @@ function DraftInvoicesTab() {
             <tbody className="divide-y">
               {filtered.map((r) => (
                 <tr key={r.id} className="hover:bg-secondary/40">
+                  <Td>
+                    <Checkbox
+                      checked={selected.has(r.id)}
+                      onCheckedChange={() => toggleOne(r.id)}
+                      disabled={r.status !== "draft"}
+                    />
+                  </Td>
                   <Td>{r.issue_date}</Td>
                   <Td className="font-medium">{r.client_name}</Td>
                   <Td className="text-muted-foreground">{r.due_date || "—"}</Td>
@@ -823,6 +899,7 @@ function DraftInvoicesTab() {
                   <Td><StatusBadge status={r.status}/></Td>
                   <Td className="text-end whitespace-nowrap">
                     <Button size="icon" variant="ghost" onClick={() => setPreview({ ...r, number: r.id.slice(0, 8).toUpperCase() })} title={ar ? "معاينة" : "Preview"}><Eye className="size-4"/></Button>
+                    <Button size="icon" variant="ghost" onClick={() => downloadInvoicePdf("invoice", { ...r, number: r.id.slice(0,8).toUpperCase() }, org as any)} title={ar ? "تنزيل PDF" : "Download PDF"}><Download className="size-4"/></Button>
                     {can("edit_financials") && r.status === "draft" && (
                       <>
                         <Button size="icon" variant="ghost" onClick={() => setPendingAccept(r)} disabled={busyId === r.id} title={ar ? "قبول" : "Accept"}>
@@ -843,6 +920,31 @@ function DraftInvoicesTab() {
           </table>
         )}
       </Card>
+
+      <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{ar ? `قبول ${selected.size} مسودة` : `Accept ${selected.size} drafts`}</DialogTitle></DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p className="text-muted-foreground">
+              {ar ? "سيتم تحويل جميع المسودات المحددة إلى فواتير ضريبية بأرقام متسلسلة." : "All selected drafts will be converted into tax invoices with sequential numbers."}
+            </p>
+            <div>
+              <Label>{ar ? "تاريخ استحقاق موحد (اختياري)" : "Uniform due date (optional)"}</Label>
+              <Input type="date" className="mt-1.5" value={bulkDue} onChange={(e) => setBulkDue(e.target.value)} />
+              <p className="mt-1 text-xs text-muted-foreground">{ar ? "اتركه فارغاً لاستخدام تاريخ استحقاق كل مسودة." : "Leave blank to keep each draft's own due date."}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setBulkOpen(false)}>{ar ? "إلغاء" : "Cancel"}</Button>
+            <Button variant="gold" onClick={runBulkAccept} disabled={bulkBusy}>
+              {bulkBusy && <Loader2 className="size-4 animate-spin me-1.5"/>}
+              {ar ? "قبول الكل" : "Accept all"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
 
       {preview && <DocumentPreview kind="invoice" doc={{ ...preview, tax_rate: preview.tax_rate ?? 0 }} onClose={() => setPreview(null)} />}
 
