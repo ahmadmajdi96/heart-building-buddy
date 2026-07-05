@@ -31,6 +31,8 @@ function CasesPage() {
   const del = useServerFn(deleteCase);
   const listC = useServerFn(listClients);
 
+  const saveC = useServerFn(saveClient);
+
   const [cases, setCases] = useState<CaseRow[]>([]);
   const [clients, setClients] = useState<ClientRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +40,11 @@ function CasesPage() {
   const [status, setStatus] = useState<string>("all");
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<CaseRow> | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<CaseRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [quickClientOpen, setQuickClientOpen] = useState(false);
+  const [quickClient, setQuickClient] = useState<{ name: string; email: string; phone: string; company: string; type: "individual" | "company" }>({ name: "", email: "", phone: "", company: "", type: "individual" });
+  const [quickBusy, setQuickBusy] = useState(false);
 
   async function refresh() {
     setLoading(true);
@@ -58,7 +65,8 @@ function CasesPage() {
   }), [cases, q, status]);
 
   async function submit() {
-    if (!editing?.title) { toast.error(locale === "ar" ? "العنوان مطلوب" : "Title required"); return; }
+    if (!editing?.title) { toast.error(locale === "ar" ? "العنوان مطلوب" : "Title is required"); return; }
+    const isNew = !editing.id;
     try {
       await save({ data: {
         id: editing.id, title: editing.title!, case_number: editing.case_number ?? undefined,
@@ -71,13 +79,54 @@ function CasesPage() {
         opposing_counsel: editing.opposing_counsel ?? undefined,
       }});
       setEditOpen(false); setEditing(null); refresh();
-      toast.success(locale === "ar" ? "تم الحفظ" : "Saved");
-    } catch (e) { toast.error((e as Error).message); }
+      toast.success(
+        isNew
+          ? (locale === "ar" ? "تم إضافة القضية بنجاح" : "Case added successfully")
+          : (locale === "ar" ? "تم حفظ التغييرات بنجاح" : "Case saved successfully"),
+      );
+    } catch (e) {
+      toast.error(
+        (isNew
+          ? (locale === "ar" ? "فشل إضافة القضية: " : "Failed to add case: ")
+          : (locale === "ar" ? "فشل الحفظ: " : "Save failed: ")) + (e as Error).message,
+      );
+    }
   }
 
-  async function remove(id: string) {
-    if (!confirm(locale === "ar" ? "حذف هذه القضية؟" : "Delete this case?")) return;
-    try { await del({ data: { id } }); refresh(); } catch (e) { toast.error((e as Error).message); }
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      await del({ data: { id: pendingDelete.id } });
+      toast.success(locale === "ar" ? "تم حذف القضية بنجاح" : "Case deleted successfully");
+      setPendingDelete(null);
+      refresh();
+    } catch (e) {
+      toast.error((locale === "ar" ? "فشل الحذف: " : "Delete failed: ") + (e as Error).message);
+    } finally { setDeleting(false); }
+  }
+
+  async function submitQuickClient() {
+    if (!quickClient.name.trim()) { toast.error(locale === "ar" ? "الاسم مطلوب" : "Name is required"); return; }
+    setQuickBusy(true);
+    try {
+      const row: any = await saveC({ data: {
+        name: quickClient.name.trim(),
+        email: quickClient.email,
+        phone: quickClient.phone,
+        company: quickClient.company,
+        type: quickClient.type,
+        status: "active",
+      }});
+      const newClient = { id: row.id as string, name: row.name as string };
+      setClients((prev) => [newClient, ...prev]);
+      setEditing((prev) => ({ ...(prev ?? {}), client_id: newClient.id }));
+      setQuickClient({ name: "", email: "", phone: "", company: "", type: "individual" });
+      setQuickClientOpen(false);
+      toast.success(locale === "ar" ? "تم إضافة الموكل بنجاح" : "Client added successfully");
+    } catch (e) {
+      toast.error((locale === "ar" ? "فشل إضافة الموكل: " : "Failed to add client: ") + (e as Error).message);
+    } finally { setQuickBusy(false); }
   }
 
   const STATUS_LABELS: Record<string, { ar: string; en: string }> = {
