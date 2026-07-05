@@ -31,11 +31,18 @@ export const getWorkspaceOverview = createServerFn({ method: "GET" })
         .select("user_id, role, status, invited_email, created_at")
         .eq("org_id", orgId)
         .eq("status", "active"),
-      context.supabase
-        .from("cases")
-        .select("id, title, case_number, status, priority, opened_at, owner_id, client_id, clients(id, name)")
-        .eq("org_id", orgId)
-        .order("opened_at", { ascending: false }),
+      // cases don't have org_id — scope through owner_id ∈ org members
+      (async () => {
+        const { data: orgMems } = await context.supabase
+          .from("organization_members").select("user_id").eq("org_id", orgId).eq("status", "active");
+        const ownerIds = (orgMems ?? []).map((m: any) => m.user_id).filter(Boolean);
+        if (ownerIds.length === 0) return { data: [] as any[], error: null };
+        return await context.supabase
+          .from("cases")
+          .select("id, title, case_number, status, priority, opened_at, owner_id, client_id, clients(id, name)")
+          .in("owner_id", ownerIds)
+          .order("opened_at", { ascending: false });
+      })(),
     ]);
     if (membersRes.error) throw new Error(membersRes.error.message);
     if (casesRes.error) throw new Error(casesRes.error.message);
