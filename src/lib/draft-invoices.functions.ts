@@ -144,6 +144,17 @@ export const acceptDraftInvoice = createServerFn({ method: "POST" })
       .update({ status: "accepted", accepted_invoice_id: inv!.id, accepted_at: new Date().toISOString() })
       .eq("id", data.id);
 
+    try {
+      await context.supabase.from("activity_log").insert([
+        { org_id: mem.org_id, actor_id: context.userId, entity_type: "draft_invoice", entity_id: data.id,
+          case_id: draft.case_id ?? null, action: "accepted",
+          summary: `Draft accepted for ${draft.client_name}` },
+        { org_id: mem.org_id, actor_id: context.userId, entity_type: "invoice", entity_id: inv!.id,
+          case_id: draft.case_id ?? null, action: "converted_from_draft",
+          summary: `Invoice ${(inv as any).number} converted from draft` },
+      ]);
+    } catch { /* non-fatal */ }
+
     return inv;
   });
 
@@ -155,6 +166,57 @@ export const rejectDraftInvoice = createServerFn({ method: "POST" })
       .update({ status: "rejected" }).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const bulkAcceptDraftInvoices = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    ids: z.array(z.string().uuid()).min(1),
+    due_date: z.string().nullable().optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const mem = await getCallerOrg(context);
+    const results: { id: string; ok: boolean; error?: string; invoice_number?: string }[] = [];
+    for (const id of data.ids) {
+      try {
+        const { data: draft, error: dErr } = await context.supabase
+          .from("draft_invoices").select("*").eq("id", id).maybeSingle();
+        if (dErr) throw new Error(dErr.message);
+        if (!draft || draft.status !== "draft") throw new Error("Not a draft");
+        const { data: numRes, error: nErr } = await context.supabase.rpc("next_doc_number", {
+          _org_id: mem.org_id, _kind: "invoice",
+        });
+        if (nErr) throw new Error(nErr.message);
+        const { data: inv, error: iErr } = await context.supabase
+          .from("tax_invoices").insert({
+            org_id: mem.org_id, number: numRes as string,
+            client_id: draft.client_id, client_name: draft.client_name, case_id: draft.case_id,
+            issue_date: new Date().toISOString().slice(0, 10),
+            due_date: data.due_date ?? draft.due_date,
+            status: "issued", currency: draft.currency, tax_rate: draft.tax_rate,
+            subtotal: draft.subtotal, tax_amount: draft.tax_amount, total: draft.total,
+            notes: draft.notes, items: draft.items, created_by: context.userId,
+          }).select().maybeSingle();
+        if (iErr) throw new Error(iErr.message);
+        await context.supabase.from("draft_invoices")
+          .update({ status: "accepted", accepted_invoice_id: (inv as any).id, accepted_at: new Date().toISOString() })
+          .eq("id", id);
+        try {
+          await context.supabase.from("activity_log").insert([
+            { org_id: mem.org_id, actor_id: context.userId, entity_type: "draft_invoice", entity_id: id,
+              case_id: draft.case_id ?? null, action: "accepted",
+              summary: `Draft accepted for ${draft.client_name} (bulk)` },
+            { org_id: mem.org_id, actor_id: context.userId, entity_type: "invoice", entity_id: (inv as any).id,
+              case_id: draft.case_id ?? null, action: "converted_from_draft",
+              summary: `Invoice ${(inv as any).number} converted from draft (bulk)` },
+          ]);
+        } catch { /* non-fatal */ }
+        results.push({ id, ok: true, invoice_number: (inv as any).number });
+      } catch (e) {
+        results.push({ id, ok: false, error: (e as Error).message });
+      }
+    }
+    return results;
   });
 
 const DraftFromTimeInput = z.object({

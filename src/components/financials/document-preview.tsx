@@ -3,7 +3,8 @@ import { useI18n } from "@/lib/i18n";
 import { useLogoUrl } from "@/lib/logo";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, Languages } from "lucide-react";
+import { Printer, Languages, Download } from "lucide-react";
+import { downloadInvoicePdf } from "@/lib/invoice-pdf";
 import { useState } from "react";
 import { hijriDate, fmtNumber } from "@/lib/bilingual";
 
@@ -38,6 +39,7 @@ type Mode = "current" | "bilingual";
 
 export function DocumentPreview({ kind, doc, onClose }: { kind: "quote" | "invoice"; doc: any; onClose: () => void }) {
   const { locale } = useI18n();
+  const { org } = useOrg();
   const items = (doc.items as any[]) ?? [];
   const [mode, setMode] = useState<Mode>("current");
 
@@ -54,6 +56,7 @@ export function DocumentPreview({ kind, doc, onClose }: { kind: "quote" | "invoi
           <Button size="sm" variant="outline" onClick={() => setMode(mode === "bilingual" ? "current" : "bilingual")}>
             <Languages className="size-4"/>{mode === "bilingual" ? L("لغة واحدة","Single language") : L("عرض ثنائي اللغة","Bilingual")}
           </Button>
+          <Button size="sm" variant="outline" onClick={() => downloadInvoicePdf(kind, doc, org as any)}><Download className="size-4"/>{L("تنزيل PDF","Download PDF")}</Button>
           <Button size="sm" variant="outline" onClick={() => window.print()}><Printer className="size-4"/>{L("طباعة","Print")}</Button>
         </div>
         <div className="bg-card p-2 print:p-0">

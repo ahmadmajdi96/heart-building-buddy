@@ -146,3 +146,42 @@ export const listOverdueInvoices = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return data ?? [];
   });
+
+/** Mark an invoice as paid — records a payment for any remaining balance, updates
+ *  status, and logs an activity entry with the payment date. */
+export const markInvoicePaid = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    id: z.string().uuid(),
+    paid_at: z.string(),
+    method: z.enum(["bank_transfer", "card", "cash", "cheque", "other"]).default("bank_transfer"),
+    reference: z.string().optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: inv, error: iErr } = await context.supabase
+      .from("tax_invoices").select("*").eq("id", data.id).maybeSingle();
+    if (iErr) throw new Error(iErr.message);
+    if (!inv) throw new Error("Invoice not found");
+    const remaining = Number(inv.total) - Number(inv.amount_paid || 0);
+    if (remaining > 0) {
+      const { error: pErr } = await context.supabase.from("payments").insert({
+        org_id: inv.org_id,
+        created_by: context.userId,
+        invoice_id: inv.id,
+        client_name: inv.client_name,
+        amount: remaining,
+        method: data.method,
+        reference: data.reference ?? null,
+        paid_at: data.paid_at,
+        currency: inv.currency,
+      });
+      if (pErr) throw new Error(pErr.message);
+    }
+    const { error: uErr } = await context.supabase.from("tax_invoices")
+      .update({ amount_paid: Number(inv.total), status: "paid" }).eq("id", inv.id);
+    if (uErr) throw new Error(uErr.message);
+
+    await logActivity(context, inv.org_id, "paid", inv.id,
+      `Invoice ${inv.number} marked paid on ${data.paid_at}`, inv.case_id);
+    return { ok: true };
+  });
