@@ -51,6 +51,9 @@ function formatDuration(seconds: number): string {
 function TimePage() {
   const { locale } = useI18n();
   const ar = locale === "ar";
+  const search = Route.useSearch();
+  const filterIds = useMemo(() => new Set((search.ids ?? "").split(",").filter(Boolean)), [search.ids]);
+  const navigate = Route.useNavigate();
   const list = useServerFn(listTimeEntries);
   const save = useServerFn(saveTimeEntry);
   const del = useServerFn(deleteTimeEntry);
