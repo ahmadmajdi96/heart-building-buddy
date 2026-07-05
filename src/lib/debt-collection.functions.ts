@@ -219,7 +219,7 @@ export const removeAssignee = createServerFn({ method: "POST" })
 const PaymentInput = z.object({
   id: z.string().uuid().optional(),
   case_id: z.string().uuid(),
-  payer_id: z.string().uuid().nullable().optional(),
+  payer_id: optUuid,
   amount_received: z.number().min(0),
   service_fee: z.number().min(0).default(0),
   amount_forwarded: z.number().min(0).default(0),
