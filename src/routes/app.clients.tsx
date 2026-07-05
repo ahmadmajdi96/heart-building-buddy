@@ -151,7 +151,7 @@ function ClientsPage() {
                   <td className="px-5 py-4 text-muted-foreground">{c.email || "—"}</td>
                   <td className="px-5 py-4 text-end">
                     <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="size-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => remove(c.id)}><Trash2 className="size-4 text-destructive" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setPendingDelete(c)}><Trash2 className="size-4 text-destructive" /></Button>
                   </td>
                 </tr>
               ))}
