@@ -607,4 +607,151 @@ function Td({ children, className = "" }: { children?: React.ReactNode; classNam
 function Loading() { return <div className="grid place-items-center p-12"><Loader2 className="size-5 animate-spin text-muted-foreground"/></div>; }
 function Empty({ msg }: { msg: string }) { return <div className="p-12 text-center text-sm text-muted-foreground">{msg}</div>; }
 
+// ---------- DRAFT INVOICES (proforma) ----------
+function DraftInvoicesTab() {
+  const { locale } = useI18n();
+  const ar = locale === "ar";
+  const { can } = useOrg();
+  const listFn = useServerFn(listDraftInvoices);
+  const acceptFn = useServerFn(acceptDraftInvoice);
+  const rejectFn = useServerFn(rejectDraftInvoice);
+  const deleteFn = useServerFn(deleteDraftInvoice);
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState("all");
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<any | null>(null);
+  const [pendingAccept, setPendingAccept] = useState<any | null>(null);
+  const [preview, setPreview] = useState<any | null>(null);
+
+  async function load() {
+    setLoading(true);
+    try { setRows((await listFn()) as any[]); }
+    catch (e) { toast.error((e as Error).message); }
+    finally { setLoading(false); }
+  }
+  useEffect(() => { load(); }, []);
+
+  const filtered = useMemo(() => rows.filter((r) => {
+    if (status !== "all" && r.status !== status) return false;
+    if (!q.trim()) return true;
+    const s = q.toLowerCase();
+    return (r.client_name ?? "").toLowerCase().includes(s);
+  }), [rows, q, status]);
+
+  async function accept(row: any) {
+    setBusyId(row.id);
+    try {
+      await acceptFn({ data: { id: row.id } });
+      toast.success(ar ? "تم قبول الفاتورة وتحويلها إلى فاتورة ضريبية" : "Accepted — moved to Tax invoices");
+      setPendingAccept(null); load();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setBusyId(null); }
+  }
+  async function reject(row: any) {
+    setBusyId(row.id);
+    try { await rejectFn({ data: { id: row.id } }); toast.success(ar ? "تم الرفض" : "Rejected"); load(); }
+    catch (e) { toast.error((e as Error).message); }
+    finally { setBusyId(null); }
+  }
+  async function remove(row: any) {
+    setBusyId(row.id);
+    try { await deleteFn({ data: { id: row.id } }); toast.success(ar ? "تم الحذف" : "Deleted"); setPendingDelete(null); load(); }
+    catch (e) { toast.error((e as Error).message); }
+    finally { setBusyId(null); }
+  }
+
+  return (
+    <>
+      <Card className="overflow-hidden">
+        <div className="flex flex-wrap items-center gap-3 border-b p-4">
+          <div className="text-sm font-semibold mr-auto">
+            {ar ? "الفواتير (مسودات)" : "Invoices (drafts)"}
+            <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span>
+          </div>
+          <TableFilter q={q} setQ={setQ} status={status} setStatus={setStatus}
+            statuses={["all", "draft", "accepted", "rejected"]}
+            placeholder={ar ? "ابحث بالعميل…" : "Search by client…"} locale={locale as any} />
+        </div>
+        {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={ar ? "لا مسودات. أنشئ واحدة من تتبع الوقت." : "No drafts yet. Create one from Time tracking."}/> : (
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <Th>{ar ? "الإصدار" : "Issued"}</Th>
+                <Th>{ar ? "العميل" : "Client"}</Th>
+                <Th>{ar ? "الاستحقاق" : "Due"}</Th>
+                <Th className="text-end">{ar ? "الإجمالي" : "Total"}</Th>
+                <Th>{ar ? "الحالة" : "Status"}</Th>
+                <Th></Th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {filtered.map((r) => (
+                <tr key={r.id} className="hover:bg-secondary/40">
+                  <Td>{r.issue_date}</Td>
+                  <Td className="font-medium">{r.client_name}</Td>
+                  <Td className="text-muted-foreground">{r.due_date || "—"}</Td>
+                  <Td className="text-end font-mono tabular-nums">{fmt(r.total, r.currency)}</Td>
+                  <Td><StatusBadge status={r.status}/></Td>
+                  <Td className="text-end whitespace-nowrap">
+                    <Button size="icon" variant="ghost" onClick={() => setPreview({ ...r, number: r.id.slice(0, 8).toUpperCase() })} title={ar ? "معاينة" : "Preview"}><Eye className="size-4"/></Button>
+                    {can("edit_financials") && r.status === "draft" && (
+                      <>
+                        <Button size="icon" variant="ghost" onClick={() => setPendingAccept(r)} disabled={busyId === r.id} title={ar ? "قبول" : "Accept"}>
+                          <Check className="size-4 text-emerald-600"/>
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => reject(r)} disabled={busyId === r.id} title={ar ? "رفض" : "Reject"}>
+                          <XCircle className="size-4 text-amber-600"/>
+                        </Button>
+                      </>
+                    )}
+                    {can("delete_financials") && (
+                      <Button size="icon" variant="ghost" onClick={() => setPendingDelete(r)} disabled={busyId === r.id}><Trash2 className="size-4 text-destructive"/></Button>
+                    )}
+                  </Td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+
+      {preview && <DocumentPreview kind="invoice" doc={{ ...preview, tax_rate: preview.tax_rate ?? 0 }} onClose={() => setPreview(null)} />}
+
+      <Dialog open={!!pendingAccept} onOpenChange={(o) => { if (!o) setPendingAccept(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{ar ? "قبول المسودة؟" : "Accept draft?"}</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {ar ? "سيتم تحويل هذه المسودة إلى فاتورة ضريبية رسمية ولن يمكن التراجع." : "This draft will be converted to an official tax invoice. This cannot be undone."}
+          </p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPendingAccept(null)}>{ar ? "إلغاء" : "Cancel"}</Button>
+            <Button variant="gold" onClick={() => pendingAccept && accept(pendingAccept)} disabled={busyId === pendingAccept?.id}>
+              {busyId === pendingAccept?.id && <Loader2 className="size-4 animate-spin me-1.5"/>}
+              {ar ? "قبول وتحويل" : "Accept & convert"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!pendingDelete} onOpenChange={(o) => { if (!o) setPendingDelete(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{ar ? "حذف المسودة؟" : "Delete draft?"}</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {ar ? "سيتم حذف هذه المسودة نهائياً." : "This draft will be permanently deleted."}
+          </p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPendingDelete(null)}>{ar ? "إلغاء" : "Cancel"}</Button>
+            <Button variant="gold" className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => pendingDelete && remove(pendingDelete)} disabled={busyId === pendingDelete?.id}>
+              {busyId === pendingDelete?.id && <Loader2 className="size-4 animate-spin me-1.5"/>}
+              {ar ? "حذف" : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 export { DocumentHeader };
