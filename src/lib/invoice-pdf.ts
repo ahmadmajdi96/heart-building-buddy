@@ -1,0 +1,99 @@
+import jsPDF from "jspdf";
+
+type Org = { legal_name?: string; display_name?: string | null; email?: string | null; phone?: string | null; address?: string | null; tax_id?: string | null };
+type Doc = {
+  number?: string;
+  client_name?: string;
+  issue_date?: string;
+  due_date?: string | null;
+  valid_until?: string | null;
+  currency?: string;
+  tax_rate?: number;
+  subtotal?: number;
+  tax_amount?: number;
+  total?: number;
+  notes?: string | null;
+  items?: { description?: string; quantity?: number; unit_price?: number }[];
+};
+
+function money(n: number | undefined) {
+  return Number(n ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+export function downloadInvoicePdf(kind: "quote" | "invoice", doc: Doc, org?: Org | null) {
+  const pdf = new jsPDF({ unit: "pt", format: "a4" });
+  const W = pdf.internal.pageSize.getWidth();
+  const M = 48;
+  let y = M;
+
+  // Header
+  pdf.setFont("helvetica", "bold").setFontSize(16);
+  pdf.text(org?.display_name || org?.legal_name || "", M, y);
+  pdf.setFont("helvetica", "normal").setFontSize(9);
+  const rightLines = [org?.email, org?.phone, org?.address, org?.tax_id ? `VAT/TAX: ${org.tax_id}` : null].filter(Boolean) as string[];
+  let ry = y;
+  rightLines.forEach((line) => { pdf.text(String(line), W - M, ry, { align: "right" }); ry += 12; });
+  y = Math.max(y + 20, ry + 4);
+
+  pdf.setDrawColor(200); pdf.line(M, y, W - M, y); y += 20;
+
+  // Doc heading
+  pdf.setFont("helvetica", "bold").setFontSize(20);
+  pdf.text(kind === "quote" ? "QUOTE" : "TAX INVOICE", M, y);
+  pdf.setFont("helvetica", "normal").setFontSize(11);
+  pdf.text(String(doc.number ?? ""), M, y + 18);
+
+  pdf.setFontSize(10);
+  pdf.text(`Issued: ${doc.issue_date ?? ""}`, W - M, y, { align: "right" });
+  const dueLabel = kind === "quote" ? (doc.valid_until ? `Valid until: ${doc.valid_until}` : "") : (doc.due_date ? `Due: ${doc.due_date}` : "");
+  if (dueLabel) pdf.text(dueLabel, W - M, y + 14, { align: "right" });
+  y += 46;
+
+  pdf.setFont("helvetica", "bold").setFontSize(9).setTextColor(120);
+  pdf.text("BILL TO", M, y);
+  pdf.setFont("helvetica", "normal").setFontSize(11).setTextColor(0);
+  pdf.text(String(doc.client_name ?? ""), M, y + 14);
+  y += 36;
+
+  // Table header
+  const cols = { desc: M, qty: W - M - 240, price: W - M - 120, total: W - M };
+  pdf.setDrawColor(220); pdf.line(M, y, W - M, y); y += 14;
+  pdf.setFont("helvetica", "bold").setFontSize(10);
+  pdf.text("Description", cols.desc, y);
+  pdf.text("Qty", cols.qty, y, { align: "right" });
+  pdf.text("Price", cols.price, y, { align: "right" });
+  pdf.text("Total", cols.total, y, { align: "right" });
+  y += 8; pdf.line(M, y, W - M, y); y += 14;
+
+  pdf.setFont("helvetica", "normal");
+  for (const it of (doc.items ?? [])) {
+    if (y > 740) { pdf.addPage(); y = M; }
+    const desc = String(it.description ?? "");
+    const wrapped = pdf.splitTextToSize(desc, cols.qty - M - 20);
+    pdf.text(wrapped, cols.desc, y);
+    pdf.text(String(it.quantity ?? 0), cols.qty, y, { align: "right" });
+    pdf.text(money(it.unit_price), cols.price, y, { align: "right" });
+    pdf.text(money(Number(it.quantity ?? 0) * Number(it.unit_price ?? 0)), cols.total, y, { align: "right" });
+    y += 14 * Math.max(1, wrapped.length);
+  }
+
+  y += 8; pdf.line(M, y, W - M, y); y += 18;
+  const labelX = W - M - 200; const valX = W - M;
+  const cur = doc.currency ?? "";
+  pdf.text("Subtotal", labelX, y); pdf.text(`${money(doc.subtotal)} ${cur}`, valX, y, { align: "right" }); y += 14;
+  pdf.text(`Tax (${doc.tax_rate ?? 0}%)`, labelX, y); pdf.text(`${money(doc.tax_amount)} ${cur}`, valX, y, { align: "right" }); y += 14;
+  pdf.setFont("helvetica", "bold").setFontSize(12);
+  pdf.text("Total", labelX, y); pdf.text(`${money(doc.total)} ${cur}`, valX, y, { align: "right" });
+  y += 24;
+
+  if (doc.notes) {
+    pdf.setFont("helvetica", "bold").setFontSize(9).setTextColor(120);
+    pdf.text("NOTES", M, y);
+    pdf.setFont("helvetica", "normal").setFontSize(10).setTextColor(0);
+    const wrapped = pdf.splitTextToSize(doc.notes, W - 2 * M);
+    pdf.text(wrapped, M, y + 14);
+  }
+
+  const filename = `${kind}-${(doc.number || "document").replace(/[^\w-]+/g, "_")}.pdf`;
+  pdf.save(filename);
+}
