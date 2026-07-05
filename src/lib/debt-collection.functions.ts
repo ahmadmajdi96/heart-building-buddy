@@ -128,7 +128,7 @@ export const deleteDebtCase = createServerFn({ method: "POST" })
 const PayerInput = z.object({
   id: z.string().uuid().optional(),
   case_id: z.string().uuid(),
-  client_id: z.string().uuid().nullable().optional(),
+  client_id: optUuid,
   name: z.string().min(1),
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
