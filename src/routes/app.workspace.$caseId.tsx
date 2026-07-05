@@ -253,22 +253,12 @@ function WorkspaceCasePage() {
             </TabsContent>
 
             <TabsContent value="invoices">
-              <Card className="overflow-hidden">
-                {data.invoices.length === 0 ? <Empty msg={ar ? "لا فواتير" : "No invoices"} /> : (
-                  <ul className="divide-y">
-                    {data.invoices.map((i: any) => (
-                      <li key={i.id} className="flex items-center gap-3 p-4">
-                        <div className="min-w-0 flex-1">
-                          <div className="font-mono text-sm">{i.number}</div>
-                          <div className="text-xs text-muted-foreground">{i.issue_date} · {ar ? "استحقاق" : "due"} {i.due_date || "—"}</div>
-                        </div>
-                        <Badge variant="outline" className="text-[10px] uppercase">{i.status}</Badge>
-                        <div className="w-28 text-end font-mono tabular-nums">{fmtMoney(i.total, i.currency)}</div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </Card>
+              <InvoicesPanel
+                drafts={data.drafts ?? []}
+                taxInvoices={data.invoices ?? []}
+                reload={() => { load({ data: { id: caseId } }).then(setData).catch(() => {}); }}
+                ar={ar}
+              />
             </TabsContent>
           </Tabs>
         </div>
