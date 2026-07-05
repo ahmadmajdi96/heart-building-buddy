@@ -496,6 +496,36 @@ function TimePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!pendingSingle} onOpenChange={(o) => { if (!o) setPendingSingle(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{ar ? "حذف السجل؟" : "Delete entry?"}</AlertDialogTitle>
+            <AlertDialogDescription>{ar ? "سيتم حذف هذا السجل نهائياً." : "This entry will be permanently deleted."}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>{ar ? "إلغاء" : "Cancel"}</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmSingle(); }} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting && <Loader2 className="size-4 animate-spin me-1.5" />}{ar ? "حذف" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={pendingBulk} onOpenChange={(o) => { if (!o) setPendingBulk(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{ar ? `حذف ${selected.size} سجل؟` : `Delete ${selected.size} entries?`}</AlertDialogTitle>
+            <AlertDialogDescription>{ar ? "سيتم حذف جميع السجلات المحددة نهائياً." : "All selected entries will be permanently deleted."}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>{ar ? "إلغاء" : "Cancel"}</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmBulk(); }} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting && <Loader2 className="size-4 animate-spin me-1.5" />}{ar ? "حذف الكل" : "Delete all"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
