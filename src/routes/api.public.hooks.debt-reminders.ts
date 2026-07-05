@@ -101,7 +101,7 @@ export const Route = createFileRoute("/api/public/hooks/debt-reminders")({
               const msg = render(rule.message_template, vars);
               const r = await sendSms(payer.phone, msg, from);
               await supabaseAdmin.from("debt_sms_log").insert({
-                org_id: dcRow?.org_id, case_id: caseId, payer_id: payer.id,
+                org_id: dcRow?.org_id ?? "", case_id: caseId, payer_id: payer.id,
                 phone: payer.phone, message: msg, kind: rule.kind,
                 status: r.ok ? "sent" : "failed",
                 twilio_sid: r.sid ?? null, error: r.error ?? null,
