@@ -1,22 +1,29 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useI18n } from "@/lib/i18n";
-import { PageHeader } from "@/components/app/primitives";
+import { PageHeader, StatusBadge } from "@/components/app/primitives";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   Loader2, ArrowLeft, Users, FileText, CalendarDays, Clock, Receipt,
-  AlertTriangle, Crown, Eye, ExternalLink, Download,
+  AlertTriangle, Crown, Eye, ExternalLink, Download, Check, XCircle, CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getWorkspaceCase } from "@/lib/workspace.functions";
 import { getSignedDownloadUrl } from "@/lib/documents.functions";
+import { acceptDraftInvoice, rejectDraftInvoice } from "@/lib/draft-invoices.functions";
+import { setInvoiceStatus } from "@/lib/invoicing.functions";
+import { getTimeEntriesByIds } from "@/lib/time-entries.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { DocumentPreviewBody } from "@/components/documents/preview-body";
+import { DocumentPreview } from "@/components/financials/document-preview";
 
 export const Route = createFileRoute("/app/workspace/$caseId")({
   component: WorkspaceCasePage,
