@@ -262,6 +262,8 @@ function PaymentDialog({ onSaved, onClose }: { onSaved: () => void; onClose: () 
 
 // ---------- SCHEDULES / PAYMENT PLANS ----------
 function SchedulesTab() {
+  const [detailsPlanId, setDetailsPlanId] = useState<string | null>(null);
+
   const { locale } = useI18n();
   const { org, can } = useOrg();
   const [rows, setRows] = useState<any[]>([]);
