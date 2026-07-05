@@ -359,9 +359,13 @@ function SchedulesTab() {
                         <ExternalLink className="size-3"/>{locale === "ar" ? "ملف التحصيل" : "Debt case"}
                       </Link>
                     )}
+                    <Button size="sm" variant="outline" onClick={() => setDetailsPlanId(planId)}>
+                      <Eye className="size-4"/>{locale === "ar" ? "التفاصيل" : "Details"}
+                    </Button>
                     {can("delete_financials") && <Button size="icon" variant="ghost" onClick={() => removePlan(planId)}><Trash2 className="size-4 text-destructive"/></Button>}
                   </div>
                 </div>
+
                 <table className="w-full text-sm">
                   <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
                     <tr><Th>#</Th><Th>{locale === "ar" ? "الاستحقاق" : "Due"}</Th><Th>{locale === "ar" ? "الفاتورة" : "Invoice"}</Th><Th className="text-end">{locale === "ar" ? "المبلغ" : "Amount"}</Th><Th>{locale === "ar" ? "الحالة" : "Status"}</Th><Th></Th></tr>
