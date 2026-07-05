@@ -1577,11 +1577,15 @@ export type Database = {
           created_at: string
           created_by: string
           currency: string
+          debt_case_id: string | null
           description: string | null
           due_date: string
           id: string
+          installment_count: number | null
+          installment_no: number | null
           invoice_id: string | null
           org_id: string
+          plan_id: string | null
           reminder_sent_at: string | null
           status: Database["public"]["Enums"]["schedule_status"]
           updated_at: string
@@ -1593,11 +1597,15 @@ export type Database = {
           created_at?: string
           created_by: string
           currency?: string
+          debt_case_id?: string | null
           description?: string | null
           due_date: string
           id?: string
+          installment_count?: number | null
+          installment_no?: number | null
           invoice_id?: string | null
           org_id: string
+          plan_id?: string | null
           reminder_sent_at?: string | null
           status?: Database["public"]["Enums"]["schedule_status"]
           updated_at?: string
@@ -1609,11 +1617,15 @@ export type Database = {
           created_at?: string
           created_by?: string
           currency?: string
+          debt_case_id?: string | null
           description?: string | null
           due_date?: string
           id?: string
+          installment_count?: number | null
+          installment_no?: number | null
           invoice_id?: string | null
           org_id?: string
+          plan_id?: string | null
           reminder_sent_at?: string | null
           status?: Database["public"]["Enums"]["schedule_status"]
           updated_at?: string
@@ -1624,6 +1636,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_schedules_debt_case_id_fkey"
+            columns: ["debt_case_id"]
+            isOneToOne: false
+            referencedRelation: "debt_cases"
             referencedColumns: ["id"]
           },
           {
