@@ -97,3 +97,81 @@ export function downloadInvoicePdf(kind: "quote" | "invoice", doc: Doc, org?: Or
   const filename = `${kind}-${(doc.number || "document").replace(/[^\w-]+/g, "_")}.pdf`;
   pdf.save(filename);
 }
+
+type Receipt = {
+  receipt_no: string;
+  paid_at: string;
+  amount: number;
+  currency: string;
+  method?: string | null;
+  reference?: string | null;
+  client_name?: string | null;
+  invoice_number?: string | null;
+  installment_label?: string | null;
+  plan_id?: string | null;
+  notes?: string | null;
+};
+
+export function downloadReceiptPdf(receipt: Receipt, org?: Org | null) {
+  const pdf = new jsPDF({ unit: "pt", format: "a4" });
+  const W = pdf.internal.pageSize.getWidth();
+  const M = 48;
+  let y = M;
+
+  pdf.setFont("helvetica", "bold").setFontSize(16);
+  pdf.text(org?.display_name || org?.legal_name || "", M, y);
+  pdf.setFont("helvetica", "normal").setFontSize(9);
+  const rightLines = [org?.email, org?.phone, org?.address, org?.tax_id ? `VAT/TAX: ${org.tax_id}` : null].filter(Boolean) as string[];
+  let ry = y;
+  rightLines.forEach((line) => { pdf.text(String(line), W - M, ry, { align: "right" }); ry += 12; });
+  y = Math.max(y + 20, ry + 4);
+
+  pdf.setDrawColor(200); pdf.line(M, y, W - M, y); y += 24;
+
+  pdf.setFont("helvetica", "bold").setFontSize(20);
+  pdf.text("PAYMENT RECEIPT", M, y);
+  pdf.setFont("helvetica", "normal").setFontSize(11);
+  pdf.text(receipt.receipt_no, M, y + 18);
+  pdf.setFontSize(10);
+  pdf.text(`Date: ${receipt.paid_at}`, W - M, y, { align: "right" });
+  y += 50;
+
+  pdf.setFont("helvetica", "bold").setFontSize(9).setTextColor(120);
+  pdf.text("RECEIVED FROM", M, y);
+  pdf.setFont("helvetica", "normal").setFontSize(11).setTextColor(0);
+  pdf.text(String(receipt.client_name ?? "—"), M, y + 14);
+  y += 40;
+
+  const rows: [string, string][] = [
+    ["Amount", `${money(receipt.amount)} ${receipt.currency}`],
+    ["Method", (receipt.method ?? "—").replace(/_/g, " ")],
+    ["Reference", receipt.reference ?? "—"],
+    ["Applied to invoice", receipt.invoice_number ?? "—"],
+    ["Installment", receipt.installment_label ?? "—"],
+    ["Plan ID", receipt.plan_id ? receipt.plan_id.slice(0, 8) : "—"],
+  ];
+  pdf.setFontSize(10);
+  for (const [k, v] of rows) {
+    pdf.setTextColor(120); pdf.text(k, M, y);
+    pdf.setTextColor(0); pdf.text(String(v), M + 160, y);
+    y += 18;
+  }
+  y += 12;
+  pdf.setDrawColor(220); pdf.line(M, y, W - M, y); y += 22;
+
+  pdf.setFont("helvetica", "bold").setFontSize(14);
+  pdf.text("TOTAL RECEIVED", M, y);
+  pdf.text(`${money(receipt.amount)} ${receipt.currency}`, W - M, y, { align: "right" });
+  y += 32;
+
+  if (receipt.notes) {
+    pdf.setFont("helvetica", "bold").setFontSize(9).setTextColor(120);
+    pdf.text("NOTES", M, y);
+    pdf.setFont("helvetica", "normal").setFontSize(10).setTextColor(0);
+    const wrapped = pdf.splitTextToSize(receipt.notes, W - 2 * M);
+    pdf.text(wrapped, M, y + 14);
+  }
+
+  const filename = `receipt-${receipt.receipt_no.replace(/[^\w-]+/g, "_")}.pdf`;
+  pdf.save(filename);
+}
