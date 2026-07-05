@@ -172,12 +172,13 @@ function TimePage() {
   }
 
   const filtered = useMemo(() => entries.filter((e) => {
+    if (filterIds.size > 0 && !filterIds.has(e.id)) return false;
     if (!q) return true;
     const s = q.toLowerCase();
     return e.description.toLowerCase().includes(s)
       || (e.cases?.title ?? "").toLowerCase().includes(s)
       || (e.clients?.name ?? "").toLowerCase().includes(s);
-  }), [entries, q]);
+  }), [entries, q, filterIds]);
 
   const totals = useMemo(() => {
     const total = entries.reduce((acc, e) => acc + (e.duration_seconds || 0), 0);
