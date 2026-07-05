@@ -3,7 +3,8 @@ import { useI18n } from "@/lib/i18n";
 import { useLogoUrl } from "@/lib/logo";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, Languages } from "lucide-react";
+import { Printer, Languages, Download } from "lucide-react";
+import { downloadInvoicePdf } from "@/lib/invoice-pdf";
 import { useState } from "react";
 import { hijriDate, fmtNumber } from "@/lib/bilingual";
 
