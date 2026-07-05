@@ -71,6 +71,7 @@ function TableFilter({ q, setQ, status, setStatus, statuses, placeholder, locale
 function FinancialsPage() {
   const { locale } = useI18n();
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const { org, loading, can } = useOrg();
 
   useEffect(() => {
