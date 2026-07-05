@@ -258,31 +258,40 @@ function PaymentDialog({ onSaved, onClose }: { onSaved: () => void; onClose: () 
   );
 }
 
-// ---------- SCHEDULES ----------
+// ---------- SCHEDULES / PAYMENT PLANS ----------
 function SchedulesTab() {
   const { locale } = useI18n();
   const { org, can } = useOrg();
-  const [rows, setRows] = useState<Schedule[]>([]);
-  const [open, setOpen] = useState(false);
+  const [rows, setRows] = useState<any[]>([]);
+  const [openOne, setOpenOne] = useState(false);
+  const [openPlan, setOpenPlan] = useState(false);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
+  const [markingId, setMarkingId] = useState<string | null>(null);
+  const markPaidFn = useServerFn(markSchedulePaid);
+  const deletePlanFn = useServerFn(deletePaymentPlan);
 
   async function load() {
     if (!org) return;
-    const { data } = await supabase.from("payment_schedules").select("*").eq("org_id", org.id).order("due_date", { ascending: true });
+    const { data } = await supabase.from("payment_schedules")
+      .select("*, tax_invoices(id,number,status)")
+      .eq("org_id", org.id)
+      .order("plan_id", { ascending: false, nullsFirst: false })
+      .order("due_date", { ascending: true });
     setRows(data ?? []); setLoading(false);
   }
   useEffect(() => { load(); }, [org?.id]);
 
-  async function markPaid(id: string) {
-    await supabase.from("payment_schedules").update({ status: "paid" }).eq("id", id);
-    load();
-  }
   async function remove(id: string) {
     if (!confirm("Delete?")) return;
     await supabase.from("payment_schedules").delete().eq("id", id);
     load();
+  }
+  async function removePlan(plan_id: string) {
+    if (!confirm(locale === "ar" ? "حذف كامل الخطة؟" : "Delete entire plan and all installments?")) return;
+    try { await deletePlanFn({ data: { plan_id } }); toast.success("Plan deleted"); load(); }
+    catch (e: any) { toast.error(e.message); }
   }
 
   const statuses = useMemo(() => ["all", ...Array.from(new Set(rows.map((r) => r.status).filter(Boolean)))], [rows]);
@@ -293,37 +302,123 @@ function SchedulesTab() {
     return (r.client_name ?? "").toLowerCase().includes(s) || (r.description ?? "").toLowerCase().includes(s);
   }), [rows, q, status]);
 
+  // group by plan_id
+  const grouped = useMemo(() => {
+    const plans = new Map<string, any[]>();
+    const singles: any[] = [];
+    for (const r of filtered) {
+      if (r.plan_id) {
+        if (!plans.has(r.plan_id)) plans.set(r.plan_id, []);
+        plans.get(r.plan_id)!.push(r);
+      } else singles.push(r);
+    }
+    for (const arr of plans.values()) arr.sort((a, b) => (a.installment_no ?? 0) - (b.installment_no ?? 0));
+    return { plans: Array.from(plans.entries()), singles };
+  }, [filtered]);
+
   return (
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 border-b p-4">
         <div className="text-sm font-semibold mr-auto">{locale === "ar" ? "جدولة المدفوعات" : "Payment schedule"} <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span></div>
         <TableFilter q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses} placeholder={locale === "ar" ? "ابحث…" : "Search…"} locale={locale as any} />
         {can("edit_financials") && (
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button size="sm" variant="gold"><Plus className="size-4"/>{locale === "ar" ? "إضافة قسط" : "New installment"}</Button></DialogTrigger>
-            <ScheduleDialog onSaved={() => { setOpen(false); load(); }} onClose={() => setOpen(false)} />
-          </Dialog>
+          <>
+            <Dialog open={openPlan} onOpenChange={setOpenPlan}>
+              <DialogTrigger asChild><Button size="sm" variant="gold"><Layers className="size-4"/>{locale === "ar" ? "خطة سداد جديدة" : "New payment plan"}</Button></DialogTrigger>
+              <PaymentPlanDialog onSaved={() => { setOpenPlan(false); load(); }} onClose={() => setOpenPlan(false)} />
+            </Dialog>
+            <Dialog open={openOne} onOpenChange={setOpenOne}>
+              <DialogTrigger asChild><Button size="sm" variant="outline"><Plus className="size-4"/>{locale === "ar" ? "قسط منفرد" : "Single installment"}</Button></DialogTrigger>
+              <ScheduleDialog onSaved={() => { setOpenOne(false); load(); }} onClose={() => setOpenOne(false)} />
+            </Dialog>
+          </>
         )}
       </div>
+
       {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={locale === "ar" ? "لا نتائج." : "No matches."}/> : (
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
-            <tr><Th>{locale === "ar" ? "الاستحقاق" : "Due"}</Th><Th>{locale === "ar" ? "العميل" : "Client"}</Th><Th>{locale === "ar" ? "الوصف" : "Description"}</Th><Th className="text-end">{locale === "ar" ? "المبلغ" : "Amount"}</Th><Th>{locale === "ar" ? "الحالة" : "Status"}</Th><Th></Th></tr>
-          </thead>
-          <tbody className="divide-y">
-            {filtered.map((r) => (
-              <tr key={r.id} className="hover:bg-secondary/40">
-                <Td>{r.due_date}</Td><Td className="font-medium">{r.client_name}</Td><Td className="text-muted-foreground">{r.description || "—"}</Td>
-                <Td className="text-end font-mono tabular-nums">{fmt(r.amount, r.currency)}</Td>
-                <Td><StatusBadge status={r.status}/></Td>
-                <Td className="text-end">
-                  {can("edit_financials") && r.status !== "paid" && <Button size="sm" variant="ghost" onClick={() => markPaid(r.id)}>{locale === "ar" ? "تم الدفع" : "Mark paid"}</Button>}
-                  {can("delete_financials") && <Button size="icon" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="size-4 text-destructive"/></Button>}
-                </Td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="divide-y">
+          {grouped.plans.map(([planId, items]) => {
+            const total = items.reduce((a, r) => a + Number(r.amount), 0);
+            const paid = items.filter((r) => r.status === "paid").reduce((a, r) => a + Number(r.amount), 0);
+            const anchor = items[0];
+            return (
+              <div key={planId} className="p-4">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-semibold">{anchor.client_name} <span className="ms-2 text-xs font-normal text-muted-foreground">{items.length} {locale === "ar" ? "أقساط" : "installments"}</span></div>
+                    <div className="text-xs text-muted-foreground">{anchor.description}</div>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <span className="font-mono tabular-nums">{fmt(paid, anchor.currency)} / {fmt(total, anchor.currency)}</span>
+                    {anchor.debt_case_id && (
+                      <Link to="/app/debt-collection/$id" params={{ id: anchor.debt_case_id }} className="text-xs text-gold hover:underline inline-flex items-center gap-1">
+                        <ExternalLink className="size-3"/>{locale === "ar" ? "ملف التحصيل" : "Debt case"}
+                      </Link>
+                    )}
+                    {can("delete_financials") && <Button size="icon" variant="ghost" onClick={() => removePlan(planId)}><Trash2 className="size-4 text-destructive"/></Button>}
+                  </div>
+                </div>
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
+                    <tr><Th>#</Th><Th>{locale === "ar" ? "الاستحقاق" : "Due"}</Th><Th>{locale === "ar" ? "الفاتورة" : "Invoice"}</Th><Th className="text-end">{locale === "ar" ? "المبلغ" : "Amount"}</Th><Th>{locale === "ar" ? "الحالة" : "Status"}</Th><Th></Th></tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {items.map((r) => (
+                      <tr key={r.id} className="hover:bg-secondary/40">
+                        <Td>{r.installment_no}/{r.installment_count}</Td>
+                        <Td>{r.due_date}</Td>
+                        <Td>{r.tax_invoices ? <Link to="/app/financials" search={{ tab: "invoices" as const, q: r.tax_invoices.number, status: "all", dueFrom: "", dueTo: "", payment: "all" as const }} className="text-gold hover:underline">{r.tax_invoices.number}</Link> : "—"}</Td>
+                        <Td className="text-end font-mono tabular-nums">{fmt(r.amount, r.currency)}</Td>
+                        <Td><StatusBadge status={r.status}/></Td>
+                        <Td className="text-end">
+                          {can("edit_financials") && r.status !== "paid" && (
+                            <Button size="sm" variant="ghost" disabled={markingId === r.id} onClick={async () => {
+                              setMarkingId(r.id);
+                              try {
+                                await markPaidFn({ data: { id: r.id, paid_at: new Date().toISOString().slice(0, 10), method: "bank_transfer" } });
+                                toast.success(locale === "ar" ? "تم تسجيل الدفع" : "Payment recorded");
+                                load();
+                              } catch (e: any) { toast.error(e.message); }
+                              finally { setMarkingId(null); }
+                            }}>{locale === "ar" ? "تم الدفع" : "Mark paid"}</Button>
+                          )}
+                        </Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
+
+          {grouped.singles.length > 0 && (
+            <div className="p-4">
+              <div className="mb-2 text-sm font-semibold">{locale === "ar" ? "أقساط منفردة" : "One-off installments"}</div>
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
+                  <tr><Th>{locale === "ar" ? "الاستحقاق" : "Due"}</Th><Th>{locale === "ar" ? "العميل" : "Client"}</Th><Th>{locale === "ar" ? "الوصف" : "Description"}</Th><Th className="text-end">{locale === "ar" ? "المبلغ" : "Amount"}</Th><Th>{locale === "ar" ? "الحالة" : "Status"}</Th><Th></Th></tr>
+                </thead>
+                <tbody className="divide-y">
+                  {grouped.singles.map((r) => (
+                    <tr key={r.id} className="hover:bg-secondary/40">
+                      <Td>{r.due_date}</Td><Td className="font-medium">{r.client_name}</Td><Td className="text-muted-foreground">{r.description || "—"}</Td>
+                      <Td className="text-end font-mono tabular-nums">{fmt(r.amount, r.currency)}</Td>
+                      <Td><StatusBadge status={r.status}/></Td>
+                      <Td className="text-end">
+                        {can("edit_financials") && r.status !== "paid" && (
+                          <Button size="sm" variant="ghost" onClick={async () => {
+                            await supabase.from("payment_schedules").update({ status: "paid" }).eq("id", r.id); load();
+                          }}>{locale === "ar" ? "تم الدفع" : "Mark paid"}</Button>
+                        )}
+                        {can("delete_financials") && <Button size="icon" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="size-4 text-destructive"/></Button>}
+                      </Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       )}
     </Card>
   );
@@ -360,6 +455,175 @@ function ScheduleDialog({ onSaved, onClose }: { onSaved: () => void; onClose: ()
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>{locale === "ar" ? "إلغاء" : "Cancel"}</Button>
         <Button variant="gold" onClick={save} disabled={saving || !form.client_name || !form.due_date || !form.amount}>{saving && <Loader2 className="size-4 animate-spin"/>}{locale === "ar" ? "حفظ" : "Save"}</Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
+
+function PaymentPlanDialog({ onSaved, onClose }: { onSaved: () => void; onClose: () => void }) {
+  const { locale } = useI18n();
+  const listClientsFn = useServerFn(listClients);
+  const saveClientFn = useServerFn(saveClient);
+  const listUnpaidFn = useServerFn(listUnpaidInvoicesForClient);
+  const createPlanFn = useServerFn(createPaymentPlan);
+
+  const [clients, setClients] = useState<any[]>([]);
+  const [clientId, setClientId] = useState<string>("");
+  const [addingNew, setAddingNew] = useState(false);
+  const [newClient, setNewClient] = useState({ name: "", phone: "", email: "" });
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [selInv, setSelInv] = useState<Record<string, boolean>>({});
+  const [installments, setInstallments] = useState<3 | 6 | 12>(3);
+  const [firstDue, setFirstDue] = useState<string>(() => {
+    const d = new Date(); d.setMonth(d.getMonth() + 1); return d.toISOString().slice(0, 10);
+  });
+  const [description, setDescription] = useState("");
+  const [createDebt, setCreateDebt] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [loadingInv, setLoadingInv] = useState(false);
+
+  useEffect(() => { listClientsFn().then((c: any) => setClients(c ?? [])).catch(() => {}); }, []);
+  useEffect(() => {
+    if (!clientId) { setInvoices([]); setSelInv({}); return; }
+    setLoadingInv(true);
+    listUnpaidFn({ data: { client_id: clientId } })
+      .then((rows: any) => { setInvoices(rows ?? []); setSelInv(Object.fromEntries((rows ?? []).map((r: any) => [r.id, true]))); })
+      .catch((e: any) => toast.error(e.message))
+      .finally(() => setLoadingInv(false));
+  }, [clientId]);
+
+  const client = clients.find((c) => c.id === clientId);
+  const selectedInvoices = invoices.filter((i) => selInv[i.id]);
+  const total = selectedInvoices.reduce((a, i) => a + Number(i._remaining), 0);
+  const perInstallment = total > 0 ? total / installments : 0;
+
+  async function createClient() {
+    if (!newClient.name.trim()) return;
+    try {
+      const row: any = await saveClientFn({ data: { name: newClient.name, phone: newClient.phone, email: newClient.email || "", type: "individual", status: "active" } });
+      toast.success(locale === "ar" ? "تمت الإضافة" : "Client added");
+      const refreshed: any = await listClientsFn();
+      setClients(refreshed ?? []);
+      setClientId(row.id);
+      setAddingNew(false);
+      setNewClient({ name: "", phone: "", email: "" });
+    } catch (e: any) { toast.error(e.message); }
+  }
+
+  async function submit() {
+    if (!clientId || !client) { toast.error("Select a client"); return; }
+    const ids = Object.keys(selInv).filter((k) => selInv[k]);
+    if (ids.length === 0) { toast.error("Select at least one invoice"); return; }
+    if (!firstDue) { toast.error("First due date required"); return; }
+    setSaving(true);
+    try {
+      const res: any = await createPlanFn({ data: {
+        client_id: clientId, client_name: client.name, invoice_ids: ids,
+        installments, first_due_date: firstDue, description, create_debt_case: createDebt,
+      } });
+      toast.success(locale === "ar" ? `تم إنشاء خطة من ${res.count} أقساط` : `Created ${res.count}-installment plan`);
+      onSaved();
+    } catch (e: any) { toast.error(e.message); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <DialogContent className="max-w-2xl">
+      <DialogHeader>
+        <DialogTitle>{locale === "ar" ? "خطة سداد جديدة" : "New payment plan"}</DialogTitle>
+      </DialogHeader>
+      <div className="space-y-4">
+        {/* Client selector */}
+        <div>
+          <Label>{locale === "ar" ? "العميل" : "Client"}</Label>
+          {addingNew ? (
+            <div className="mt-1.5 space-y-2 rounded-md border p-3">
+              <Input placeholder={locale === "ar" ? "الاسم" : "Name"} value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}/>
+              <div className="grid grid-cols-2 gap-2">
+                <Input placeholder={locale === "ar" ? "الهاتف" : "Phone"} value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}/>
+                <Input placeholder="Email" value={newClient.email} onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}/>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="ghost" onClick={() => setAddingNew(false)}>{locale === "ar" ? "إلغاء" : "Cancel"}</Button>
+                <Button size="sm" variant="gold" onClick={createClient} disabled={!newClient.name.trim()}>{locale === "ar" ? "إضافة العميل" : "Add client"}</Button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-1.5 flex gap-2">
+              <Select value={clientId} onValueChange={setClientId}>
+                <SelectTrigger className="flex-1"><SelectValue placeholder={locale === "ar" ? "اختر عميلاً" : "Select client"}/></SelectTrigger>
+                <SelectContent>
+                  {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Button variant="outline" size="sm" onClick={() => setAddingNew(true)}><Plus className="size-4"/>{locale === "ar" ? "جديد" : "New"}</Button>
+            </div>
+          )}
+        </div>
+
+        {/* Invoices */}
+        {clientId && (
+          <div>
+            <Label>{locale === "ar" ? "الفواتير غير المسددة" : "Unpaid invoices"}</Label>
+            <div className="mt-1.5 max-h-56 overflow-auto rounded-md border">
+              {loadingInv ? <div className="p-4 text-center text-sm text-muted-foreground"><Loader2 className="mx-auto size-4 animate-spin"/></div>
+                : invoices.length === 0 ? <div className="p-4 text-center text-sm text-muted-foreground">{locale === "ar" ? "لا توجد فواتير غير مسددة." : "No unpaid invoices for this client."}</div>
+                : (
+                  <table className="w-full text-sm">
+                    <tbody className="divide-y">
+                      {invoices.map((i) => (
+                        <tr key={i.id} className="hover:bg-secondary/40">
+                          <td className="w-8 px-2"><Checkbox checked={!!selInv[i.id]} onCheckedChange={(v) => setSelInv({ ...selInv, [i.id]: !!v })}/></td>
+                          <td className="px-2 py-2 font-medium">{i.number}</td>
+                          <td className="px-2 py-2 text-muted-foreground">{i.due_date || i.issue_date}</td>
+                          <td className="px-2 py-2 text-end font-mono tabular-nums">{fmt(i._remaining, i.currency)}</td>
+                          <td className="px-2 py-2"><StatusBadge status={i.status}/></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+            </div>
+          </div>
+        )}
+
+        {/* Installments */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>{locale === "ar" ? "عدد الأقساط" : "Split into"}</Label>
+            <div className="mt-1.5 flex gap-2">
+              {[3, 6, 12].map((n) => (
+                <Button key={n} type="button" size="sm" variant={installments === n ? "gold" : "outline"} onClick={() => setInstallments(n as 3 | 6 | 12)}>{n}</Button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <Label>{locale === "ar" ? "استحقاق أول قسط" : "First due date"}</Label>
+            <Input type="date" className="mt-1.5" value={firstDue} onChange={(e) => setFirstDue(e.target.value)}/>
+          </div>
+        </div>
+
+        <div>
+          <Label>{locale === "ar" ? "وصف" : "Description (optional)"}</Label>
+          <Input className="mt-1.5" value={description} onChange={(e) => setDescription(e.target.value)}/>
+        </div>
+
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox checked={createDebt} onCheckedChange={(v) => setCreateDebt(!!v)}/>
+          {locale === "ar" ? "إنشاء ملف تحصيل تلقائي بالتذكيرات (قبل 3 أيام، عند الاستحقاق، والتأخر)" : "Auto-create debt collection case with reminders (3 days before, on due, overdue)"}
+        </label>
+
+        {/* Summary */}
+        {total > 0 && (
+          <div className="rounded-md border bg-secondary/40 p-3 text-sm">
+            <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "الإجمالي" : "Total"}</span><span className="font-mono tabular-nums">{fmt(total, selectedInvoices[0]?.currency || "USD")}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "كل قسط" : "Per installment"}</span><span className="font-mono tabular-nums">{fmt(perInstallment, selectedInvoices[0]?.currency || "USD")}</span></div>
+          </div>
+        )}
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>{locale === "ar" ? "إلغاء" : "Cancel"}</Button>
+        <Button variant="gold" onClick={submit} disabled={saving || !clientId || total <= 0}>{saving && <Loader2 className="size-4 animate-spin"/>}{locale === "ar" ? "إنشاء الخطة" : "Create plan"}</Button>
       </DialogFooter>
     </DialogContent>
   );
