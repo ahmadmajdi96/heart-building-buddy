@@ -34,9 +34,11 @@ import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppActivityRouteImport } from './routes/app.activity'
 import { Route as AppWorkspaceIndexRouteImport } from './routes/app.workspace.index'
 import { Route as AppMeetingsIndexRouteImport } from './routes/app.meetings.index'
+import { Route as AppDebtCollectionIndexRouteImport } from './routes/app.debt-collection.index'
 import { Route as AppCasesIndexRouteImport } from './routes/app.cases.index'
 import { Route as AppWorkspaceCaseIdRouteImport } from './routes/app.workspace.$caseId'
 import { Route as AppMeetingsIdRouteImport } from './routes/app.meetings.$id'
+import { Route as AppDebtCollectionIdRouteImport } from './routes/app.debt-collection.$id'
 import { Route as AppClientsClientIdRouteImport } from './routes/app.clients.$clientId'
 import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
 import { Route as ApiElevenlabsScribeTokenRouteImport } from './routes/api.elevenlabs.scribe-token'
@@ -167,6 +169,11 @@ const AppMeetingsIndexRoute = AppMeetingsIndexRouteImport.update({
   path: '/meetings/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDebtCollectionIndexRoute = AppDebtCollectionIndexRouteImport.update({
+  id: '/debt-collection/',
+  path: '/debt-collection/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCasesIndexRoute = AppCasesIndexRouteImport.update({
   id: '/cases/',
   path: '/cases/',
@@ -180,6 +187,11 @@ const AppWorkspaceCaseIdRoute = AppWorkspaceCaseIdRouteImport.update({
 const AppMeetingsIdRoute = AppMeetingsIdRouteImport.update({
   id: '/meetings/$id',
   path: '/meetings/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDebtCollectionIdRoute = AppDebtCollectionIdRouteImport.update({
+  id: '/debt-collection/$id',
+  path: '/debt-collection/$id',
   getParentRoute: () => AppRoute,
 } as any)
 const AppClientsClientIdRoute = AppClientsClientIdRouteImport.update({
@@ -231,9 +243,11 @@ export interface FileRoutesByFullPath {
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
+  '/app/debt-collection/$id': typeof AppDebtCollectionIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/workspace/$caseId': typeof AppWorkspaceCaseIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
+  '/app/debt-collection/': typeof AppDebtCollectionIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
@@ -264,9 +278,11 @@ export interface FileRoutesByTo {
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
+  '/app/debt-collection/$id': typeof AppDebtCollectionIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/workspace/$caseId': typeof AppWorkspaceCaseIdRoute
   '/app/cases': typeof AppCasesIndexRoute
+  '/app/debt-collection': typeof AppDebtCollectionIndexRoute
   '/app/meetings': typeof AppMeetingsIndexRoute
   '/app/workspace': typeof AppWorkspaceIndexRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
@@ -299,9 +315,11 @@ export interface FileRoutesById {
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
+  '/app/debt-collection/$id': typeof AppDebtCollectionIdRoute
   '/app/meetings/$id': typeof AppMeetingsIdRoute
   '/app/workspace/$caseId': typeof AppWorkspaceCaseIdRoute
   '/app/cases/': typeof AppCasesIndexRoute
+  '/app/debt-collection/': typeof AppDebtCollectionIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
@@ -335,9 +353,11 @@ export interface FileRouteTypes {
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
+    | '/app/debt-collection/$id'
     | '/app/meetings/$id'
     | '/app/workspace/$caseId'
     | '/app/cases/'
+    | '/app/debt-collection/'
     | '/app/meetings/'
     | '/app/workspace/'
     | '/app/meetings/join/$room'
@@ -368,9 +388,11 @@ export interface FileRouteTypes {
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
+    | '/app/debt-collection/$id'
     | '/app/meetings/$id'
     | '/app/workspace/$caseId'
     | '/app/cases'
+    | '/app/debt-collection'
     | '/app/meetings'
     | '/app/workspace'
     | '/app/meetings/join/$room'
@@ -402,9 +424,11 @@ export interface FileRouteTypes {
     | '/api/elevenlabs/scribe-token'
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
+    | '/app/debt-collection/$id'
     | '/app/meetings/$id'
     | '/app/workspace/$caseId'
     | '/app/cases/'
+    | '/app/debt-collection/'
     | '/app/meetings/'
     | '/app/workspace/'
     | '/app/meetings/join/$room'
@@ -596,6 +620,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMeetingsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/debt-collection/': {
+      id: '/app/debt-collection/'
+      path: '/debt-collection'
+      fullPath: '/app/debt-collection/'
+      preLoaderRoute: typeof AppDebtCollectionIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/cases/': {
       id: '/app/cases/'
       path: '/cases'
@@ -615,6 +646,13 @@ declare module '@tanstack/react-router' {
       path: '/meetings/$id'
       fullPath: '/app/meetings/$id'
       preLoaderRoute: typeof AppMeetingsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/debt-collection/$id': {
+      id: '/app/debt-collection/$id'
+      path: '/debt-collection/$id'
+      fullPath: '/app/debt-collection/$id'
+      preLoaderRoute: typeof AppDebtCollectionIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/clients/$clientId': {
@@ -680,9 +718,11 @@ interface AppRouteChildren {
   AppTimeRoute: typeof AppTimeRoute
   AppIndexRoute: typeof AppIndexRoute
   AppCasesCaseIdRoute: typeof AppCasesCaseIdRoute
+  AppDebtCollectionIdRoute: typeof AppDebtCollectionIdRoute
   AppMeetingsIdRoute: typeof AppMeetingsIdRoute
   AppWorkspaceCaseIdRoute: typeof AppWorkspaceCaseIdRoute
   AppCasesIndexRoute: typeof AppCasesIndexRoute
+  AppDebtCollectionIndexRoute: typeof AppDebtCollectionIndexRoute
   AppMeetingsIndexRoute: typeof AppMeetingsIndexRoute
   AppWorkspaceIndexRoute: typeof AppWorkspaceIndexRoute
   AppMeetingsJoinRoomRoute: typeof AppMeetingsJoinRoomRoute
@@ -708,9 +748,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppTimeRoute: AppTimeRoute,
   AppIndexRoute: AppIndexRoute,
   AppCasesCaseIdRoute: AppCasesCaseIdRoute,
+  AppDebtCollectionIdRoute: AppDebtCollectionIdRoute,
   AppMeetingsIdRoute: AppMeetingsIdRoute,
   AppWorkspaceCaseIdRoute: AppWorkspaceCaseIdRoute,
   AppCasesIndexRoute: AppCasesIndexRoute,
+  AppDebtCollectionIndexRoute: AppDebtCollectionIndexRoute,
   AppMeetingsIndexRoute: AppMeetingsIndexRoute,
   AppWorkspaceIndexRoute: AppWorkspaceIndexRoute,
   AppMeetingsJoinRoomRoute: AppMeetingsJoinRoomRoute,
