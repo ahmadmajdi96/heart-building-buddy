@@ -206,7 +206,7 @@ function PayersTab({ caseId, caseData, payers, assignees, ar }: any) {
             {payers.map((p: any) => (
               <TableRow key={p.id}>
                 <TableCell>
-                  <Checkbox checked={selected.includes(p.id)} onCheckedChange={(v) => setSelected((s) => v ? [...s, p.id] : s.filter((x) => x !== p.id))} />
+                  <Checkbox checked={selected.includes(p.id)} onCheckedChange={(v: boolean | "indeterminate") => setSelected((s) => v ? [...s, p.id] : s.filter((x) => x !== p.id))} />
                 </TableCell>
                 <TableCell>
                   <div className="font-medium">{p.name}</div>
@@ -332,7 +332,7 @@ function TeamTab({ caseId, assignees, ar }: any) {
           {assignees.map((a: any) => (
             <div key={a.user_id} className="flex items-center justify-between rounded-lg border p-3">
               <div className="flex items-center gap-3">
-                <Checkbox checked={selected.includes(a.user_id)} onCheckedChange={(v) => setSelected((s) => v ? [...s, a.user_id] : s.filter((x) => x !== a.user_id))} />
+                <Checkbox checked={selected.includes(a.user_id)} onCheckedChange={(v: boolean | "indeterminate") => setSelected((s) => v ? [...s, a.user_id] : s.filter((x) => x !== a.user_id))} />
                 <div>
                   <div className="font-medium flex items-center gap-2"><User className="size-3.5 text-muted-foreground" />{a._name}</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-3">
@@ -380,7 +380,7 @@ function AssignDialog({ caseId, members, onSubmit, pending, ar }: any) {
           <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+15551234567" />
         </div>
         <div className="flex items-center gap-2">
-          <Checkbox id="notify" checked={form.notify_sms} onCheckedChange={(v) => setForm({ ...form, notify_sms: !!v })} />
+          <Checkbox id="notify" checked={form.notify_sms} onCheckedChange={(v: boolean | "indeterminate") => setForm({ ...form, notify_sms: !!v })} />
           <Label htmlFor="notify" className="cursor-pointer">{ar ? "إشعار عبر SMS" : "Notify by SMS"}</Label>
         </div>
       </div>
