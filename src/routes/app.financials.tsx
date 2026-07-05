@@ -477,25 +477,10 @@ function InvoicesTab() {
     catch (e) { toast.error((e as Error).message); }
   }
   async function confirmMarkPaid() {
-    if (!payTarget || !org) return;
+    if (!payTarget) return;
     setPayBusy(true);
     try {
-      const remaining = Number(payTarget.total) - Number(payTarget.amount_paid || 0);
-      if (remaining > 0) {
-        const { data: sess } = await supabase.auth.getSession();
-        await supabase.from("payments").insert({
-          org_id: org.id,
-          created_by: sess.session!.user.id,
-          invoice_id: payTarget.id,
-          client_name: payTarget.client_name,
-          amount: remaining,
-          method: "bank_transfer",
-          paid_at: payDate,
-        });
-        await supabase.from("tax_invoices").update({ amount_paid: Number(payTarget.total), status: "paid" }).eq("id", payTarget.id);
-      } else {
-        await setStatusFn({ data: { id: payTarget.id, status: "paid" } });
-      }
+      await markPaidFn({ data: { id: payTarget.id, paid_at: payDate, method: "bank_transfer" } });
       toast.success(locale === "ar" ? "تم تعليمها كمدفوعة" : "Marked as paid");
       setPayTarget(null); load();
     } catch (e) { toast.error((e as Error).message); }
