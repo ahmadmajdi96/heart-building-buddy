@@ -25,10 +25,11 @@ export function PageHeader({
 }
 
 export function StatTile({
-  label, value, delta, icon, tone = "default", index = 0,
+  label, value, delta, icon, tone = "default", index = 0, to,
 }: {
   label: string; value: string; delta?: string;
   icon?: ReactNode; tone?: "default" | "gold" | "success" | "warning"; index?: number;
+  to?: string;
 }) {
   const tones = {
     default: "text-primary bg-primary/10 ring-primary/15",
@@ -36,13 +37,16 @@ export function StatTile({
     success: "text-success bg-success/10 ring-success/20",
     warning: "text-warning bg-warning/15 ring-warning/25",
   } as const;
-  return (
+  const inner = (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: Math.min(index, 8) * 0.04, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ y: -3 }}
-      className="group relative overflow-hidden rounded-xl border border-border/70 bg-card p-5 shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition-shadow hover:shadow-[0_12px_40px_-12px_oklch(0.26_0.08_258/0.25)]"
+      className={cn(
+        "group relative overflow-hidden rounded-xl border border-border/70 bg-card p-5 shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition-shadow hover:shadow-[0_12px_40px_-12px_oklch(0.26_0.08_258/0.25)]",
+        to && "cursor-pointer hover:border-gold/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/40",
+      )}
     >
       <div className="pointer-events-none absolute -right-10 -top-10 size-32 rounded-full bg-gradient-to-br from-gold/15 to-transparent blur-2xl opacity-0 transition-opacity group-hover:opacity-100" />
       <div className="flex items-start justify-between gap-3">
@@ -53,7 +57,10 @@ export function StatTile({
       {delta && <div className="mt-1 text-xs text-success">{delta}</div>}
     </motion.div>
   );
+  if (to) return <Link to={to} className="block">{inner}</Link>;
+  return inner;
 }
+
 
 export function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
