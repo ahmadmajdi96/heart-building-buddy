@@ -54,15 +54,16 @@ function AnalyticsPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label={locale === "ar" ? "القضايا" : "Cases"} value={String(stats.totals.cases)} icon={<Briefcase className="size-4" />} tone="gold" />
-        <StatTile label={locale === "ar" ? "الموكلون" : "Clients"} value={String(stats.totals.clients)} icon={<Users className="size-4" />} />
-        <StatTile label={locale === "ar" ? "نسبة الفوز" : "Win rate"} value={stats.winRate != null ? `${stats.winRate}%` : "—"} icon={<TrendingUp className="size-4" />} tone="success" />
-        <StatTile label={locale === "ar" ? "مواعيد قادمة (٧ أيام)" : "Upcoming (7d)"} value={String(stats.totals.upcoming)} icon={<CalendarDays className="size-4" />} />
-        <StatTile label={locale === "ar" ? "المستندات" : "Documents"} value={String(stats.totals.documents)} icon={<FileText className="size-4" />} />
-        <StatTile label={locale === "ar" ? "المسودات" : "Drafts"} value={String(stats.totals.drafts)} icon={<FileText className="size-4" />} />
-        <StatTile label={locale === "ar" ? "محاكاة المحاكم" : "Courtroom sims"} value={String(stats.totals.simulations)} icon={<Gavel className="size-4" />} />
-        <StatTile label={locale === "ar" ? "متوسط درجة المحاكاة" : "Avg sim score"} value={stats.avgSimScore != null ? String(stats.avgSimScore) : "—"} icon={<Award className="size-4" />} tone="success" />
+        <StatTile to="/app/cases" label={locale === "ar" ? "القضايا" : "Cases"} value={String(stats.totals.cases)} icon={<Briefcase className="size-4" />} tone="gold" />
+        <StatTile to="/app/clients" label={locale === "ar" ? "الموكلون" : "Clients"} value={String(stats.totals.clients)} icon={<Users className="size-4" />} />
+        <StatTile to="/app/analytics" label={locale === "ar" ? "نسبة الفوز" : "Win rate"} value={stats.winRate != null ? `${stats.winRate}%` : "—"} icon={<TrendingUp className="size-4" />} tone="success" />
+        <StatTile to="/app/calendar" label={locale === "ar" ? "مواعيد قادمة (٧ أيام)" : "Upcoming (7d)"} value={String(stats.totals.upcoming)} icon={<CalendarDays className="size-4" />} />
+        <StatTile to="/app/documents" label={locale === "ar" ? "المستندات" : "Documents"} value={String(stats.totals.documents)} icon={<FileText className="size-4" />} />
+        <StatTile to="/app/drafting" label={locale === "ar" ? "المسودات" : "Drafts"} value={String(stats.totals.drafts)} icon={<FileText className="size-4" />} />
+        <StatTile to="/app/courtroom" label={locale === "ar" ? "محاكاة المحاكم" : "Courtroom sims"} value={String(stats.totals.simulations)} icon={<Gavel className="size-4" />} />
+        <StatTile to="/app/courtroom" label={locale === "ar" ? "متوسط درجة المحاكاة" : "Avg sim score"} value={stats.avgSimScore != null ? String(stats.avgSimScore) : "—"} icon={<Award className="size-4" />} tone="success" />
       </div>
+
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="card-elev rounded-xl border bg-card p-6">
