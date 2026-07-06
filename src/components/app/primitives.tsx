@@ -57,7 +57,7 @@ export function StatTile({
       {delta && <div className="mt-1 text-xs text-success">{delta}</div>}
     </motion.div>
   );
-  if (to) return <Link to={to} className="block">{inner}</Link>;
+  if (to) return <Link to={to as any} className="block">{inner}</Link>;
   return inner;
 }
 
