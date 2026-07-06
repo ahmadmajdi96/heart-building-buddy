@@ -10,7 +10,49 @@ import { useI18n } from "@/lib/i18n";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/auth")({ component: AuthPage });
+function AuthErrorBoundary({ error, reset }: { error: Error; reset: () => void }) {
+  const msg = String(error?.message || "");
+  const isChunk = /Loading chunk|Failed to fetch dynamically imported module|ChunkLoadError|Importing a module script failed/i.test(msg);
+  useEffect(() => {
+    if (isChunk && typeof window !== "undefined") {
+      const key = "__mohkam_auth_chunk_reload";
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, "1");
+        window.location.reload();
+      }
+    }
+  }, [isChunk]);
+  return (
+    <div className="min-h-screen grid place-items-center bg-pearl px-4">
+      <div className="w-full max-w-md rounded-2xl border bg-card p-8 card-elev text-center">
+        <div className="mb-6 flex justify-center"><BrandMark /></div>
+        <h1 className="font-serif text-2xl mb-2">Sign-in couldn't load</h1>
+        <p className="text-sm text-muted-foreground mb-6">
+          {isChunk
+            ? "A newer version was deployed. We'll refresh and try again."
+            : "Something went wrong loading this page. Please retry."}
+        </p>
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button
+            variant="gold"
+            onClick={() => {
+              try { sessionStorage.removeItem("__mohkam_auth_chunk_reload"); } catch {}
+              reset();
+              setTimeout(() => { if (typeof window !== "undefined") window.location.reload(); }, 400);
+            }}
+          >
+            Try again
+          </Button>
+          <a href="/" className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent">
+            Go home
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export const Route = createFileRoute("/auth")({ component: AuthPage, errorComponent: AuthErrorBoundary });
 
 type Mode = "signin" | "signup" | "magic" | "forgot";
 
