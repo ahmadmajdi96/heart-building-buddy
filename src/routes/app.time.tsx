@@ -187,8 +187,22 @@ function TimePage() {
     return { total, billable, amount };
   }, [entries]);
 
+  // Robust cross-browser timestamp parse: Postgres may return
+  // "2026-07-06 12:34:56.789+00" which Firefox/older Edge on Windows reject
+  // as NaN, causing the on-screen timer to freeze at 00:00:00.
+  const parseTs = (v: string): number => {
+    if (!v) return NaN;
+    let s = v.trim().replace(" ", "T");
+    // expand short offset "+00" or "-05" to "+00:00"
+    s = s.replace(/([+-]\d{2})$/, "$1:00");
+    // strip trailing microseconds beyond 3 digits
+    s = s.replace(/(\.\d{3})\d+/, "$1");
+    const t = Date.parse(s);
+    return Number.isFinite(t) ? t : Date.parse(v);
+  };
+
   const liveDuration = runningEntry
-    ? Math.max(0, Math.floor((now - new Date(runningEntry.started_at).getTime()) / 1000))
+    ? Math.max(0, Math.floor((now - parseTs(runningEntry.started_at)) / 1000))
     : 0;
 
   return (
