@@ -1,6 +1,8 @@
 import { type ReactNode } from "react";
-import { motion } from "framer-motion";
+import { Link } from "@tanstack/react-router";
+import { motion } from "@/components/motion-lite";
 import { cn } from "@/lib/utils";
+
 
 export function PageHeader({
   title, subtitle, actions,
