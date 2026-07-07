@@ -110,7 +110,9 @@ export const draftDocument = createServerFn({ method: "POST" })
     const lang = data.locale === "ar" ? "Arabic" : "English";
     const { text } = await generateText({
       model: gateway(MODEL),
-      system: `You are an expert Arab legal drafter. Produce a polished, ready-to-use legal document in ${lang} suitable for use in Arab jurisdictions. Use proper legal structure: title, parties, preamble, numbered clauses, governing law, signatures. Use bracket placeholders like [الاسم] / [Name] for variables. Output the document text only — no commentary.`,
+      system: `${strictLanguageDirective(data.locale)}
+
+You are an expert Arab legal drafter. Produce a polished, ready-to-use legal document in ${lang} suitable for use in Arab jurisdictions. Use proper legal structure: title, parties, preamble, numbered clauses, governing law, signatures. Use bracket placeholders like [الاسم] / [Name] for variables. Output the document text only — no commentary.`,
       prompt: `${data.template ? `Template: ${data.template}\n\n` : ""}User request: ${data.prompt}`,
     });
     return { draft: text };
