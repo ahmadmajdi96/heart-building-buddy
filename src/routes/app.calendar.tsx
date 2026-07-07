@@ -49,13 +49,6 @@ function CalendarPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Partial<Appt> | null>(null);
   const [open, setOpen] = useState(false);
-  // Filters (apply to the calendar grid + export)
-  const [filterKind, setFilterKind] = useState<string>("all");
-  const [filterCase, setFilterCase] = useState<string>("all");
-  const [filterClient, setFilterClient] = useState<string>("all");
-  const [exportFrom, setExportFrom] = useState<string>("");
-  const [exportTo, setExportTo] = useState<string>("");
-  const [exporting, setExporting] = useState(false);
 
 
   const range = useMemo(() => {
