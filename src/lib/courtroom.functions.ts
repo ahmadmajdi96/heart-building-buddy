@@ -133,16 +133,30 @@ const TurnOutput = z.object({
 });
 
 export const courtroomTurn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => TurnInput.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const gateway = getGateway();
     const lang = data.locale === "ar" ? "Arabic" : "English";
     const opposingRole = data.userRole === "claimant" ? "defendant" : "claimant";
 
-    const system = `You simulate a realistic court hearing in an Arab jurisdiction. Reply entirely in ${lang}.
+    // Build a question for the RAG index from the case + latest exchange,
+    // so the AI hearing is grounded in the user's Jordanian-law RAG corpus.
+    const recent = data.history.slice(-4).map((m) => `[${m.speaker}] ${m.text}`).join("\n");
+    const ragQuestion = [
+      data.caseBrief.slice(0, 1500),
+      data.userMessage ? `Latest counsel statement: ${data.userMessage}` : "",
+      recent ? `Recent exchange:\n${recent}` : "",
+      "What Jordanian statutes, articles, and cassation rulings are directly relevant?",
+    ].filter(Boolean).join("\n\n");
+    const grounding = await ragContext(context.userId, ragQuestion);
+
+    const system = `You simulate a realistic court hearing in the Hashemite Kingdom of Jordan. Reply entirely in ${lang}.
+Ground every legal argument, objection, and ruling in Jordanian law (Civil Code, Penal Code, Procedure codes, Labour Law, Cassation rulings, etc.). Cite specific article numbers or case numbers when possible, drawing on the RAG CONTEXT below.
+
 Roles:
-- "judge": fair, formal presiding judge; manages procedure, asks questions, rules on objections, eventually issues a verdict.
-- "opposing": ${opposingRole}'s counsel — argumentative but professional.
+- "judge": fair, formal presiding judge; manages procedure, asks questions, rules on objections, eventually issues a verdict grounded in Jordanian law.
+- "opposing": ${opposingRole}'s counsel — argumentative but professional, citing Jordanian authorities.
 - The user is the ${data.userRole}'s counsel. NEVER speak as the user.
 Keep each message concise (1-4 sentences). Stay in character.
 When the hearing reaches a natural verdict, the judge issues a final ruling and you set verdictReached=true.
@@ -153,6 +167,9 @@ Reply with a single JSON object only — no markdown, no commentary — with thi
   "verdictReached": boolean
 }
 
+RAG CONTEXT (Jordanian legal corpus, may be empty):
+${grounding || "(no retrieved context)"}
+
 CASE BRIEF:
 ${data.caseBrief}
 
@@ -160,9 +177,9 @@ HISTORY SO FAR (chronological):
 ${data.history.map((m) => `[${m.speaker}] ${m.text}`).join("\n") || "(none yet)"}`;
 
     const userPrompt = data.start
-      ? `Open the hearing. The judge enters, identifies the case, states the charges/claims, and invites the ${data.userRole === "claimant" ? "claimant" : "prosecution/claimant"} to begin. Return 1-2 turns.`
+      ? `Open the hearing. The judge enters, identifies the case, states the charges/claims under Jordanian law, and invites the ${data.userRole === "claimant" ? "claimant" : "prosecution/claimant"} to begin. Return 1-2 turns.`
       : `The user (${data.userRole}'s counsel) just said: "${data.userMessage ?? ""}"
-Continue the hearing with 1-3 turns (judge and/or opposing counsel reacting).`;
+Continue the hearing with 1-3 turns (judge and/or opposing counsel reacting), citing Jordanian law where relevant.`;
 
     const { text } = await generateText({
       model: gateway(MODEL),
