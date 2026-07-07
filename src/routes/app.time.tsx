@@ -256,15 +256,11 @@ function TimePage() {
                     amount,
                   ];
                 });
-                const csv = ["\uFEFF" + headers.join(",")].concat(rows.map((r) => r.map((v) => {
+                const csv = [headers.join("\t")].concat(rows.map((r) => r.map((v) => {
                   const s = v == null ? "" : String(v);
-                  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-                }).join(","))).join("\n");
-                const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url; a.download = `paid-hours-${new Date().toISOString().slice(0,10)}.csv`;
-                a.click(); URL.revokeObjectURL(url);
+                  return /["\t\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+                }).join("\t"))).join("\r\n");
+                downloadCsv(`paid-hours-${new Date().toISOString().slice(0,10)}.csv`, csv);
                 toast.success(ar ? `تم تصدير ${rows.length} سجل` : `Exported ${rows.length} entries`);
               } catch (e) { toast.error((e as Error).message); }
             }} disabled={filtered.length === 0}>
