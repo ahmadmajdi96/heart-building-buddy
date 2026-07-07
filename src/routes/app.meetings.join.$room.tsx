@@ -4,6 +4,8 @@ import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { JITSI_DOMAIN, JITSI_EXTERNAL_API_URL } from "@/lib/jitsi-config";
+
 
 export const Route = createFileRoute("/app/meetings/join/$room")({ component: JoinRoom });
 

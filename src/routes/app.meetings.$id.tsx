@@ -8,6 +8,8 @@ import { getMeeting, saveMeetingTranscript } from "@/lib/meetings.functions";
 import { useScribe } from "@elevenlabs/react";
 import { CommitStrategy } from "@elevenlabs/client";
 import { ArrowLeft, Copy, Mic, MicOff, Loader2, Save, PhoneOff } from "lucide-react";
+import { JITSI_DOMAIN, JITSI_EXTERNAL_API_URL } from "@/lib/jitsi-config";
+
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/meetings/$id")({ component: MeetingRoom });
