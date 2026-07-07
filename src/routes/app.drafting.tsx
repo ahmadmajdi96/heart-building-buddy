@@ -443,6 +443,23 @@ function DraftingPage() {
         </div>
       </div>
 
+      {ragSources.length > 0 && (
+        <div className="card-elev rounded-xl border bg-card p-5">
+          <div className="mb-3 text-sm font-semibold flex items-center gap-2">
+            <FileText className="size-4 text-gold" />
+            {locale === "ar" ? "المصادر من ملفاتك" : "Sources from your files"}
+          </div>
+          <ul className="space-y-2 text-xs">
+            {ragSources.map((s, i) => (
+              <li key={i} className="rounded border bg-background p-2.5">
+                <div className="font-medium">{s.filename}{s.page ? ` · p.${s.page}` : ""}</div>
+                {s.excerpt && <div className="mt-1 text-muted-foreground line-clamp-3">{s.excerpt}</div>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {drafts.length > 0 && (
         <div className="card-elev rounded-xl border bg-card p-5">
           <div className="mb-3 text-sm font-semibold">{locale === "ar" ? "مسودات محفوظة" : "Saved drafts"}</div>
