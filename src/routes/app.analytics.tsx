@@ -38,12 +38,18 @@ function DashboardPage() {
     return () => { cancelled = true; };
   }, []);
 
-  const fmtMoney = (n: number) =>
-    new Intl.NumberFormat(locale === "ar" ? "ar" : "en", {
-      style: "currency",
-      currency: org?.currency || "USD",
-      maximumFractionDigits: 0,
-    }).format(n);
+  const fmtMoney = (n: number) => {
+    const raw = (org?.currency || "USD").toUpperCase();
+    // Common short codes we accept in org settings but Intl doesn't recognize.
+    const currency = raw === "JD" ? "JOD" : raw.length === 3 ? raw : "USD";
+    try {
+      return new Intl.NumberFormat(locale === "ar" ? "ar" : "en", {
+        style: "currency", currency, maximumFractionDigits: 0,
+      }).format(n);
+    } catch {
+      return `${currency} ${new Intl.NumberFormat(locale === "ar" ? "ar" : "en", { maximumFractionDigits: 0 }).format(n)}`;
+    }
+  };
 
   if (loading) {
     return <div className="grid place-items-center p-20"><Loader2 className="size-6 animate-spin text-gold" /></div>;
