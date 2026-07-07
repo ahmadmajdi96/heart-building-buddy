@@ -730,7 +730,7 @@ function SettingsTab({ caseId, caseData, ar }: any) {
                   <Badge variant="outline" className="text-xs">{offsetLabel(r.offset_days, ar)}</Badge>
                   {!r.active && <Badge variant="secondary" className="text-xs">{ar ? "معطل" : "Inactive"}</Badge>}
                 </div>
-                <div className="mt-1 line-clamp-2 whitespace-pre-wrap text-xs text-muted-foreground">{r.message_template}</div>
+                <div className="mt-1 line-clamp-2 whitespace-pre-wrap text-xs text-muted-foreground">{toFriendly(r.message_template)}</div>
               </div>
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="sm" onClick={() => { setEditing(r); setOpenDialog(true); }}>
@@ -746,10 +746,10 @@ function SettingsTab({ caseId, caseData, ar }: any) {
       )}
 
       <div className="mt-4 rounded-md bg-muted/30 p-3 text-xs text-muted-foreground">
-        <div className="font-medium text-foreground">{ar ? "المتغيرات المتاحة" : "Available variables"}</div>
+        <div className="font-medium text-foreground">{ar ? "الحقول المتاحة (تُملأ تلقائياً)" : "Available fields (auto-filled)"}</div>
         <div className="mt-1 flex flex-wrap gap-1">
           {TEMPLATE_VARS.map((v) => (
-            <code key={v.key} className="rounded bg-background px-1.5 py-0.5">{v.key}</code>
+            <code key={v.key} className="rounded bg-background px-1.5 py-0.5">{v.friendly}</code>
           ))}
         </div>
       </div>
