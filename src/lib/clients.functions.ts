@@ -60,6 +60,15 @@ export const saveClient = createServerFn({ method: "POST" })
     }
     const { data: row, error } = await context.supabase.from("clients").insert(payload).select().maybeSingle();
     if (error) throw new Error(error.message);
+    // Fire-and-forget WhatsApp welcome to new client
+    if (row?.phone) {
+      const { fireWhatsApp } = await import("./whatsapp.server");
+      const name = row.name || "";
+      fireWhatsApp(
+        row.phone,
+        `Hello ${name}, your client profile has been created successfully. We will be in touch regarding your matters. — Legal Team`,
+      );
+    }
     return row;
   });
 
