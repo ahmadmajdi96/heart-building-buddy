@@ -204,6 +204,24 @@ function DocsPage() {
         subtitle={locale === "ar" ? "PDF · DOC · DOCX · CSV · JPG — الحد الأقصى 4 ميغابايت لكل ملف." : "PDF · DOC · DOCX · CSV · JPG — 4 MB max per file."}
       />
 
+      {/* Analytics — surfaced first so the picture of the library is above the fold */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {[
+          { l: locale === "ar" ? "الإجمالي" : "Total", v: analytics.total, icon: FileStack },
+          { l: locale === "ar" ? "قوالب" : "Templates", v: analytics.templates, icon: BookMarked },
+          { l: locale === "ar" ? "مرتبطة بقضايا" : "Case-related", v: analytics.caseDocs, icon: Briefcase },
+          { l: locale === "ar" ? "مرتبطة بموكلين" : "Client-related", v: analytics.clientDocs, icon: Users },
+          { l: locale === "ar" ? "الحجم الكلي" : "Total size", v: formatBytes(analytics.totalSize) },
+        ].map((t, i) => (
+          <div key={i} className="card-elev rounded-xl border bg-card p-4">
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+              {t.icon && <t.icon className="size-3.5" />}{t.l}
+            </div>
+            <div className="mt-1 font-serif text-2xl tabular-nums">{t.v}</div>
+          </div>
+        ))}
+      </div>
+
       <div className="card-elev rounded-xl border bg-card p-5 space-y-3">
         <div className="text-sm font-semibold">{locale === "ar" ? "رفع مستند جديد" : "Upload a new document"}</div>
         <p className="text-xs text-muted-foreground">
@@ -236,23 +254,6 @@ function DocsPage() {
         </div>
       </div>
 
-      {/* Analytics */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {[
-          { l: locale === "ar" ? "الإجمالي" : "Total", v: analytics.total, icon: FileStack },
-          { l: locale === "ar" ? "قوالب" : "Templates", v: analytics.templates, icon: BookMarked },
-          { l: locale === "ar" ? "مرتبطة بقضايا" : "Case-related", v: analytics.caseDocs, icon: Briefcase },
-          { l: locale === "ar" ? "مرتبطة بموكلين" : "Client-related", v: analytics.clientDocs, icon: Users },
-          { l: locale === "ar" ? "الحجم الكلي" : "Total size", v: formatBytes(analytics.totalSize) },
-        ].map((t, i) => (
-          <div key={i} className="card-elev rounded-xl border bg-card p-4">
-            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-              {t.icon && <t.icon className="size-3.5" />}{t.l}
-            </div>
-            <div className="mt-1 font-serif text-2xl tabular-nums">{t.v}</div>
-          </div>
-        ))}
-      </div>
 
       <div className="card-elev rounded-xl border bg-card">
         <div className="space-y-3 border-b p-4">

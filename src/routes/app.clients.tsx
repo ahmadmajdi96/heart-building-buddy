@@ -37,6 +37,10 @@ function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "individual" | "company">("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<Client> | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -53,9 +57,24 @@ function ClientsPage() {
   }
   useEffect(() => { refresh(); }, []);
 
-  const filtered = useMemo(() => clients.filter((c) =>
-    !q || c.name.toLowerCase().includes(q.toLowerCase()) || (c.email ?? "").toLowerCase().includes(q.toLowerCase()) || (c.company ?? "").toLowerCase().includes(q.toLowerCase()),
-  ), [clients, q]);
+  const filtered = useMemo(() => clients.filter((c) => {
+    if (statusFilter !== "all" && (c.status ?? "active") !== statusFilter) return false;
+    if (typeFilter !== "all" && (c.type ?? "individual") !== typeFilter) return false;
+    if (fromDate || toDate) {
+      const t = new Date(c.created_at).getTime();
+      if (fromDate && t < new Date(fromDate).getTime()) return false;
+      if (toDate) { const to = new Date(toDate); to.setHours(23,59,59,999); if (t > to.getTime()) return false; }
+    }
+    if (!q) return true;
+    const s = q.toLowerCase();
+    return c.name.toLowerCase().includes(s)
+      || (c.email ?? "").toLowerCase().includes(s)
+      || (c.company ?? "").toLowerCase().includes(s)
+      || (c.phone ?? "").toLowerCase().includes(s);
+  }), [clients, q, statusFilter, typeFilter, fromDate, toDate]);
+
+  const hasFilters = q || statusFilter !== "all" || typeFilter !== "all" || fromDate || toDate;
+  function clearFilters() { setQ(""); setStatusFilter("all"); setTypeFilter("all"); setFromDate(""); setToDate(""); }
 
   function openNew() { setEmailError(null); setEditing({ type: "individual", status: "active" }); setEditOpen(true); }
   function openEdit(c: Client) { setEmailError(null); setEditing(c); setEditOpen(true); }
@@ -127,15 +146,53 @@ function ClientsPage() {
       />
 
       <div className="card-elev rounded-xl border bg-card">
-        <div className="flex items-center gap-3 border-b p-4">
-          <div className="relative max-w-sm flex-1">
+        <div className="flex flex-wrap items-end gap-3 border-b p-4">
+          <div className="relative min-w-[220px] flex-1 max-w-sm">
             <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={locale === "ar" ? "ابحث…" : "Search clients…"} className="h-9 ps-9" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "الحالة" : "Status"}</Label>
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+              <SelectTrigger className="h-9 w-[130px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{locale === "ar" ? "الكل" : "All"}</SelectItem>
+                <SelectItem value="active">{locale === "ar" ? "نشط" : "Active"}</SelectItem>
+                <SelectItem value="inactive">{locale === "ar" ? "غير نشط" : "Inactive"}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "النوع" : "Type"}</Label>
+            <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as any)}>
+              <SelectTrigger className="h-9 w-[130px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{locale === "ar" ? "الكل" : "All"}</SelectItem>
+                <SelectItem value="individual">{locale === "ar" ? "فرد" : "Individual"}</SelectItem>
+                <SelectItem value="company">{locale === "ar" ? "شركة" : "Company"}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "من (تاريخ الإنشاء)" : "From (created)"}</Label>
+            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-9 w-[150px]" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "إلى" : "To"}</Label>
+            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 w-[150px]" />
+          </div>
+          {hasFilters && (
+            <Button size="sm" variant="ghost" onClick={clearFilters} className="gap-1.5 h-9">
+              {locale === "ar" ? "مسح" : "Clear"}
+            </Button>
+          )}
+          <div className="ms-auto text-xs text-muted-foreground">
+            {filtered.length} / {clients.length}
           </div>
         </div>
 
         {loading ? <div className="grid place-items-center p-12"><Loader2 className="size-5 animate-spin text-gold" /></div>
-        : filtered.length === 0 ? <div className="p-12 text-center text-muted-foreground text-sm">{locale === "ar" ? "لا توجد بيانات بعد. أضِف موكلك الأول." : "No clients yet. Add your first client to get started."}</div>
+        : filtered.length === 0 ? <div className="p-12 text-center text-muted-foreground text-sm">{hasFilters ? (locale === "ar" ? "لا نتائج مطابقة." : "No matching clients.") : (locale === "ar" ? "لا توجد بيانات بعد. أضِف موكلك الأول." : "No clients yet. Add your first client to get started.")}</div>
         : <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
@@ -144,6 +201,7 @@ function ClientsPage() {
                 <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "النوع" : "Type"}</th>
                 <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "الدولة" : "Country"}</th>
                 <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "قضايا نشطة" : "Active matters"}</th>
+                <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "تاريخ الإنشاء" : "Created"}</th>
                 <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "آخر نشاط" : "Last update"}</th>
                 <th className="px-5 py-3 text-start font-medium">{locale === "ar" ? "البريد" : "Email"}</th>
                 <th className="px-5 py-3 text-end font-medium"></th>
@@ -165,6 +223,7 @@ function ClientsPage() {
                   <td className="px-5 py-4 text-muted-foreground capitalize">{c.type ?? "individual"}</td>
                   <td className="px-5 py-4 text-muted-foreground">{c.country || "—"}</td>
                   <td className="px-5 py-4">{c._active_cases ?? 0}<span className="text-xs text-muted-foreground"> / {c._total_cases ?? 0}</span></td>
+                  <td className="px-5 py-4 text-muted-foreground text-xs tabular-nums" title={new Date(c.created_at).toLocaleString()}>{new Date(c.created_at).toLocaleDateString()}</td>
                   <td className="px-5 py-4 text-muted-foreground text-xs">{c._last_interaction ? new Date(c._last_interaction).toLocaleDateString() : "—"}</td>
                   <td className="px-5 py-4 text-muted-foreground">{c.email || "—"}</td>
                   <td className="px-5 py-4 text-end">
@@ -177,6 +236,7 @@ function ClientsPage() {
           </table>
         </div>}
       </div>
+
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
@@ -206,7 +266,22 @@ function ClientsPage() {
                 </Select>
               </div>
             </div>
-            <div><Label>{locale === "ar" ? "الاسم *" : "Name *"}</Label><Input value={editing?.name ?? ""} onChange={(e) => setEditing({ ...editing!, name: e.target.value })} /></div>
+            <div>
+              <div className="flex items-center justify-between">
+                <Label>{locale === "ar" ? "الاسم *" : "Name *"}</Label>
+                {!editing?.id && (editing?.name ?? "").trim().length >= 2 && (
+                  <InlineConflictBadge
+                    name={editing?.name ?? ""}
+                    national_id={editing?.national_id ?? ""}
+                    tax_id={editing?.tax_id ?? ""}
+                    email={editing?.email ?? ""}
+                    phone={editing?.phone ?? ""}
+                    onOpenFullCheck={() => { setConflictOpen(true); }}
+                  />
+                )}
+              </div>
+              <Input value={editing?.name ?? ""} onChange={(e) => setEditing({ ...editing!, name: e.target.value })} />
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{locale === "ar" ? "الشركة" : "Company"}</Label><Input value={editing?.company ?? ""} onChange={(e) => setEditing({ ...editing!, company: e.target.value })} /></div>
               <div><Label>{locale === "ar" ? "الدولة" : "Country"}</Label><Input value={editing?.country ?? ""} onChange={(e) => setEditing({ ...editing!, country: e.target.value })} placeholder="SA / JO / AE…" /></div>
@@ -270,22 +345,28 @@ function ClientsPage() {
 function ConflictCheckDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { locale } = useI18n();
   const check = useServerFn(conflictCheck);
-  const [form, setForm] = useState({ name: "", national_id: "", tax_id: "", email: "" });
+  const [form, setForm] = useState({ name: "", national_id: "", tax_id: "", email: "", phone: "" });
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Awaited<ReturnType<typeof conflictCheck>> | null>(null);
 
   async function run() {
     if (!form.name.trim() || form.name.trim().length < 2) {
-      toast.error(locale === "ar" ? "أدخل اسماً" : "Enter a name to check");
+      toast.error(locale === "ar" ? "أدخل اسماً على الأقل (حرفين)" : "Enter a name (at least 2 characters)");
       return;
     }
     setBusy(true);
-    try { setResult(await check({ data: form })); }
+    try {
+      const r = await check({ data: form });
+      setResult(r);
+      const total = (r.clients?.length ?? 0) + (r.parties?.length ?? 0) + (r.identityMatches?.length ?? 0);
+      if (total === 0) toast.success(locale === "ar" ? "لا توجد تعارضات" : "No conflicts found");
+      else toast.warning(locale === "ar" ? `تم العثور على ${total} تطابق محتمل` : `Found ${total} potential match${total > 1 ? "es" : ""}`);
+    }
     catch (e) { toast.error((e as Error).message); }
     finally { setBusy(false); }
   }
 
-  function reset() { setForm({ name: "", national_id: "", tax_id: "", email: "" }); setResult(null); }
+  function reset() { setForm({ name: "", national_id: "", tax_id: "", email: "", phone: "" }); setResult(null); }
 
   const hasMatches = result && (result.clients.length || result.parties.length || result.identityMatches.length);
 
@@ -296,12 +377,13 @@ function ConflictCheckDialog({ open, onClose }: { open: boolean; onClose: () => 
           <DialogTitle className="flex items-center gap-2"><ShieldAlert className="size-5 text-amber-600" />{locale === "ar" ? "فحص تعارض" : "Conflict check"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">{locale === "ar" ? "ابحث في الموكلين والأطراف المعارضة عن أي تعارض محتمل قبل قبول قضية جديدة." : "Search existing clients and opposing parties for potential conflicts before accepting a new matter."}</p>
+          <p className="text-sm text-muted-foreground">{locale === "ar" ? "ابحث في الموكلين والأطراف المعارضة عن أي تعارض محتمل قبل قبول قضية جديدة. يمكنك تعبئة أي حقل من الحقول الاختيارية لتحسين الدقة." : "Search existing clients and opposing parties for potential conflicts before accepting a new matter. Fill in any of the optional fields for a stronger check."}</p>
           <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2"><Label>{locale === "ar" ? "الاسم *" : "Name *"}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+            <div className="col-span-2"><Label>{locale === "ar" ? "الاسم *" : "Name *"}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} onKeyDown={(e) => { if (e.key === "Enter") run(); }} autoFocus /></div>
             <div><Label>{locale === "ar" ? "الرقم الوطني" : "National ID"}</Label><Input value={form.national_id} onChange={(e) => setForm({ ...form, national_id: e.target.value })} /></div>
             <div><Label>{locale === "ar" ? "الرقم الضريبي" : "Tax ID"}</Label><Input value={form.tax_id} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} /></div>
-            <div className="col-span-2"><Label>{locale === "ar" ? "البريد" : "Email"}</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+            <div><Label>{locale === "ar" ? "البريد" : "Email"}</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+            <div><Label>{locale === "ar" ? "الهاتف" : "Phone"}</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+962…" /></div>
           </div>
           <Button onClick={run} disabled={busy} variant="gold" className="w-full">
             {busy && <Loader2 className="size-4 animate-spin" />}{locale === "ar" ? "تشغيل الفحص" : "Run conflict check"}
@@ -457,3 +539,50 @@ function ClientDetailSheet({ id, onClose }: { id: string | null; onClose: () => 
     </Sheet>
   );
 }
+
+/** Debounced inline conflict check shown as a small badge next to the Name field. */
+function InlineConflictBadge({
+  name, national_id, tax_id, email, phone, onOpenFullCheck,
+}: { name: string; national_id: string; tax_id: string; email: string; phone: string; onOpenFullCheck: () => void }) {
+  const { locale } = useI18n();
+  const check = useServerFn(conflictCheck);
+  const [count, setCount] = useState<number | null>(null);
+  const [checking, setChecking] = useState(false);
+
+  useEffect(() => {
+    const trimmed = name.trim();
+    if (trimmed.length < 2) { setCount(null); return; }
+    let cancelled = false;
+    setChecking(true);
+    const t = setTimeout(async () => {
+      try {
+        const r = await check({ data: { name: trimmed, national_id, tax_id, email, phone } });
+        if (cancelled) return;
+        const total = (r.clients?.length ?? 0) + (r.parties?.length ?? 0) + (r.identityMatches?.length ?? 0);
+        setCount(total);
+      } catch { if (!cancelled) setCount(null); }
+      finally { if (!cancelled) setChecking(false); }
+    }, 600);
+    return () => { cancelled = true; clearTimeout(t); setChecking(false); };
+  }, [name, national_id, tax_id, email, phone, check]);
+
+  if (checking && count === null) {
+    return <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1"><Loader2 className="size-3 animate-spin" />{locale === "ar" ? "فحص…" : "checking…"}</span>;
+  }
+  if (count === null) return null;
+  if (count === 0) {
+    return <span className="text-[10px] text-emerald-700 inline-flex items-center gap-1"><CheckCircle2 className="size-3" />{locale === "ar" ? "لا تعارض" : "no conflict"}</span>;
+  }
+  return (
+    <button
+      type="button"
+      onClick={onOpenFullCheck}
+      className="text-[10px] font-medium text-amber-700 bg-amber-100 hover:bg-amber-200 rounded-full px-2 py-0.5 inline-flex items-center gap-1"
+      title={locale === "ar" ? "عرض التفاصيل" : "View details"}
+    >
+      <ShieldAlert className="size-3" />
+      {count} {locale === "ar" ? "تطابق محتمل" : count === 1 ? "potential match" : "potential matches"}
+    </button>
+  );
+}
+

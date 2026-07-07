@@ -100,8 +100,8 @@ export const deleteInteraction = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-/** Conflict check: fuzzy-match a name (and optional id numbers) against existing
- *  clients and case parties. Returns conflicting matches with the case context. */
+/** Conflict check: fuzzy-match a name + optional national_id / tax_id / email / phone
+ *  against existing clients and case parties. Returns categorized matches. */
 export const conflictCheck = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
@@ -110,35 +110,64 @@ export const conflictCheck = createServerFn({ method: "POST" })
       national_id: z.string().optional(),
       tax_id: z.string().optional(),
       email: z.string().optional(),
+      phone: z.string().optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const sb = context.supabase as any;
-    const tokens = data.name.trim().split(/\s+/).filter((t) => t.length >= 2);
-    const orFilter = tokens.map((t) => `name.ilike.%${t}%`).join(",");
 
+    const cleanName = data.name.trim();
+    const tokens = cleanName.split(/\s+/).filter((t) => t.length >= 2);
+    const nameOr = tokens.length
+      ? tokens.map((t) => `name.ilike.%${escapeIlike(t)}%`).join(",")
+      : `name.ilike.%${escapeIlike(cleanName)}%`;
+
+    // 1) Fuzzy name matches across clients + case parties
     const [clientsRes, partiesRes] = await Promise.all([
-      sb.from("clients").select("id, name, email, national_id, tax_id, type, company").or(orFilter || `name.ilike.%${data.name}%`),
-      sb.from("case_parties").select("id, name, role, case_id, cases(id, title, case_number, status)").or(orFilter || `name.ilike.%${data.name}%`),
+      sb.from("clients").select("id, name, email, phone, national_id, tax_id, type, company").or(nameOr),
+      sb.from("case_parties").select("id, name, role, case_id, cases(id, title, case_number, status)").or(nameOr),
     ]);
 
+    // 2) Exact identity matches — strongest signal
     const idMatches: any[] = [];
-    if (data.national_id) {
-      const { data: byNid } = await sb.from("clients").select("id, name, national_id").eq("national_id", data.national_id);
+    if (data.national_id?.trim()) {
+      const { data: byNid } = await sb.from("clients").select("id, name, national_id").eq("national_id", data.national_id.trim());
       idMatches.push(...(byNid ?? []).map((c: any) => ({ ...c, _match: "national_id" })));
     }
-    if (data.tax_id) {
-      const { data: byTax } = await sb.from("clients").select("id, name, tax_id").eq("tax_id", data.tax_id);
+    if (data.tax_id?.trim()) {
+      const { data: byTax } = await sb.from("clients").select("id, name, tax_id").eq("tax_id", data.tax_id.trim());
       idMatches.push(...(byTax ?? []).map((c: any) => ({ ...c, _match: "tax_id" })));
     }
-    if (data.email) {
-      const { data: byEmail } = await sb.from("clients").select("id, name, email").eq("email", data.email);
+    if (data.email?.trim()) {
+      const { data: byEmail } = await sb.from("clients").select("id, name, email").ilike("email", data.email.trim());
       idMatches.push(...(byEmail ?? []).map((c: any) => ({ ...c, _match: "email" })));
     }
+    if (data.phone?.trim()) {
+      // Normalise: match on the last 8 digits of the phone (handles country-code differences)
+      const digits = data.phone.replace(/\D/g, "");
+      const last8 = digits.slice(-8);
+      if (last8.length >= 6) {
+        const { data: byPhone } = await sb.from("clients").select("id, name, phone").ilike("phone", `%${last8}%`);
+        idMatches.push(...(byPhone ?? []).map((c: any) => ({ ...c, _match: "phone" })));
+      }
+    }
+
+    // Deduplicate identity matches by (id + _match) so we don't repeat.
+    const seen = new Set<string>();
+    const dedupIdMatches = idMatches.filter((m) => {
+      const k = `${m.id}:${m._match}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
 
     return {
-      clients: clientsRes.data ?? [],
-      parties: partiesRes.data ?? [],
-      identityMatches: idMatches,
+      clients: (clientsRes.data ?? []) as any[],
+      parties: (partiesRes.data ?? []) as any[],
+      identityMatches: dedupIdMatches,
     };
   });
+
+function escapeIlike(v: string) {
+  return v.replace(/[%_,()]/g, (m) => `\\${m}`);
+}

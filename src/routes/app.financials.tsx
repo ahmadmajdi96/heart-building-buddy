@@ -26,6 +26,8 @@ import { getTimeEntriesByIds } from "@/lib/time-entries.functions";
 import { listOrgDebtPayments } from "@/lib/debt-collection.functions";
 import { listClients, saveClient } from "@/lib/clients.functions";
 import { listUnpaidInvoicesForClient, createPaymentPlan, markSchedulePaid, deletePaymentPlan, getPaymentPlan, pausePaymentPlan, resumePaymentPlan, cancelPaymentPlan, reschedulePaymentPlan } from "@/lib/payment-plans.functions";
+import { FinancialsToolbar } from "@/components/financials/financials-toolbar";
+import { toCsv, downloadCsv, inRange } from "@/lib/csv-export";
 
 
 import { ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Layers } from "lucide-react";
@@ -140,10 +142,14 @@ function PaymentsTab() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [method, setMethod] = useState<string>("all");
+  const [from, setFrom] = useState(""); const [to, setTo] = useState("");
 
   async function load() {
     if (!org) return;
-    const { data } = await supabase.from("payments").select("*").eq("org_id", org.id).order("paid_at", { ascending: false });
+    // Include invoice and case joins so exports carry full context.
+    const { data } = await supabase.from("payments")
+      .select("*, tax_invoices(id, number, case_id, cases(id, title, case_number))")
+      .eq("org_id", org.id).order("paid_at", { ascending: false });
     setRows(data ?? []); setLoading(false);
   }
   useEffect(() => { load(); }, [org?.id]);
@@ -151,22 +157,39 @@ function PaymentsTab() {
   const methods = useMemo(() => ["all", ...Array.from(new Set(rows.map((r) => r.method).filter(Boolean)))], [rows]);
   const filtered = useMemo(() => rows.filter((r) => {
     if (method !== "all" && r.method !== method) return false;
+    if (!inRange(r.paid_at, from, to)) return false;
     if (!q.trim()) return true;
     const s = q.toLowerCase();
     return (r.client_name ?? "").toLowerCase().includes(s) || (r.reference ?? "").toLowerCase().includes(s);
-  }), [rows, q, method]);
+  }), [rows, q, method, from, to]);
+
+  function exportCsv() {
+    const headers = ["Paid at","Client","Invoice #","Case","Case #","Method","Amount","Currency","Reference","Notes"];
+    const rowsCsv = filtered.map((r: any) => [
+      r.paid_at, r.client_name ?? "",
+      r.tax_invoices?.number ?? "", r.tax_invoices?.cases?.title ?? "", r.tax_invoices?.cases?.case_number ?? "",
+      r.method, r.amount, r.currency, r.reference ?? "", r.notes ?? "",
+    ]);
+    downloadCsv(`payments_${new Date().toISOString().slice(0,10)}.csv`, toCsv(headers, rowsCsv));
+  }
 
   return (
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 border-b p-4">
         <div className="text-sm font-semibold mr-auto">{locale === "ar" ? "سجل المدفوعات" : "Payment log"} <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span></div>
-        <TableFilter q={q} setQ={setQ} status={method} setStatus={setMethod} statuses={methods} placeholder={locale === "ar" ? "ابحث بالعميل/المرجع…" : "Search client / reference…"} locale={locale as any} />
         {can("edit_financials") && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button size="sm" variant="gold"><Plus className="size-4"/>{locale === "ar" ? "تسجيل دفعة" : "Record payment"}</Button></DialogTrigger>
             <PaymentDialog onSaved={() => { setOpen(false); load(); }} onClose={() => setOpen(false)} />
           </Dialog>
         )}
+      </div>
+      <div className="border-b p-4">
+        <FinancialsToolbar q={q} setQ={setQ} status={method} setStatus={setMethod} statuses={methods}
+          fromLabel={locale === "ar" ? "من (تاريخ الدفع)" : "From (paid at)"}
+          from={from} setFrom={setFrom} to={to} setTo={setTo}
+          onExport={exportCsv} exportDisabled={filtered.length === 0}
+          placeholder={locale === "ar" ? "ابحث بالعميل/المرجع…" : "Search client / reference…"} locale={locale as any} />
       </div>
       {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={locale === "ar" ? "لا نتائج." : "No matches."}/> : (
         <table className="w-full text-sm">
@@ -272,6 +295,7 @@ function SchedulesTab() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
+  const [from, setFrom] = useState(""); const [to, setTo] = useState("");
   const [markingId, setMarkingId] = useState<string | null>(null);
   const markPaidFn = useServerFn(markSchedulePaid);
   const deletePlanFn = useServerFn(deletePaymentPlan);
@@ -279,7 +303,7 @@ function SchedulesTab() {
   async function load() {
     if (!org) return;
     const { data } = await supabase.from("payment_schedules")
-      .select("*, tax_invoices(id,number,status)")
+      .select("*, tax_invoices(id,number,status,case_id,cases(id,title,case_number))")
       .eq("org_id", org.id)
       .order("plan_id", { ascending: false, nullsFirst: false })
       .order("due_date", { ascending: true });
@@ -301,10 +325,24 @@ function SchedulesTab() {
   const statuses = useMemo(() => ["all", ...Array.from(new Set(rows.map((r) => r.status).filter(Boolean)))], [rows]);
   const filtered = useMemo(() => rows.filter((r) => {
     if (status !== "all" && r.status !== status) return false;
+    if (!inRange(r.due_date, from, to)) return false;
     if (!q.trim()) return true;
     const s = q.toLowerCase();
     return (r.client_name ?? "").toLowerCase().includes(s) || (r.description ?? "").toLowerCase().includes(s);
-  }), [rows, q, status]);
+  }), [rows, q, status, from, to]);
+
+  function exportCsv() {
+    const headers = ["Due date","Plan ID","Installment","Client","Description","Invoice #","Case","Case #","Amount","Currency","Status"];
+    const rowsCsv = filtered.map((r: any) => [
+      r.due_date, r.plan_id ?? "",
+      r.installment_no ? `${r.installment_no}/${r.installment_count}` : "single",
+      r.client_name ?? "", r.description ?? "",
+      r.tax_invoices?.number ?? "",
+      r.tax_invoices?.cases?.title ?? "", r.tax_invoices?.cases?.case_number ?? "",
+      r.amount, r.currency, r.status,
+    ]);
+    downloadCsv(`schedules_${new Date().toISOString().slice(0,10)}.csv`, toCsv(headers, rowsCsv));
+  }
 
   // group by plan_id
   const grouped = useMemo(() => {
@@ -324,7 +362,6 @@ function SchedulesTab() {
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 border-b p-4">
         <div className="text-sm font-semibold mr-auto">{locale === "ar" ? "جدولة المدفوعات" : "Payment schedule"} <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span></div>
-        <TableFilter q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses} placeholder={locale === "ar" ? "ابحث…" : "Search…"} locale={locale as any} />
         {can("edit_financials") && (
           <>
             <Dialog open={openPlan} onOpenChange={setOpenPlan}>
@@ -338,6 +375,15 @@ function SchedulesTab() {
           </>
         )}
       </div>
+      <div className="border-b p-4">
+        <FinancialsToolbar q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses}
+          fromLabel={locale === "ar" ? "من (الاستحقاق)" : "From (due)"}
+          from={from} setFrom={setFrom} to={to} setTo={setTo}
+          onExport={exportCsv} exportDisabled={filtered.length === 0}
+          placeholder={locale === "ar" ? "ابحث بالعميل/الوصف…" : "Search client / description…"} locale={locale as any} />
+      </div>
+
+
 
       {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={locale === "ar" ? "لا نتائج." : "No matches."}/> : (
         <div className="divide-y">
@@ -923,10 +969,13 @@ function QuotesTab() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
+  const [from, setFrom] = useState(""); const [to, setTo] = useState("");
 
   async function load() {
     if (!org) return;
-    const { data } = await supabase.from("quotes").select("*").eq("org_id", org.id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("quotes")
+      .select("*, cases(id, title, case_number), clients(id, name, email, phone)")
+      .eq("org_id", org.id).order("created_at", { ascending: false });
     setRows(data ?? []); setLoading(false);
   }
   useEffect(() => { load(); }, [org?.id]);
@@ -954,23 +1003,41 @@ function QuotesTab() {
   const statuses = useMemo(() => ["all", ...Array.from(new Set(rows.map((r) => r.status).filter(Boolean)))], [rows]);
   const filtered = useMemo(() => rows.filter((r) => {
     if (status !== "all" && r.status !== status) return false;
+    if (!inRange(r.issue_date, from, to)) return false;
     if (!q.trim()) return true;
     const s = q.toLowerCase();
     return (r.client_name ?? "").toLowerCase().includes(s) || (r.number ?? "").toLowerCase().includes(s);
-  }), [rows, q, status]);
+  }), [rows, q, status, from, to]);
+
+  function exportCsv() {
+    const headers = ["Number","Issue date","Valid until","Client","Client email","Client phone","Case","Case #","Currency","Subtotal","Tax","Total","Status","Notes"];
+    const rowsCsv = filtered.map((r: any) => [
+      r.number, r.issue_date, r.valid_until ?? "",
+      r.client_name ?? "", r.clients?.email ?? "", r.clients?.phone ?? "",
+      r.cases?.title ?? "", r.cases?.case_number ?? "",
+      r.currency, r.subtotal, r.tax_amount, r.total, r.status, r.notes ?? "",
+    ]);
+    downloadCsv(`quotes_${new Date().toISOString().slice(0,10)}.csv`, toCsv(headers, rowsCsv));
+  }
 
   return (
     <>
       <Card className="overflow-hidden">
         <div className="flex flex-wrap items-center gap-3 border-b p-4">
           <div className="text-sm font-semibold mr-auto">{locale === "ar" ? "عروض الأسعار" : "Quotes"} <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span></div>
-          <TableFilter q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses} placeholder={locale === "ar" ? "ابحث برقم/عميل…" : "Search by #/client…"} locale={locale as any} />
           {can("edit_financials") && (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild><Button size="sm" variant="gold"><Plus className="size-4"/>{locale === "ar" ? "عرض سعر جديد" : "New quote"}</Button></DialogTrigger>
               <DocFormDialog kind="quote" onSaved={() => { setOpen(false); load(); }} onClose={() => setOpen(false)} />
             </Dialog>
           )}
+        </div>
+        <div className="border-b p-4">
+          <FinancialsToolbar q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses}
+            fromLabel={locale === "ar" ? "من (الإصدار)" : "From (issued)"}
+            from={from} setFrom={setFrom} to={to} setTo={setTo}
+            onExport={exportCsv} exportDisabled={filtered.length === 0}
+            placeholder={locale === "ar" ? "ابحث برقم/عميل…" : "Search by #/client…"} locale={locale as any} />
         </div>
         {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={locale === "ar" ? "لا نتائج." : "No matches."}/> : (
           <table className="w-full text-sm">
@@ -1013,6 +1080,7 @@ function InvoicesTab() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
+  const [from, setFrom] = useState(""); const [to, setTo] = useState("");
   const [payTarget, setPayTarget] = useState<Invoice | null>(null);
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
   const [payBusy, setPayBusy] = useState(false);
@@ -1020,7 +1088,9 @@ function InvoicesTab() {
   async function load() {
     if (!org) return;
     try { await sweep(); } catch { /* non-fatal */ }
-    const { data } = await supabase.from("tax_invoices").select("*").eq("org_id", org.id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("tax_invoices")
+      .select("*, cases(id, title, case_number), clients(id, name, email, phone)")
+      .eq("org_id", org.id).order("created_at", { ascending: false });
     setRows(data ?? []); setLoading(false);
   }
   useEffect(() => { load(); }, [org?.id]);
@@ -1044,11 +1114,23 @@ function InvoicesTab() {
   const statuses = useMemo(() => ["all", "draft", "issued", "partial", "paid", "overdue", "void"], []);
   const filtered = useMemo(() => rows.filter((r) => {
     if (status !== "all" && r.status !== status) return false;
+    if (!inRange(r.issue_date, from, to)) return false;
     if (!q.trim()) return true;
     const s = q.toLowerCase();
     return (r.client_name ?? "").toLowerCase().includes(s) || (r.number ?? "").toLowerCase().includes(s);
-  }), [rows, q, status]);
+  }), [rows, q, status, from, to]);
   const overdueCount = rows.filter((r) => r.status === "overdue").length;
+
+  function exportCsv() {
+    const headers = ["Number","Issue date","Due date","Client","Client email","Client phone","Case","Case #","Currency","Subtotal","Tax","Total","Amount paid","Status","Notes"];
+    const rowsCsv = filtered.map((r: any) => [
+      r.number, r.issue_date, r.due_date ?? "",
+      r.client_name ?? "", r.clients?.email ?? "", r.clients?.phone ?? "",
+      r.cases?.title ?? "", r.cases?.case_number ?? "",
+      r.currency, r.subtotal, r.tax_amount, r.total, r.amount_paid, r.status, r.notes ?? "",
+    ]);
+    downloadCsv(`tax_invoices_${new Date().toISOString().slice(0,10)}.csv`, toCsv(headers, rowsCsv));
+  }
 
   return (
     <>
@@ -1063,13 +1145,19 @@ function InvoicesTab() {
               </button>
             )}
           </div>
-          <TableFilter q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses} placeholder={locale === "ar" ? "ابحث برقم/عميل…" : "Search by #/client…"} locale={locale as any} />
           {can("edit_financials") && (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild><Button size="sm" variant="gold"><Plus className="size-4"/>{locale === "ar" ? "فاتورة جديدة" : "New invoice"}</Button></DialogTrigger>
               <DocFormDialog kind="invoice" onSaved={() => { setOpen(false); load(); }} onClose={() => setOpen(false)} />
             </Dialog>
           )}
+        </div>
+        <div className="border-b p-4">
+          <FinancialsToolbar q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses}
+            fromLabel={locale === "ar" ? "من (الإصدار)" : "From (issued)"}
+            from={from} setFrom={setFrom} to={to} setTo={setTo}
+            onExport={exportCsv} exportDisabled={filtered.length === 0}
+            placeholder={locale === "ar" ? "ابحث برقم/عميل…" : "Search by #/client…"} locale={locale as any} />
         </div>
         {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={locale === "ar" ? "لا نتائج." : "No matches."}/> : (
           <table className="w-full text-sm">
@@ -1371,6 +1459,16 @@ function DraftInvoicesTab() {
 
   const acceptEntryIds = (pendingAccept?.time_entry_ids ?? []) as string[];
 
+  function exportCsv() {
+    const headers = ["Issue date","Due date","Client","Case ID","Currency","Subtotal","Tax","Total","Status","Notes","Time entry IDs"];
+    const rowsCsv = filtered.map((r: any) => [
+      r.issue_date, r.due_date ?? "", r.client_name ?? "", r.case_id ?? "",
+      r.currency, r.subtotal, r.tax_amount, r.total, r.status, r.notes ?? "",
+      Array.isArray(r.time_entry_ids) ? r.time_entry_ids.join("|") : "",
+    ]);
+    downloadCsv(`draft_invoices_${new Date().toISOString().slice(0,10)}.csv`, toCsv(headers, rowsCsv));
+  }
+
   return (
     <>
       <Card className="overflow-hidden">
@@ -1384,6 +1482,9 @@ function DraftInvoicesTab() {
               <Check className="size-4" /> {ar ? `قبول ${selected.size}` : `Accept ${selected.size}`}
             </Button>
           )}
+          <Button size="sm" variant="outline" onClick={exportCsv} disabled={filtered.length === 0}>
+            <Download className="size-4"/>{ar ? "تصدير CSV" : "Export CSV"}
+          </Button>
           <TableFilter q={q} setQ={(v) => setSearch({ q: v })} status={status} setStatus={(v) => setSearch({ status: v })}
             statuses={["all", "draft", "accepted", "rejected"]}
             placeholder={ar ? "ابحث بالعميل أو الملاحظات…" : "Search by client or notes…"} locale={locale as any} />
@@ -1601,6 +1702,8 @@ function CollectionsTab() {
   const listFn = useServerFn(listOrgDebtPayments);
   const { data: rows, isLoading } = useCollectionsQuery(listFn);
   const [q, setQ] = useState("");
+  const [method, setMethod] = useState<string>("all");
+  const [from, setFrom] = useState(""); const [to, setTo] = useState("");
 
   const totals = (rows ?? []).reduce((a, r: any) => ({
     received: a.received + Number(r.amount_received || 0),
@@ -1608,31 +1711,49 @@ function CollectionsTab() {
     forwarded: a.forwarded + Number(r.amount_forwarded || 0),
   }), { received: 0, fee: 0, forwarded: 0 });
 
-  const filtered = (rows ?? []).filter((r: any) =>
-    !q || r.debt_cases?.title?.toLowerCase().includes(q.toLowerCase())
-      || r.debt_case_payers?.name?.toLowerCase().includes(q.toLowerCase())
-      || r.forwarder_name?.toLowerCase().includes(q.toLowerCase())
-  );
+  const methods = useMemo(() => ["all", ...Array.from(new Set((rows ?? []).map((r: any) => r.method).filter(Boolean)))], [rows]);
+  const filtered = (rows ?? []).filter((r: any) => {
+    if (method !== "all" && r.method !== method) return false;
+    if (!inRange(r.paid_at, from, to)) return false;
+    if (!q) return true;
+    const s = q.toLowerCase();
+    return r.debt_cases?.title?.toLowerCase().includes(s)
+      || r.debt_case_payers?.name?.toLowerCase().includes(s)
+      || r.forwarder_name?.toLowerCase().includes(s);
+  });
+
+  function exportCsv() {
+    const headers = ["Paid at","Debt case","Payer","Received","Fee","Forwarded","Currency","Method","Forwarder","Reference","Notes"];
+    const rowsCsv = filtered.map((r: any) => [
+      r.paid_at, r.debt_cases?.title ?? "", r.debt_case_payers?.name ?? "",
+      r.amount_received, r.service_fee, r.amount_forwarded, r.currency,
+      r.method, r.forwarder_name ?? "", r.reference ?? "", r.notes ?? "",
+    ]);
+    downloadCsv(`collections_${new Date().toISOString().slice(0,10)}.csv`, toCsv(headers, rowsCsv));
+  }
 
   return (
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 border-b p-4">
         <div className="text-sm font-semibold mr-auto">
           {ar ? "مدفوعات تحصيل الديون" : "Debt collection payments"}
-          <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length})</span>
+          <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{(rows ?? []).length})</span>
         </div>
         <div className="text-xs text-muted-foreground flex gap-4">
           <span>{ar ? "المُستلم" : "Received"}: <b className="text-foreground">{totals.received.toFixed(2)}</b></span>
           <span>{ar ? "المُحوَّل" : "Forwarded"}: <b className="text-foreground">{totals.forwarded.toFixed(2)}</b></span>
           <span>{ar ? "الرسوم" : "Fees"}: <b className="text-gold">{totals.fee.toFixed(2)}</b></span>
         </div>
-        <div className="relative w-56">
-          <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={ar ? "بحث…" : "Search…"} className="h-9 ps-9" />
-        </div>
         <Button size="sm" variant="outline" asChild>
           <Link to="/app/debt-collection">{ar ? "إدارة القضايا" : "Manage cases"}</Link>
         </Button>
+      </div>
+      <div className="border-b p-4">
+        <FinancialsToolbar q={q} setQ={setQ} status={method} setStatus={setMethod} statuses={methods}
+          fromLabel={ar ? "من (تاريخ الدفع)" : "From (paid at)"}
+          from={from} setFrom={setFrom} to={to} setTo={setTo}
+          onExport={exportCsv} exportDisabled={filtered.length === 0}
+          placeholder={ar ? "بحث…" : "Search case / payer / forwarder…"} locale={locale as any} />
       </div>
       {isLoading ? <Loading /> : filtered.length === 0 ? <Empty msg={ar ? "لا مدفوعات تحصيل" : "No collection payments yet"} /> : (
         <table className="w-full text-sm">
