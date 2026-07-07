@@ -13,10 +13,12 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { listClients, saveClient, deleteClient, getClient, addInteraction, deleteInteraction, conflictCheck } from "@/lib/clients.functions";
-import { Plus, Search, Loader2, Pencil, Trash2, Phone, Mail, Building, User, MessageSquare, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { Plus, Search, Loader2, Pencil, Trash2, Phone, Mail, Building, User, MessageSquare, ShieldAlert, CheckCircle2, Users, Briefcase, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toCsv, downloadCsv } from "@/lib/csv-export";
+import { StatTile } from "@/components/app/primitives";
 
 export const Route = createFileRoute("/app/clients/")({ component: ClientsPage });
 
