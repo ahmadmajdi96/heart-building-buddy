@@ -292,6 +292,9 @@ export const listOrgDebtPayments = createServerFn({ method: "GET" })
 
 /* ============================ SMS ============================ */
 
+const PROJECT_ID_FOR_SMS = "fb990850-3f8b-4251-83c6-f826e75969f7";
+const SMS_STATUS_CALLBACK = `https://project--${PROJECT_ID_FOR_SMS}.lovable.app/api/public/hooks/twilio-status`;
+
 async function sendTwilioSms(to: string, body: string, from: string): Promise<{ sid?: string; error?: string; status: string }> {
   const key = process.env.LOVABLE_API_KEY;
   const twKey = process.env.TWILIO_API_KEY;
@@ -304,14 +307,24 @@ async function sendTwilioSms(to: string, body: string, from: string): Promise<{ 
         "X-Connection-Api-Key": twKey,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({ To: String(to).trim(), From: String(from).trim(), Body: body }),
+      body: new URLSearchParams({
+        To: String(to).trim(), From: String(from).trim(), Body: body,
+        StatusCallback: SMS_STATUS_CALLBACK,
+      }),
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) return { status: "failed", error: JSON.stringify(json).slice(0, 500) };
-    return { status: "sent", sid: (json as any).sid };
+    return { status: (json as any).status ?? "sent", sid: (json as any).sid };
   } catch (e: any) {
     return { status: "failed", error: String(e?.message || e) };
   }
+}
+
+async function logSmsMessage(row: Record<string, any>) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await (supabaseAdmin as any).from("sms_messages").insert(row);
+  } catch {}
 }
 
 
