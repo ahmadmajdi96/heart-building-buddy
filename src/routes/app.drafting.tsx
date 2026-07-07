@@ -313,6 +313,55 @@ function DraftingPage() {
         </div>
 
         <div>
+          <div className="mb-2 flex items-center justify-between">
+            <div className="text-sm font-semibold flex items-center gap-2">
+              <Upload className="size-4 text-gold" />
+              {locale === "ar" ? "ارفع مستنداتك (خاصة بك)" : "Upload your documents (private)"}
+            </div>
+            <label className="cursor-pointer text-xs rounded border px-2.5 py-1.5 hover:border-gold">
+              {uploading ? (
+                <span className="inline-flex items-center gap-1"><Loader2 className="size-3.5 animate-spin" />{locale === "ar" ? "جارٍ الرفع…" : "Uploading…"}</span>
+              ) : (
+                <span className="inline-flex items-center gap-1"><Plus className="size-3.5" />{locale === "ar" ? "إضافة ملفات" : "Add files"}</span>
+              )}
+              <input
+                type="file"
+                multiple
+                accept=".pdf,.docx,.txt,.md,.html,.csv,.xlsx,.pptx"
+                className="hidden"
+                disabled={uploading}
+                onChange={(e) => { void uploadRagFiles(e.target.files); e.currentTarget.value = ""; }}
+              />
+            </label>
+          </div>
+          <p className="text-[11px] text-muted-foreground mb-2">
+            {locale === "ar"
+              ? "عند رفع ملفات، ستُصاغ المسودة بالاعتماد على محتواها فقط (PDF/DOCX/TXT/MD/HTML/CSV/XLSX/PPTX)."
+              : "When files are uploaded, the draft is grounded strictly in their content (PDF/DOCX/TXT/MD/HTML/CSV/XLSX/PPTX)."}
+          </p>
+          {ragDocs.length > 0 && (
+            <ul className="grid gap-1.5 md:grid-cols-2 lg:grid-cols-3">
+              {ragDocs.map((d) => (
+                <li key={d.documentId} className={`flex items-center gap-2 rounded border px-2.5 py-2 text-xs ${d.status === "succeeded" ? "border-gold/50 bg-gold/5" : ""}`}>
+                  {d.status === "succeeded" ? <CheckCircle2 className="size-3.5 text-gold shrink-0" />
+                    : d.status === "failed" ? <AlertCircle className="size-3.5 text-destructive shrink-0" />
+                    : <Loader2 className="size-3.5 animate-spin shrink-0" />}
+                  <span className="min-w-0 flex-1 truncate" title={d.filename}>{d.filename}</span>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {d.status === "succeeded" ? (locale === "ar" ? "جاهز" : "ready")
+                      : d.status === "failed" ? (locale === "ar" ? "فشل" : "failed")
+                      : (locale === "ar" ? "معالجة…" : "indexing…")}
+                  </span>
+                  <button onClick={() => removeRagDoc(d.documentId)} className="text-muted-foreground hover:text-destructive">
+                    <X className="size-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div>
           <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
             <Sparkles className="size-4 text-gold" />
             {locale === "ar" ? "تعليمات إضافية" : "Additional instructions"}
