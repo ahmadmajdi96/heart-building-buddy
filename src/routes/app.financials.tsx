@@ -969,10 +969,13 @@ function QuotesTab() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
+  const [from, setFrom] = useState(""); const [to, setTo] = useState("");
 
   async function load() {
     if (!org) return;
-    const { data } = await supabase.from("quotes").select("*").eq("org_id", org.id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("quotes")
+      .select("*, cases(id, title, case_number), clients(id, name, email, phone)")
+      .eq("org_id", org.id).order("created_at", { ascending: false });
     setRows(data ?? []); setLoading(false);
   }
   useEffect(() => { load(); }, [org?.id]);
@@ -1000,23 +1003,41 @@ function QuotesTab() {
   const statuses = useMemo(() => ["all", ...Array.from(new Set(rows.map((r) => r.status).filter(Boolean)))], [rows]);
   const filtered = useMemo(() => rows.filter((r) => {
     if (status !== "all" && r.status !== status) return false;
+    if (!inRange(r.issue_date, from, to)) return false;
     if (!q.trim()) return true;
     const s = q.toLowerCase();
     return (r.client_name ?? "").toLowerCase().includes(s) || (r.number ?? "").toLowerCase().includes(s);
-  }), [rows, q, status]);
+  }), [rows, q, status, from, to]);
+
+  function exportCsv() {
+    const headers = ["Number","Issue date","Valid until","Client","Client email","Client phone","Case","Case #","Currency","Subtotal","Tax","Total","Status","Notes"];
+    const rowsCsv = filtered.map((r: any) => [
+      r.number, r.issue_date, r.valid_until ?? "",
+      r.client_name ?? "", r.clients?.email ?? "", r.clients?.phone ?? "",
+      r.cases?.title ?? "", r.cases?.case_number ?? "",
+      r.currency, r.subtotal, r.tax_amount, r.total, r.status, r.notes ?? "",
+    ]);
+    downloadCsv(`quotes_${new Date().toISOString().slice(0,10)}.csv`, toCsv(headers, rowsCsv));
+  }
 
   return (
     <>
       <Card className="overflow-hidden">
         <div className="flex flex-wrap items-center gap-3 border-b p-4">
           <div className="text-sm font-semibold mr-auto">{locale === "ar" ? "عروض الأسعار" : "Quotes"} <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span></div>
-          <TableFilter q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses} placeholder={locale === "ar" ? "ابحث برقم/عميل…" : "Search by #/client…"} locale={locale as any} />
           {can("edit_financials") && (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild><Button size="sm" variant="gold"><Plus className="size-4"/>{locale === "ar" ? "عرض سعر جديد" : "New quote"}</Button></DialogTrigger>
               <DocFormDialog kind="quote" onSaved={() => { setOpen(false); load(); }} onClose={() => setOpen(false)} />
             </Dialog>
           )}
+        </div>
+        <div className="border-b p-4">
+          <FinancialsToolbar q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses}
+            fromLabel={locale === "ar" ? "من (الإصدار)" : "From (issued)"}
+            from={from} setFrom={setFrom} to={to} setTo={setTo}
+            onExport={exportCsv} exportDisabled={filtered.length === 0}
+            placeholder={locale === "ar" ? "ابحث برقم/عميل…" : "Search by #/client…"} locale={locale as any} />
         </div>
         {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={locale === "ar" ? "لا نتائج." : "No matches."}/> : (
           <table className="w-full text-sm">
