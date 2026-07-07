@@ -12,7 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { listAppointments, saveAppointment, deleteAppointment } from "@/lib/appointments.functions";
 import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
-import { Plus, ChevronLeft, ChevronRight, Trash2, Clock, MapPin, Loader2 } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Trash2, Clock, MapPin, Loader2, Download, Filter } from "lucide-react";
+import { toCsv, downloadCsv } from "@/lib/csv-export";
+
 import { toast } from "sonner";
 import {
   addDays, addMonths, addWeeks, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfDay,
@@ -47,6 +49,14 @@ function CalendarPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Partial<Appt> | null>(null);
   const [open, setOpen] = useState(false);
+  // Filters (apply to the calendar grid + export)
+  const [filterKind, setFilterKind] = useState<string>("all");
+  const [filterCase, setFilterCase] = useState<string>("all");
+  const [filterClient, setFilterClient] = useState<string>("all");
+  const [exportFrom, setExportFrom] = useState<string>("");
+  const [exportTo, setExportTo] = useState<string>("");
+  const [exporting, setExporting] = useState(false);
+
 
   const range = useMemo(() => {
     if (view === "month") return { from: startOfWeek(startOfMonth(cursor)), to: endOfWeek(endOfMonth(cursor)) };
@@ -105,6 +115,51 @@ function CalendarPage() {
 
   const heading = view === "month" ? format(cursor, "MMMM yyyy") : view === "week" ? `${format(startOfWeek(cursor), "MMM d")} – ${format(endOfWeek(cursor), "MMM d, yyyy")}` : format(cursor, "EEEE, MMMM d, yyyy");
 
+  const filteredAppts = useMemo(() => appts.filter((a) => {
+    if (filterKind !== "all" && a.kind !== filterKind) return false;
+    if (filterCase !== "all") {
+      if (filterCase === "none" ? a.case_id : a.case_id !== filterCase) return false;
+    }
+    if (filterClient !== "all") {
+      if (filterClient === "none" ? a.client_id : a.client_id !== filterClient) return false;
+    }
+    return true;
+  }), [appts, filterKind, filterCase, filterClient]);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      // If explicit date range set, fetch that range; else use whatever is loaded (view range).
+      const fromIso = exportFrom ? new Date(exportFrom).toISOString() : range.from.toISOString();
+      const toIso = exportTo ? (() => { const d = new Date(exportTo); d.setHours(23,59,59,999); return d.toISOString(); })() : range.to.toISOString();
+      const rows = await list({ data: { from: fromIso, to: toIso } }) as Appt[];
+      // Apply active filters to the exported set as well.
+      const clientMap = new Map(clients.map((c) => [c.id, c.name] as const));
+      const caseMap = new Map(cases.map((c) => [c.id, c.title] as const));
+      const filteredExport = rows.filter((a) => {
+        if (filterKind !== "all" && a.kind !== filterKind) return false;
+        if (filterCase !== "all") {
+          if (filterCase === "none" ? a.case_id : a.case_id !== filterCase) return false;
+        }
+        if (filterClient !== "all") {
+          if (filterClient === "none" ? a.client_id : a.client_id !== filterClient) return false;
+        }
+        return true;
+      });
+      const headers = ["Title","Kind","Starts at","Ends at","Location","Case","Client","Notes"];
+      const csv = toCsv(headers, filteredExport.map((a) => [
+        a.title, a.kind, new Date(a.starts_at).toISOString(), new Date(a.ends_at).toISOString(),
+        a.location ?? "", a.case_id ? (caseMap.get(a.case_id) ?? "") : "",
+        a.client_id ? (clientMap.get(a.client_id) ?? "") : "", a.description ?? "",
+      ]));
+      downloadCsv(`appointments-${new Date().toISOString().slice(0,10)}.csv`, csv);
+      toast.success(locale === "ar" ? `تم تصدير ${filteredExport.length} موعد` : `Exported ${filteredExport.length} events`);
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setExporting(false); }
+  }
+
+  const hasFilters = filterKind !== "all" || filterCase !== "all" || filterClient !== "all";
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -112,6 +167,73 @@ function CalendarPage() {
         subtitle={locale === "ar" ? "جلسات المحاكم والمواعيد." : "Court hearings, meetings and deadlines."}
         actions={<Button variant="gold" size="sm" className="gap-1.5" onClick={() => openNewAt(new Date())}><Plus className="size-4" />{locale === "ar" ? "موعد جديد" : "New event"}</Button>}
       />
+
+      {/* Filters + export */}
+      <div className="card-elev rounded-xl border bg-card p-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
+            <Filter className="size-3.5" />{locale === "ar" ? "تصفية وتصدير" : "Filter & Export"}
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "النوع" : "Kind"}</Label>
+            <Select value={filterKind} onValueChange={setFilterKind}>
+              <SelectTrigger className="h-9 w-[140px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{locale === "ar" ? "الكل" : "All"}</SelectItem>
+                {["court","meeting","deadline","reminder"].map((k) => (
+                  <SelectItem key={k} value={k} className="capitalize">{k}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "الموكل" : "Client"}</Label>
+            <Select value={filterClient} onValueChange={setFilterClient}>
+              <SelectTrigger className="h-9 w-[170px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{locale === "ar" ? "الكل" : "All"}</SelectItem>
+                <SelectItem value="none">{locale === "ar" ? "بدون" : "None"}</SelectItem>
+                {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "القضية" : "Case"}</Label>
+            <Select value={filterCase} onValueChange={setFilterCase}>
+              <SelectTrigger className="h-9 w-[170px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{locale === "ar" ? "الكل" : "All"}</SelectItem>
+                <SelectItem value="none">{locale === "ar" ? "بدون" : "None"}</SelectItem>
+                {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "من تاريخ (تصدير)" : "Export from"}</Label>
+            <Input type="date" value={exportFrom} onChange={(e) => setExportFrom(e.target.value)} className="h-9 w-[150px]" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "إلى تاريخ (تصدير)" : "Export to"}</Label>
+            <Input type="date" value={exportTo} onChange={(e) => setExportTo(e.target.value)} className="h-9 w-[150px]" />
+          </div>
+          {hasFilters && (
+            <Button size="sm" variant="ghost" onClick={() => { setFilterKind("all"); setFilterCase("all"); setFilterClient("all"); }}>
+              {locale === "ar" ? "مسح" : "Clear"}
+            </Button>
+          )}
+          <div className="ms-auto">
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={handleExport} disabled={exporting}>
+              {exporting ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+              {locale === "ar" ? "تصدير CSV" : "Export CSV"}
+            </Button>
+          </div>
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          {locale === "ar"
+            ? "تُطبَّق التصفية على شبكة التقويم. حدد نطاق تاريخ للتصدير أو اترك الحقول فارغة لاستخدام النطاق المعروض."
+            : "Filters apply to the calendar grid. Set an export date range or leave blank to use the visible range."}
+        </p>
+      </div>
 
       <div className="card-elev rounded-xl border bg-card">
         <div className="flex items-center justify-between border-b p-3">
@@ -129,10 +251,11 @@ function CalendarPage() {
         </div>
 
         {loading ? <div className="grid place-items-center p-12"><Loader2 className="size-5 animate-spin text-gold" /></div> :
-        view === "month" ? <MonthView cursor={cursor} appts={appts} onSlotClick={openNewAt} onEventClick={openEdit} /> :
-        view === "week" ? <WeekView cursor={cursor} appts={appts} onSlotClick={openNewAt} onEventClick={openEdit} /> :
-        <DayView cursor={cursor} appts={appts} onSlotClick={openNewAt} onEventClick={openEdit} />}
+        view === "month" ? <MonthView cursor={cursor} appts={filteredAppts} onSlotClick={openNewAt} onEventClick={openEdit} /> :
+        view === "week" ? <WeekView cursor={cursor} appts={filteredAppts} onSlotClick={openNewAt} onEventClick={openEdit} /> :
+        <DayView cursor={cursor} appts={filteredAppts} onSlotClick={openNewAt} onEventClick={openEdit} />}
       </div>
+
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

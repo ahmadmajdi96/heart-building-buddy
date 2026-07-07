@@ -12,8 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   listTimeEntries, saveTimeEntry, deleteTimeEntry, bulkDeleteTimeEntries,
-  startTimer, stopTimer, getRunningTimer, exportTimeEntriesCsv,
+  startTimer, stopTimer, getRunningTimer,
 } from "@/lib/time-entries.functions";
+
 import { createDraftFromTime } from "@/lib/draft-invoices.functions";
 import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
@@ -64,7 +65,7 @@ function TimePage() {
   const lClients = useServerFn(listClients);
   const draftFromTime = useServerFn(createDraftFromTime);
   const bulkDel = useServerFn(bulkDeleteTimeEntries);
-  const exportCsv = useServerFn(exportTimeEntriesCsv);
+  
 
   const [entries, setEntries] = useState<Entry[]>([]);
   const [cases, setCases] = useState<CaseRow[]>([]);
@@ -82,6 +83,13 @@ function TimePage() {
   const [pendingSingle, setPendingSingle] = useState<Entry | null>(null);
   const [pendingBulk, setPendingBulk] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // Filters
+  const [filterClient, setFilterClient] = useState<string>("all");
+  const [filterCase, setFilterCase] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
 
   // Timer form
   const [tDesc, setTDesc] = useState("");
@@ -173,12 +181,25 @@ function TimePage() {
 
   const filtered = useMemo(() => entries.filter((e) => {
     if (filterIds.size > 0 && !filterIds.has(e.id)) return false;
+    if (filterStatus !== "all" && e.status !== filterStatus) return false;
+    if (filterClient !== "all") {
+      if (filterClient === "none" ? e.client_id : e.client_id !== filterClient) return false;
+    }
+    if (filterCase !== "all") {
+      if (filterCase === "none" ? e.case_id : e.case_id !== filterCase) return false;
+    }
+    if (fromDate || toDate) {
+      const t = new Date(e.started_at).getTime();
+      if (fromDate && t < new Date(fromDate).getTime()) return false;
+      if (toDate) { const to = new Date(toDate); to.setHours(23,59,59,999); if (t > to.getTime()) return false; }
+    }
     if (!q) return true;
     const s = q.toLowerCase();
     return e.description.toLowerCase().includes(s)
       || (e.cases?.title ?? "").toLowerCase().includes(s)
       || (e.clients?.name ?? "").toLowerCase().includes(s);
-  }), [entries, q, filterIds]);
+  }), [entries, q, filterIds, filterStatus, filterClient, filterCase, fromDate, toDate]);
+
 
   const totals = useMemo(() => {
     const total = entries.reduce((acc, e) => acc + (e.duration_seconds || 0), 0);
@@ -208,21 +229,45 @@ function TimePage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={ar ? "تتبع الوقت" : "Time Tracking"}
+        title={ar ? "الساعات المدفوعة" : "Paid Hours"}
         subtitle={ar ? `${entries.length} سجل` : `${entries.length} entries`}
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={async () => {
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
               try {
-                const r = await exportCsv({ data: {} });
-                const blob = new Blob([r.csv], { type: "text/csv;charset=utf-8" });
+                const headers = ["Created at","Started at","Ended at","Hours","Description","Activity","Case","Case number","Client","Billable","Status","Rate","Currency","Amount"];
+                const rows = filtered.map((e) => {
+                  const hours = (e.duration_seconds || 0) / 3600;
+                  const amount = e.hourly_rate ? (hours * e.hourly_rate).toFixed(2) : "";
+                  return [
+                    new Date(e.started_at).toISOString(),
+                    new Date(e.started_at).toISOString(),
+                    e.ended_at ? new Date(e.ended_at).toISOString() : "",
+                    hours.toFixed(2),
+                    e.description ?? "",
+                    e.activity_type ?? "",
+                    e.cases?.title ?? "",
+                    e.cases?.case_number ?? "",
+                    e.clients?.name ?? "",
+                    e.billable ? "yes" : "no",
+                    e.status,
+                    e.hourly_rate ?? "",
+                    e.currency,
+                    amount,
+                  ];
+                });
+                const csv = ["\uFEFF" + headers.join(",")].concat(rows.map((r) => r.map((v) => {
+                  const s = v == null ? "" : String(v);
+                  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+                }).join(","))).join("\n");
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
-                a.href = url; a.download = `time-entries-${new Date().toISOString().slice(0,10)}.csv`;
+                a.href = url; a.download = `paid-hours-${new Date().toISOString().slice(0,10)}.csv`;
                 a.click(); URL.revokeObjectURL(url);
-                toast.success(ar ? `تم تصدير ${r.count} سجل` : `Exported ${r.count} entries`);
+                toast.success(ar ? `تم تصدير ${rows.length} سجل` : `Exported ${rows.length} entries`);
               } catch (e) { toast.error((e as Error).message); }
-            }}>
+            }} disabled={filtered.length === 0}>
               <Download className="size-4" />{ar ? "تصدير CSV" : "Export CSV"}
             </Button>
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { setEditing({ started_at: new Date().toISOString(), duration_seconds: 0, billable: true, currency: "USD", status: "logged" }); setEditOpen(true); }}>
@@ -231,6 +276,7 @@ function TimePage() {
           </div>
         }
       />
+
 
       {filterIds.size > 0 && (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-gold/40 bg-gold/5 px-4 py-2.5 text-sm">
@@ -321,15 +367,63 @@ function TimePage() {
 
       {/* Entries table */}
       <div className="card-elev rounded-xl border bg-card">
-        <div className="flex flex-wrap items-center gap-3 border-b p-4">
-          <div className="relative max-w-sm flex-1">
-            <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={ar ? "ابحث…" : "Search…"} className="h-9 ps-9" />
+        <div className="space-y-3 border-b p-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="relative min-w-[220px] flex-1">
+              <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={ar ? "ابحث…" : "Search…"} className="h-9 ps-9" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">{ar ? "العميل" : "Client"}</Label>
+              <Select value={filterClient} onValueChange={setFilterClient}>
+                <SelectTrigger className="h-9 w-[170px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{ar ? "الكل" : "All clients"}</SelectItem>
+                  <SelectItem value="none">{ar ? "بدون" : "None"}</SelectItem>
+                  {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">{ar ? "القضية" : "Matter"}</Label>
+              <Select value={filterCase} onValueChange={setFilterCase}>
+                <SelectTrigger className="h-9 w-[170px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{ar ? "الكل" : "All matters"}</SelectItem>
+                  <SelectItem value="none">{ar ? "بدون" : "None"}</SelectItem>
+                  {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">{ar ? "الحالة" : "Status"}</Label>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="h-9 w-[140px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{ar ? "الكل" : "All"}</SelectItem>
+                  <SelectItem value="logged">{ar ? "غير مفوترة" : "Unbilled"}</SelectItem>
+                  <SelectItem value="billed">{ar ? "مفوترة" : "Billed"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">{ar ? "من" : "From"}</Label>
+              <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-9 w-[150px]" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">{ar ? "إلى" : "To"}</Label>
+              <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 w-[150px]" />
+            </div>
+            {(filterClient !== "all" || filterCase !== "all" || filterStatus !== "all" || fromDate || toDate || q) && (
+              <Button size="sm" variant="ghost" onClick={() => { setQ(""); setFilterClient("all"); setFilterCase("all"); setFilterStatus("all"); setFromDate(""); setToDate(""); }}>
+                {ar ? "مسح" : "Clear"}
+              </Button>
+            )}
           </div>
           {selected.size > 0 && (
-            <div className="ms-auto flex items-center gap-3">
+            <div className="flex items-center gap-3">
               <span className="text-xs text-muted-foreground">{ar ? `محدد: ${selected.size}` : `${selected.size} selected`}</span>
-              <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>{ar ? "مسح" : "Clear"}</Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>{ar ? "مسح التحديد" : "Clear"}</Button>
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setPendingBulk(true)}>
                 <Trash2 className="size-4 text-destructive" />{ar ? "حذف المحدد" : "Delete selected"}
               </Button>
@@ -348,6 +442,7 @@ function TimePage() {
             </div>
           )}
         </div>
+
         {loading ? <div className="grid place-items-center p-12"><Loader2 className="size-5 animate-spin text-gold" /></div>
         : filtered.length === 0 ? <div className="p-12 text-center text-sm text-muted-foreground">{ar ? "لا توجد سجلات بعد." : "No time entries yet."}</div>
         : <div className="overflow-x-auto"><table className="w-full text-sm">
@@ -359,7 +454,7 @@ function TimePage() {
               else billable.forEach((id) => next.delete(id));
               setSelected(next);
             }} /></th>
-            <th className="px-5 py-3 text-start font-medium">{ar ? "التاريخ" : "Date"}</th>
+            <th className="px-5 py-3 text-start font-medium whitespace-nowrap">{ar ? "تاريخ الإنشاء" : "Created"}</th>
             <th className="px-5 py-3 text-start font-medium">{ar ? "الوصف" : "Description"}</th>
             <th className="px-5 py-3 text-start font-medium">{ar ? "القضية" : "Matter"}</th>
             <th className="px-5 py-3 text-start font-medium">{ar ? "العميل" : "Client"}</th>
@@ -375,7 +470,11 @@ function TimePage() {
               <td className="px-3 py-3"><Checkbox disabled={!e.billable || billed} checked={selected.has(e.id)} onCheckedChange={(v) => {
                 const next = new Set(selected); if (v) next.add(e.id); else next.delete(e.id); setSelected(next);
               }} /></td>
-              <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">{new Date(e.started_at).toLocaleDateString()}</td>
+              <td className="px-5 py-3 text-muted-foreground whitespace-nowrap tabular-nums text-xs">
+                {new Date(e.started_at).toLocaleDateString()}
+                <span className="ms-1 opacity-60">{new Date(e.started_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+              </td>
+
               <td className="px-5 py-3">
                 <div className="font-medium">{e.description || "—"}</div>
                 {!e.billable && <div className="text-xs text-muted-foreground">{ar ? "غير قابل للفوترة" : "Non-billable"}</div>}
