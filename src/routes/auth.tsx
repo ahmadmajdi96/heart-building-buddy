@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BrandMark } from "@/components/brand-mark";
 import { useI18n } from "@/lib/i18n";
-import { AlertCircle, Loader2, Eye, EyeOff, ShieldCheck, Scale, Sparkles, Lock } from "lucide-react";
+import { AlertCircle, Loader2, Eye, EyeOff, ShieldCheck, Scale, Sparkles, Lock, Globe } from "lucide-react";
 import { toast } from "sonner";
 
 const REMEMBER_KEY = "mohkam.remember_me";
