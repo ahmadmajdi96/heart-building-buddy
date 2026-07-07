@@ -20,6 +20,7 @@ import { Route as AppTeamRouteImport } from './routes/app.team'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppResearchRouteImport } from './routes/app.research'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
+import { Route as AppMessagesRouteImport } from './routes/app.messages'
 import { Route as AppLiveSessionsRouteImport } from './routes/app.live-sessions'
 import { Route as AppFinancialsRouteImport } from './routes/app.financials'
 import { Route as AppEducationRouteImport } from './routes/app.education'
@@ -44,6 +45,7 @@ import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
 import { Route as ApiRagUploadRouteImport } from './routes/api.rag.upload'
 import { Route as ApiElevenlabsScribeTokenRouteImport } from './routes/api.elevenlabs.scribe-token'
 import { Route as AppMeetingsJoinRoomRouteImport } from './routes/app.meetings.join.$room'
+import { Route as ApiPublicHooksTwilioStatusRouteImport } from './routes/api.public.hooks.twilio-status'
 import { Route as ApiPublicHooksDebtRemindersRouteImport } from './routes/api.public.hooks.debt-reminders'
 
 const SetPasswordRoute = SetPasswordRouteImport.update({
@@ -99,6 +101,11 @@ const AppResearchRoute = AppResearchRouteImport.update({
 const AppOnboardingRoute = AppOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMessagesRoute = AppMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
   getParentRoute: () => AppRoute,
 } as any)
 const AppLiveSessionsRoute = AppLiveSessionsRouteImport.update({
@@ -222,6 +229,12 @@ const AppMeetingsJoinRoomRoute = AppMeetingsJoinRoomRouteImport.update({
   path: '/meetings/join/$room',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicHooksTwilioStatusRoute =
+  ApiPublicHooksTwilioStatusRouteImport.update({
+    id: '/api/public/hooks/twilio-status',
+    path: '/api/public/hooks/twilio-status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksDebtRemindersRoute =
   ApiPublicHooksDebtRemindersRouteImport.update({
     id: '/api/public/hooks/debt-reminders',
@@ -246,6 +259,7 @@ export interface FileRoutesByFullPath {
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
   '/app/live-sessions': typeof AppLiveSessionsRoute
+  '/app/messages': typeof AppMessagesRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
@@ -265,6 +279,7 @@ export interface FileRoutesByFullPath {
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
+  '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesByTo {
@@ -283,6 +298,7 @@ export interface FileRoutesByTo {
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
   '/app/live-sessions': typeof AppLiveSessionsRoute
+  '/app/messages': typeof AppMessagesRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
@@ -302,6 +318,7 @@ export interface FileRoutesByTo {
   '/app/meetings': typeof AppMeetingsIndexRoute
   '/app/workspace': typeof AppWorkspaceIndexRoute
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
+  '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesById {
@@ -322,6 +339,7 @@ export interface FileRoutesById {
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
   '/app/live-sessions': typeof AppLiveSessionsRoute
+  '/app/messages': typeof AppMessagesRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
@@ -341,6 +359,7 @@ export interface FileRoutesById {
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
+  '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRouteTypes {
@@ -362,6 +381,7 @@ export interface FileRouteTypes {
     | '/app/education'
     | '/app/financials'
     | '/app/live-sessions'
+    | '/app/messages'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
@@ -381,6 +401,7 @@ export interface FileRouteTypes {
     | '/app/meetings/'
     | '/app/workspace/'
     | '/api/public/hooks/debt-reminders'
+    | '/api/public/hooks/twilio-status'
     | '/app/meetings/join/$room'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -399,6 +420,7 @@ export interface FileRouteTypes {
     | '/app/education'
     | '/app/financials'
     | '/app/live-sessions'
+    | '/app/messages'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
@@ -418,6 +440,7 @@ export interface FileRouteTypes {
     | '/app/meetings'
     | '/app/workspace'
     | '/api/public/hooks/debt-reminders'
+    | '/api/public/hooks/twilio-status'
     | '/app/meetings/join/$room'
   id:
     | '__root__'
@@ -437,6 +460,7 @@ export interface FileRouteTypes {
     | '/app/education'
     | '/app/financials'
     | '/app/live-sessions'
+    | '/app/messages'
     | '/app/onboarding'
     | '/app/research'
     | '/app/settings'
@@ -456,6 +480,7 @@ export interface FileRouteTypes {
     | '/app/meetings/'
     | '/app/workspace/'
     | '/api/public/hooks/debt-reminders'
+    | '/api/public/hooks/twilio-status'
     | '/app/meetings/join/$room'
   fileRoutesById: FileRoutesById
 }
@@ -468,6 +493,7 @@ export interface RootRouteChildren {
   ApiElevenlabsScribeTokenRoute: typeof ApiElevenlabsScribeTokenRoute
   ApiRagUploadRoute: typeof ApiRagUploadRoute
   ApiPublicHooksDebtRemindersRoute: typeof ApiPublicHooksDebtRemindersRoute
+  ApiPublicHooksTwilioStatusRoute: typeof ApiPublicHooksTwilioStatusRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -547,6 +573,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/app/onboarding'
       preLoaderRoute: typeof AppOnboardingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/messages': {
+      id: '/app/messages'
+      path: '/messages'
+      fullPath: '/app/messages'
+      preLoaderRoute: typeof AppMessagesRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/live-sessions': {
@@ -717,6 +750,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMeetingsJoinRoomRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/hooks/twilio-status': {
+      id: '/api/public/hooks/twilio-status'
+      path: '/api/public/hooks/twilio-status'
+      fullPath: '/api/public/hooks/twilio-status'
+      preLoaderRoute: typeof ApiPublicHooksTwilioStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/debt-reminders': {
       id: '/api/public/hooks/debt-reminders'
       path: '/api/public/hooks/debt-reminders'
@@ -752,6 +792,7 @@ interface AppRouteChildren {
   AppEducationRoute: typeof AppEducationRoute
   AppFinancialsRoute: typeof AppFinancialsRoute
   AppLiveSessionsRoute: typeof AppLiveSessionsRoute
+  AppMessagesRoute: typeof AppMessagesRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppResearchRoute: typeof AppResearchRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -782,6 +823,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppEducationRoute: AppEducationRoute,
   AppFinancialsRoute: AppFinancialsRoute,
   AppLiveSessionsRoute: AppLiveSessionsRoute,
+  AppMessagesRoute: AppMessagesRoute,
   AppOnboardingRoute: AppOnboardingRoute,
   AppResearchRoute: AppResearchRoute,
   AppSettingsRoute: AppSettingsRoute,
@@ -810,6 +852,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiElevenlabsScribeTokenRoute: ApiElevenlabsScribeTokenRoute,
   ApiRagUploadRoute: ApiRagUploadRoute,
   ApiPublicHooksDebtRemindersRoute: ApiPublicHooksDebtRemindersRoute,
+  ApiPublicHooksTwilioStatusRoute: ApiPublicHooksTwilioStatusRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

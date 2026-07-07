@@ -1859,6 +1859,95 @@ export type Database = {
           },
         ]
       }
+      sms_messages: {
+        Row: {
+          body: string
+          case_id: string | null
+          client_id: string | null
+          context: string
+          debt_case_id: string | null
+          delivered_at: string | null
+          error_code: string | null
+          error_message: string | null
+          from_number: string
+          id: string
+          org_id: string | null
+          owner_id: string | null
+          sent_at: string
+          status: string
+          to_number: string
+          twilio_sid: string | null
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          case_id?: string | null
+          client_id?: string | null
+          context?: string
+          debt_case_id?: string | null
+          delivered_at?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          from_number: string
+          id?: string
+          org_id?: string | null
+          owner_id?: string | null
+          sent_at?: string
+          status?: string
+          to_number: string
+          twilio_sid?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          case_id?: string | null
+          client_id?: string | null
+          context?: string
+          debt_case_id?: string | null
+          delivered_at?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          from_number?: string
+          id?: string
+          org_id?: string | null
+          owner_id?: string | null
+          sent_at?: string
+          status?: string
+          to_number?: string
+          twilio_sid?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_messages_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_messages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_messages_debt_case_id_fkey"
+            columns: ["debt_case_id"]
+            isOneToOne: false
+            referencedRelation: "debt_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_messages_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tax_invoices: {
         Row: {
           amount_paid: number
