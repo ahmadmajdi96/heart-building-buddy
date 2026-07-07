@@ -12,8 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { listAppointments, saveAppointment, deleteAppointment } from "@/lib/appointments.functions";
 import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
-import { Plus, ChevronLeft, ChevronRight, Trash2, Clock, MapPin, Loader2, Download, Filter } from "lucide-react";
-import { toCsv, downloadCsv } from "@/lib/csv-export";
+import { Plus, ChevronLeft, ChevronRight, Trash2, Clock, MapPin, Loader2 } from "lucide-react";
+
 
 import { toast } from "sonner";
 import {
