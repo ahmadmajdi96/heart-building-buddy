@@ -72,8 +72,8 @@ function DashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={locale === "ar" ? `مرحباً، ${orgName} 👋` : `Welcome back, ${orgName} 👋`}
-        subtitle={locale === "ar" ? "نظرة شاملة على نشاط المكتب." : "A complete snapshot of your firm."}
+        title={locale === "ar" ? "التحليلات والمؤشرات" : "Analytics & Insights"}
+        subtitle={locale === "ar" ? "صورة شاملة بناءً على بياناتك الفعلية." : "Real-time view of your firm's performance."}
       />
 
       {/* Top KPIs */}

@@ -5,6 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { PageHeader, StatTile } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
 import { getAnalytics, generateAnalyticsInsights } from "@/lib/analytics.functions";
+import { useOrg } from "@/lib/org-context";
 import { MarkdownView } from "@/lib/markdown";
 import { TrendingUp, Users, Briefcase, Award, Loader2, Sparkles, FileText, CalendarDays, Gavel } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Pie, PieChart, Cell, Legend, Line, LineChart } from "recharts";
@@ -16,6 +17,7 @@ type Stats = Awaited<ReturnType<typeof getAnalytics>>;
 
 function AnalyticsPage() {
   const { locale } = useI18n();
+  const { org } = useOrg();
   const load = useServerFn(getAnalytics);
   const insightsFn = useServerFn(generateAnalyticsInsights);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -41,12 +43,13 @@ function AnalyticsPage() {
 
   const statusData = Object.entries(stats.statusCounts).map(([k, v]) => ({ name: k, value: v }));
   const COLORS = ["#fce343", "#0f3460", "#16a34a", "#dc2626", "#9333ea"];
+  const orgName = org?.display_name || org?.legal_name || (locale === "ar" ? "مكتبك" : "your firm");
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title={locale === "ar" ? "التحليلات والمؤشرات" : "Analytics & Insights"}
-        subtitle={locale === "ar" ? "صورة شاملة بناءً على بياناتك الفعلية." : "Real-time view of your firm's performance."}
+        title={locale === "ar" ? `مرحباً، ${orgName} 👋` : `Welcome back, ${orgName} 👋`}
+        subtitle={locale === "ar" ? "نظرة شاملة على نشاط المكتب." : "A complete snapshot of your firm."}
         actions={<Button variant="gold" size="sm" className="gap-1.5" onClick={runInsights} disabled={insightsLoading}>
           {insightsLoading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
           {locale === "ar" ? "رؤى الذكاء الاصطناعي" : "AI insights"}
