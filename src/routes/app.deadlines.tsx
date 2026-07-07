@@ -43,6 +43,9 @@ function DeadlinesPage() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>("open");
   const [filterCase, setFilterCase] = useState<string>("all");
+  const [filterKind, setFilterKind] = useState<string>("all");
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [busy, setBusy] = useState(false);
