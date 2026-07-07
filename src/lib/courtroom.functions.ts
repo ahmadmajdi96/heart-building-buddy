@@ -85,7 +85,9 @@ export const generateCase = createServerFn({ method: "POST" })
     const lang = data.locale === "ar" ? "Arabic" : "English";
     const { text } = await generateText({
       model: gateway(MODEL),
-      system: `You are a legal case generator specialized in Jordanian law. Always reply with a single valid JSON object and no other text.`,
+      system: `${strictLanguageDirective(data.locale)}
+
+You are a legal case generator specialized in Jordanian law. Always reply with a single valid JSON object and no other text. Every string value in the JSON MUST follow the LANGUAGE LOCK above.`,
       prompt: `Generate a realistic but fictional legal case scenario for a courtroom simulation in the Hashemite Kingdom of Jordan. The case must be grounded in Jordanian law (Civil Code, Penal Code, Labour Law, Commercial Code, Personal Status Law, etc.).
 Write all string values in ${lang}. Set "jurisdiction" to "Jordan" / "الأردن" and pick a real Jordanian court (e.g. Amman First Instance Court, Court of Cassation, Administrative Court).
 Practice area hint: ${data.practiceArea ?? "any"}.
