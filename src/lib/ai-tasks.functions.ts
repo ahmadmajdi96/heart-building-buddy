@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { z } from "zod";
-import { createAiGatewayProvider, getAiGatewayApiKey } from "./ai-gateway.server";
+import { createAiGatewayProvider, getAiGatewayApiKey, strictLanguageDirective } from "./ai-gateway.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const MODEL = process.env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct";
@@ -60,7 +60,9 @@ export const legalResearch = createServerFn({ method: "POST" })
     const grounding = await ragJordanianContext(context.userId, data.query);
     const { text } = await generateText({
       model: gateway(MODEL),
-      system: `You are an expert legal research assistant specialized EXCLUSIVELY in the Hashemite Kingdom of Jordan's laws, regulations and jurisprudence. Do NOT answer about any other jurisdiction — if asked, politely note you only cover Jordanian law.
+      system: `${strictLanguageDirective(data.locale)}
+
+You are an expert legal research assistant specialized EXCLUSIVELY in the Hashemite Kingdom of Jordan's laws, regulations and jurisprudence. Do NOT answer about any other jurisdiction — if asked, politely note you only cover Jordanian law.
 
 Cover the FULL Jordanian legal corpus, citing primary articles, paragraphs and case numbers wherever possible. Sources you must search and reference when relevant include (but are not limited to):
 - The Jordanian Constitution (الدستور الأردني) of 1952 and amendments.
@@ -108,7 +110,9 @@ export const draftDocument = createServerFn({ method: "POST" })
     const lang = data.locale === "ar" ? "Arabic" : "English";
     const { text } = await generateText({
       model: gateway(MODEL),
-      system: `You are an expert Arab legal drafter. Produce a polished, ready-to-use legal document in ${lang} suitable for use in Arab jurisdictions. Use proper legal structure: title, parties, preamble, numbered clauses, governing law, signatures. Use bracket placeholders like [الاسم] / [Name] for variables. Output the document text only — no commentary.`,
+      system: `${strictLanguageDirective(data.locale)}
+
+You are an expert Arab legal drafter. Produce a polished, ready-to-use legal document in ${lang} suitable for use in Arab jurisdictions. Use proper legal structure: title, parties, preamble, numbered clauses, governing law, signatures. Use bracket placeholders like [الاسم] / [Name] for variables. Output the document text only — no commentary.`,
       prompt: `${data.template ? `Template: ${data.template}\n\n` : ""}User request: ${data.prompt}`,
     });
     return { draft: text };

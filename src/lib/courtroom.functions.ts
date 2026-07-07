@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { z } from "zod";
-import { createAiGatewayProvider, getAiGatewayApiKey } from "./ai-gateway.server";
+import { createAiGatewayProvider, getAiGatewayApiKey, strictLanguageDirective } from "./ai-gateway.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const MODEL = process.env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct";
@@ -85,7 +85,9 @@ export const generateCase = createServerFn({ method: "POST" })
     const lang = data.locale === "ar" ? "Arabic" : "English";
     const { text } = await generateText({
       model: gateway(MODEL),
-      system: `You are a legal case generator specialized in Jordanian law. Always reply with a single valid JSON object and no other text.`,
+      system: `${strictLanguageDirective(data.locale)}
+
+You are a legal case generator specialized in Jordanian law. Always reply with a single valid JSON object and no other text. Every string value in the JSON MUST follow the LANGUAGE LOCK above.`,
       prompt: `Generate a realistic but fictional legal case scenario for a courtroom simulation in the Hashemite Kingdom of Jordan. The case must be grounded in Jordanian law (Civil Code, Penal Code, Labour Law, Commercial Code, Personal Status Law, etc.).
 Write all string values in ${lang}. Set "jurisdiction" to "Jordan" / "الأردن" and pick a real Jordanian court (e.g. Amman First Instance Court, Court of Cassation, Administrative Court).
 Practice area hint: ${data.practiceArea ?? "any"}.
@@ -151,7 +153,9 @@ export const courtroomTurn = createServerFn({ method: "POST" })
     ].filter(Boolean).join("\n\n");
     const grounding = await ragContext(context.userId, ragQuestion);
 
-    const system = `You simulate a realistic court hearing in the Hashemite Kingdom of Jordan. Reply entirely in ${lang}.
+    const system = `${strictLanguageDirective(data.locale)}
+
+You simulate a realistic court hearing in the Hashemite Kingdom of Jordan. Reply entirely in ${lang}.
 Ground every legal argument, objection, and ruling in Jordanian law (Civil Code, Penal Code, Procedure codes, Labour Law, Cassation rulings, etc.). Cite specific article numbers or case numbers when possible, drawing on the RAG CONTEXT below.
 
 Roles:

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { z } from "zod";
-import { createAiGatewayProvider, getAiGatewayApiKey } from "./ai-gateway.server";
+import { createAiGatewayProvider, getAiGatewayApiKey, strictLanguageDirective } from "./ai-gateway.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const MODEL = process.env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct";
@@ -52,9 +52,10 @@ export const generateDraft = createServerFn({ method: "POST" })
       }
     }
 
+    const langLock = strictLanguageDirective(data.locale);
     const system = primaryTemplate
-      ? `You are an expert Arab legal drafter. You will be given one or more legal TEMPLATE documents. Reproduce the template text VERBATIM in ${lang} — preserve its wording, structure, numbering, and clauses exactly. The ONLY changes you may make are: (1) substitute the provided variable values everywhere they contextually belong, and (2) if multiple templates are provided, merge them coherently. Do not invent new clauses, do not summarize, do not paraphrase. Output the final document only — clean Markdown, no commentary.`
-      : `You are an expert Arab legal drafter. Produce a polished, ready-to-use legal document in ${lang}. Use proper structure: title, parties, preamble, numbered clauses, governing law, signatures. Format with clean Markdown. Substitute all known variables inline. Output the document text only — no commentary.`;
+      ? `${langLock}\n\nYou are an expert Arab legal drafter. You will be given one or more legal TEMPLATE documents. Reproduce the template text VERBATIM in ${lang} — preserve its wording, structure, numbering, and clauses exactly. The ONLY changes you may make are: (1) substitute the provided variable values everywhere they contextually belong, and (2) if multiple templates are provided, merge them coherently. Do not invent new clauses, do not summarize, do not paraphrase. Output the final document only — clean Markdown, no commentary.`
+      : `${langLock}\n\nYou are an expert Arab legal drafter. Produce a polished, ready-to-use legal document in ${lang}. Use proper structure: title, parties, preamble, numbered clauses, governing law, signatures. Format with clean Markdown. Substitute all known variables inline. Output the document text only — no commentary.`;
 
     const userParts = [
       data.prompt?.trim() ? `User instructions: ${data.prompt.trim()}` : "",
