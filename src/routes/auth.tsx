@@ -191,7 +191,7 @@ function AuthPage() {
 
           <div className="relative z-10 flex h-full flex-col justify-between p-12 text-pearl">
             <div className="flex items-center gap-3">
-              <BrandMark variant="dark" />
+              <BrandMark tone="dark" />
             </div>
 
             <div className="max-w-md">
