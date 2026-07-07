@@ -1,6 +1,8 @@
 import jsPDF from "jspdf";
+import { resolveLogoUrl } from "./logo";
 
-type Org = { legal_name?: string; display_name?: string | null; email?: string | null; phone?: string | null; address?: string | null; tax_id?: string | null };
+type Org = { legal_name?: string; display_name?: string | null; email?: string | null; phone?: string | null; address?: string | null; tax_id?: string | null; logo_path?: string | null };
+
 type Doc = {
   number?: string;
   client_name?: string;
