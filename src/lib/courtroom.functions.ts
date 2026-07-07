@@ -2,11 +2,48 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { z } from "zod";
 import { createAiGatewayProvider, getAiGatewayApiKey } from "./ai-gateway.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const MODEL = process.env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct";
 
 function getGateway() {
   return createAiGatewayProvider(getAiGatewayApiKey());
+}
+
+// Query the private RAG service for Jordanian-law context relevant to this turn.
+async function ragContext(userId: string, question: string): Promise<string> {
+  try {
+    const { ragFetch } = await import("./rag.server");
+    const res = await ragFetch(`/v1/query`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tenant_id: `user:${userId}`,
+        question,
+        top_k: 12,
+        rerank_top_n: 5,
+        temperature: 0.1,
+        max_tokens: 600,
+      }),
+    });
+    if (!res.ok) return "";
+    const json = (await res.json()) as {
+      answer?: string;
+      sources?: Array<{ filename?: string; page?: number; excerpt?: string }>;
+    };
+    const parts: string[] = [];
+    if (json.answer) parts.push(json.answer.trim());
+    if (json.sources?.length) {
+      const src = json.sources
+        .slice(0, 5)
+        .map((s, i) => `[${i + 1}] ${s.filename ?? "source"}${s.page ? ` p.${s.page}` : ""}: ${(s.excerpt ?? "").slice(0, 400)}`)
+        .join("\n");
+      parts.push(`SOURCES:\n${src}`);
+    }
+    return parts.join("\n\n").slice(0, 4000);
+  } catch {
+    return "";
+  }
 }
 
 function extractJson(text: string): unknown {
