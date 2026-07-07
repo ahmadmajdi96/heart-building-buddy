@@ -167,6 +167,9 @@ function MeetingsPage() {
                 <Button size="sm" variant="ghost" onClick={() => copyLink(m.room_name)} title={locale === "ar" ? "نسخ الرابط" : "Copy invite link"}>
                   <Copy className="size-4" />
                 </Button>
+                <Button size="sm" variant="ghost" onClick={() => navigate({ to: "/app/meetings/transcript/$id", params: { id: m.id } })} title={locale === "ar" ? "عرض/تحرير النص" : "View / edit transcript"}>
+                  <FileText className="size-4" />
+                </Button>
                 <Button size="sm" variant="outline" onClick={() => navigate({ to: "/app/meetings/$id", params: { id: m.id } })}>
                   {locale === "ar" ? "فتح" : "Open"} <ArrowRight className="size-3.5" />
                 </Button>
