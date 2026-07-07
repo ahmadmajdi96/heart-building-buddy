@@ -123,7 +123,9 @@ export const Route = createFileRoute("/api/public/hooks/debt-reminders")({
                 currency: s.currency ?? dcRow?.currency ?? "",
               };
               const msg = render(rule.message_template, vars);
-              const r = await sendSms(payer.phone, msg, from);
+              const r = await sendSms(payer.phone, msg, from, {
+                org_id: dcRow?.org_id ?? null, debt_case_id: caseId,
+              });
               await supabaseAdmin.from("debt_sms_log").insert({
                 org_id: dcRow?.org_id ?? "", case_id: caseId, payer_id: payer.id,
                 phone: payer.phone, message: msg, kind: rule.kind,
