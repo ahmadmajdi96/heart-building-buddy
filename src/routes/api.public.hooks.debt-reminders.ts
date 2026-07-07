@@ -39,8 +39,7 @@ export const Route = createFileRoute("/api/public/hooks/debt-reminders")({
   server: {
     handlers: {
       POST: async () => {
-        const from = process.env.TWILIO_FROM_NUMBER;
-        if (!from) return Response.json({ ok: false, skipped: "TWILIO_FROM_NUMBER not set" }, { status: 200 });
+        const from = process.env.TWILIO_FROM_NUMBER || "+13502381721";
         if (!process.env.LOVABLE_API_KEY || !process.env.TWILIO_API_KEY) {
           return Response.json({ ok: false, skipped: "Twilio not configured" }, { status: 200 });
         }
