@@ -75,13 +75,17 @@ function MeetingRoom() {
   const turnsRef = useRef<Turn[]>([]);
   turnsRef.current = turns;
 
-  // Local audio recorder for high-accuracy batch re-transcription
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const recorderChunksRef = useRef<Blob[]>([]);
+  // Local audio recorders for high-accuracy batch re-transcription.
+  // We keep mic, tab and mixed streams separate so the user can pick
+  // whichever track diarizes best.
+  type Track = "mic" | "tab" | "mixed";
+  const recordersRef = useRef<Partial<Record<Track, MediaRecorder>>>({});
+  const chunksRef = useRef<Record<Track, Blob[]>>({ mic: [], tab: [], mixed: [] });
   const recorderMimeRef = useRef<string>("audio/webm");
   const micStreamRef = useRef<MediaStream | null>(null);
   const displayStreamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+
 
   const scribe = useScribe({
     modelId: "scribe_v2_realtime",
