@@ -758,13 +758,15 @@ function SettingsTab({ caseId, caseData, ar }: any) {
 }
 
 function ReminderRuleDialog({ caseId, initial, onSubmit, pending, ar }: any) {
+  const initialTpl = initial?.message_template ?? "Hi [Payer name], this is a reminder that [Amount] [Currency] is due on [Due date] for [Case].";
   const [form, setForm] = useState(() => ({
     id: initial?.id,
     case_id: caseId,
     label: initial?.label ?? "",
     offset_days: initial?.offset_days ?? -3,
     kind: initial?.kind ?? "reminder_upcoming",
-    message_template: initial?.message_template ?? "Hi {{name}}, this is a reminder that {{amount_due}} {{currency}} is due on {{due_date}} for {{case_title}}.",
+    // Friendly (bracketed) text in the editor; converted to raw tokens on save.
+    message_template: toFriendly(initialTpl),
     active: initial?.active ?? true,
   }));
   const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
@@ -804,31 +806,66 @@ function ReminderRuleDialog({ caseId, initial, onSubmit, pending, ar }: any) {
             <Select value={form.kind} onValueChange={(v) => setForm({ ...form, kind: v as any })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="reminder_upcoming">Upcoming</SelectItem>
-                <SelectItem value="reminder_due">Due</SelectItem>
-                <SelectItem value="reminder_overdue">Overdue</SelectItem>
-                <SelectItem value="manual">Manual</SelectItem>
+                <SelectItem value="reminder_upcoming">{ar ? "قبل الاستحقاق" : "Upcoming"}</SelectItem>
+                <SelectItem value="reminder_due">{ar ? "يوم الاستحقاق" : "Due"}</SelectItem>
+                <SelectItem value="reminder_overdue">{ar ? "متأخر" : "Overdue"}</SelectItem>
+                <SelectItem value="manual">{ar ? "يدوي" : "Manual"}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
+
         <div>
-          <Label>{ar ? "محتوى الرسالة" : "Message content"}</Label>
-          <Textarea ref={textareaRef} rows={5} value={form.message_template} onChange={(e) => setForm({ ...form, message_template: e.target.value })} />
-          <div className="mt-2 flex flex-wrap gap-1">
-            {TEMPLATE_VARS.map((v) => (
+          <Label className="text-xs text-muted-foreground">{ar ? "قوالب جاهزة" : "Quick presets"}</Label>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {REMINDER_PRESETS.map((p) => (
               <button
-                key={v.key}
+                key={p.id}
                 type="button"
-                onClick={() => insertVar(v.key)}
-                className="rounded border border-border/60 bg-background px-1.5 py-0.5 text-xs hover:bg-muted"
-                title={v.label}
+                onClick={() => setForm({ ...form, message_template: p.template })}
+                className="rounded-md border border-border/60 bg-background px-2 py-1 text-xs hover:border-gold/50 hover:bg-gold/5"
               >
-                {v.key}
+                {ar ? p.label.ar : p.label.en}
               </button>
             ))}
           </div>
         </div>
+
+        <div>
+          <Label>{ar ? "محتوى الرسالة" : "Message content"}</Label>
+          <Textarea
+            ref={textareaRef}
+            rows={5}
+            value={form.message_template}
+            onChange={(e) => setForm({ ...form, message_template: e.target.value })}
+            placeholder={ar ? "اكتب رسالتك، وانقر على أي حقل أدناه لإدراجه." : "Type your message and click a field below to insert it."}
+          />
+          <div className="mt-2">
+            <div className="mb-1 text-[11px] uppercase tracking-wider text-muted-foreground">
+              {ar ? "أدرج حقلاً" : "Insert a field"}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {TEMPLATE_VARS.map((v) => (
+                <button
+                  key={v.key}
+                  type="button"
+                  onClick={() => insertVar(v.friendly)}
+                  className="rounded-md border border-border/60 bg-background px-2 py-1 text-xs hover:border-gold/50 hover:bg-gold/5"
+                  title={ar ? v.label.ar : v.label.en}
+                >
+                  {v.friendly}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="mt-3 rounded-md border border-dashed border-border/60 bg-muted/20 p-3">
+            <div className="mb-1 text-[11px] uppercase tracking-wider text-muted-foreground">
+              {ar ? "معاينة (بيانات تجريبية)" : "Preview (with sample data)"}
+            </div>
+            <div className="whitespace-pre-wrap text-sm">{renderPreview(form.message_template) || <span className="text-muted-foreground">—</span>}</div>
+          </div>
+        </div>
+
         <div className="flex items-center justify-between rounded-md border border-border/60 px-3 py-2">
           <div>
             <div className="text-sm font-medium">{ar ? "مفعل" : "Active"}</div>
@@ -838,7 +875,11 @@ function ReminderRuleDialog({ caseId, initial, onSubmit, pending, ar }: any) {
         </div>
       </div>
       <DialogFooter>
-        <Button variant="gold" disabled={pending || !form.label || !form.message_template} onClick={() => onSubmit(form)}>
+        <Button
+          variant="gold"
+          disabled={pending || !form.label || !form.message_template}
+          onClick={() => onSubmit({ ...form, message_template: toRaw(form.message_template) })}
+        >
           {pending ? <Loader2 className="size-4 animate-spin" /> : (ar ? "حفظ" : "Save")}
         </Button>
       </DialogFooter>
