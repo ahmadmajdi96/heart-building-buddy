@@ -46,11 +46,20 @@ function LiveTranscriptEditor() {
       try {
         const row: any = await get({ data: { id } });
         setSession(row);
-        const t = ((row?.turns as Turn[]) || []).map((x) => ({ ...x }));
+        let t = ((row?.turns as Turn[]) || []).map((x) => ({ ...x }));
+        // If turns weren't saved but transcript text exists, seed from lines
+        // so the editor shows the same UI as the meetings transcript editor.
+        if (t.length === 0 && typeof row?.transcript === "string" && row.transcript.trim()) {
+          t = row.transcript.split(/\r?\n/).filter((l: string) => l.trim()).map((line: string) => {
+            const m = line.match(/^\s*([^:\[]+?)\s*[:\-]\s*(.*)$/) || line.match(/^\s*\[([^\]]+)\]\s*(.*)$/);
+            if (m) return { speaker: m[1].trim(), text: m[2].trim() };
+            return { speaker: "speaker_0", text: line.trim() };
+          });
+        }
         setTurns(t);
         const unique = Array.from(new Set(t.map((x) => x.speaker)));
         const init: Record<string, string> = {};
-        unique.forEach((s) => { init[s] = defaultLabel(s); });
+        unique.forEach((s) => { init[s] = /^speaker_\d+$/i.test(s) ? defaultLabel(s) : s; });
         setLabels(init);
       } catch (e) { toast.error((e as Error).message); }
       finally { setLoading(false); }
