@@ -16,6 +16,7 @@ type Stats = Awaited<ReturnType<typeof getAnalytics>>;
 
 function AnalyticsPage() {
   const { locale } = useI18n();
+  const { org } = useOrg();
   const load = useServerFn(getAnalytics);
   const insightsFn = useServerFn(generateAnalyticsInsights);
   const [stats, setStats] = useState<Stats | null>(null);
