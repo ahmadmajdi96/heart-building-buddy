@@ -110,6 +110,15 @@ function CalendarPage() {
 
   const filteredAppts = appts;
 
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={locale === "ar" ? "التقويم" : "Calendar"}
+        subtitle={locale === "ar" ? "جلسات المحاكم والمواعيد." : "Court hearings, meetings and deadlines."}
+        actions={<Button variant="gold" size="sm" className="gap-1.5" onClick={() => openNewAt(new Date())}><Plus className="size-4" />{locale === "ar" ? "موعد جديد" : "New event"}</Button>}
+      />
+
+
 
       <div className="card-elev rounded-xl border bg-card">
         <div className="flex items-center justify-between border-b p-3">
