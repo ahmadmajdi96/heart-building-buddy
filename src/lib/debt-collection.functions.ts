@@ -384,6 +384,12 @@ export const sendDebtSms = createServerFn({ method: "POST" })
           phone, message: data.message, kind: data.kind,
           status: r.status, twilio_sid: r.sid ?? null, error: r.error ?? null,
         });
+        await logSmsMessage({
+          owner_id: context.userId, org_id: mem.org_id, debt_case_id: data.case_id,
+          context: "debt_reminder", to_number: phone, from_number: data.from,
+          body: data.message, twilio_sid: r.sid ?? null, status: r.status,
+          error_message: r.error ?? null,
+        });
         results.push({ user_id: a.user_id, ...r });
       }
     }
