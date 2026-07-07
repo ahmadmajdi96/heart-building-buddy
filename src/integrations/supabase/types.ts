@@ -2136,6 +2136,41 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_workspace: {
+        Args: {
+          _currency?: string
+          _display_name?: string
+          _legal_name: string
+          _preferred_language?: string
+          _type?: string
+        }
+        Returns: {
+          address: string | null
+          country: string | null
+          created_at: string
+          created_by: string
+          currency: string
+          default_tax_rate: number
+          display_name: string | null
+          email: string | null
+          id: string
+          invoice_prefix: string
+          legal_name: string
+          logo_path: string | null
+          phone: string | null
+          preferred_language: string
+          quote_prefix: string
+          tax_id: string | null
+          type: Database["public"]["Enums"]["org_type"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "organizations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       current_user_org: { Args: never; Returns: string }
       has_org_role: {
         Args: {

@@ -31,35 +31,17 @@ export const createOrganization = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => CreateInput.parse(d))
   .handler(async ({ data, context }) => {
-    // 1) Insert organization (RLS enforces created_by = auth.uid())
-    const { data: org, error } = await context.supabase
-      .from("organizations")
-      .insert({
-        legal_name: data.legal_name,
-        display_name: data.display_name || data.legal_name,
-        type: data.type,
-        currency: data.currency,
-        preferred_language: data.preferred_language,
-        default_tax_rate: 0,
-        invoice_prefix: "INV",
-        quote_prefix: "QUO",
-        created_by: context.userId,
-      })
-      .select()
-      .maybeSingle();
+    // Use the security-definer RPC so org + owner membership insert atomically
+    // and cannot fail with an RLS violation even if the caller's JWT-derived
+    // auth.uid() disagrees with the server's context.userId momentarily.
+    const { data: org, error } = await (context.supabase as any).rpc("create_workspace", {
+      _legal_name: data.legal_name,
+      _display_name: data.display_name || data.legal_name,
+      _type: data.type,
+      _currency: data.currency,
+      _preferred_language: data.preferred_language,
+    });
     if (error || !org) throw new Error(error?.message ?? "Failed to create workspace");
-
-    // 2) Insert owner membership for the current user
-    const { error: memErr } = await context.supabase
-      .from("organization_members")
-      .insert({
-        org_id: org.id,
-        user_id: context.userId,
-        role: "owner",
-        status: "active",
-      });
-    if (memErr) throw new Error(memErr.message);
-
     return org;
   });
 

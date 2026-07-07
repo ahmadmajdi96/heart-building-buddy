@@ -12,8 +12,9 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Checkbox } from "@/components/ui/checkbox";
 import { listDeadlines, saveDeadline, completeDeadline, deleteDeadline, deadlineStats } from "@/lib/deadlines.functions";
 import { listCases } from "@/lib/cases.functions";
-import { AlertTriangle, CalendarClock, Check, Loader2, Plus, Trash2, Pencil, Gavel, FileSignature, Scale } from "lucide-react";
+import { AlertTriangle, CalendarClock, Check, Loader2, Plus, Trash2, Pencil, Gavel, FileSignature, Scale, Download } from "lucide-react";
 import { toast } from "sonner";
+import { toCsv, downloadCsv } from "@/lib/csv-export";
 
 export const Route = createFileRoute("/app/deadlines")({ component: DeadlinesPage });
 
@@ -42,6 +43,9 @@ function DeadlinesPage() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>("open");
   const [filterCase, setFilterCase] = useState<string>("all");
+  const [filterKind, setFilterKind] = useState<string>("all");
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [busy, setBusy] = useState(false);
@@ -98,12 +102,24 @@ function DeadlinesPage() {
   const kindMeta = (k: string) => KINDS.find((x) => x.v === k) ?? KINDS[KINDS.length - 1];
   const kindLabel = (k: string) => { const m = kindMeta(k); return ar ? m.ar : m.en; };
 
+  const filteredRows = useMemo(() => {
+    const fromMs = fromDate ? new Date(fromDate).getTime() : null;
+    const toMs = toDate ? (() => { const d = new Date(toDate); d.setHours(23,59,59,999); return d.getTime(); })() : null;
+    return rows.filter((r) => {
+      if (filterKind !== "all" && r.kind !== filterKind) return false;
+      const t = new Date(r.due_at).getTime();
+      if (fromMs !== null && t < fromMs) return false;
+      if (toMs !== null && t > toMs) return false;
+      return true;
+    });
+  }, [rows, filterKind, fromDate, toDate]);
+
   const groups = useMemo(() => {
     const now = Date.now();
     const eod = new Date(); eod.setHours(23, 59, 59, 999);
     const week = now + 7 * 86400000;
     const overdue: any[] = [], today: any[] = [], soon: any[] = [], later: any[] = [], completed: any[] = [];
-    for (const r of rows) {
+    for (const r of filteredRows) {
       const t = new Date(r.due_at).getTime();
       if (r.status === "completed") completed.push(r);
       else if (t < now) overdue.push(r);
@@ -112,7 +128,22 @@ function DeadlinesPage() {
       else later.push(r);
     }
     return { overdue, today, soon, later, completed };
-  }, [rows]);
+  }, [filteredRows]);
+
+  function handleExport() {
+    const caseMap = new Map(cases.map((c) => [c.id, c.title] as const));
+    const headers = ["Kind","Title","Due at","Status","Matter","Court","Notes"];
+    const csv = toCsv(headers, filteredRows.map((r) => [
+      kindLabel(r.kind), r.title, new Date(r.due_at).toISOString(),
+      r.status, r.case_id ? (caseMap.get(r.case_id) ?? "") : "",
+      r.court ?? "", (r.description ?? "").replace(/\s+/g, " "),
+    ]));
+    downloadCsv(`deadlines-${new Date().toISOString().slice(0,10)}.csv`, csv);
+    toast.success(ar ? `تم تصدير ${filteredRows.length} موعد` : `Exported ${filteredRows.length} deadlines`);
+  }
+
+  const hasExtraFilters = filterKind !== "all" || fromDate || toDate;
+
 
   return (
     <div className="space-y-6">
@@ -129,25 +160,60 @@ function DeadlinesPage() {
         <Tile color="primary" label={ar ? "خلال أسبوع" : "Due this week"} value={statsData?.week.length ?? 0} icon={<CalendarClock className="size-5" />} />
       </div>
 
-      {/* Filters */}
-      <div className="card-elev rounded-xl border bg-card p-4 flex flex-wrap items-center gap-3">
-        <Label className="text-xs uppercase tracking-wider text-muted-foreground">{ar ? "الحالة" : "Status"}</Label>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="open">{ar ? "مفتوحة" : "Open"}</SelectItem>
-            <SelectItem value="completed">{ar ? "مكتملة" : "Completed"}</SelectItem>
-            <SelectItem value="all">{ar ? "الكل" : "All"}</SelectItem>
-          </SelectContent>
-        </Select>
-        <Label className="text-xs uppercase tracking-wider text-muted-foreground ms-2">{ar ? "القضية" : "Matter"}</Label>
-        <Select value={filterCase} onValueChange={setFilterCase}>
-          <SelectTrigger className="w-60"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{ar ? "الكل" : "All matters"}</SelectItem>
-            {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
-          </SelectContent>
-        </Select>
+      {/* Filters + export */}
+      <div className="card-elev rounded-xl border bg-card p-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{ar ? "الحالة" : "Status"}</Label>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="h-9 w-36"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="open">{ar ? "مفتوحة" : "Open"}</SelectItem>
+                <SelectItem value="completed">{ar ? "مكتملة" : "Completed"}</SelectItem>
+                <SelectItem value="all">{ar ? "الكل" : "All"}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{ar ? "النوع" : "Kind"}</Label>
+            <Select value={filterKind} onValueChange={setFilterKind}>
+              <SelectTrigger className="h-9 w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{ar ? "الكل" : "All"}</SelectItem>
+                {KINDS.map((k) => <SelectItem key={k.v} value={k.v}>{ar ? k.ar : k.en}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{ar ? "القضية" : "Matter"}</Label>
+            <Select value={filterCase} onValueChange={setFilterCase}>
+              <SelectTrigger className="h-9 w-56"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{ar ? "الكل" : "All matters"}</SelectItem>
+                {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{ar ? "من تاريخ" : "From"}</Label>
+            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-9 w-[150px]" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{ar ? "إلى تاريخ" : "To"}</Label>
+            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 w-[150px]" />
+          </div>
+          {hasExtraFilters && (
+            <Button size="sm" variant="ghost" onClick={() => { setFilterKind("all"); setFromDate(""); setToDate(""); }}>
+              {ar ? "مسح" : "Clear"}
+            </Button>
+          )}
+          <div className="ms-auto flex items-center gap-3">
+            <span className="text-xs text-muted-foreground tabular-nums">{filteredRows.length} / {rows.length}</span>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={handleExport} disabled={filteredRows.length === 0}>
+              <Download className="size-4" />{ar ? "تصدير CSV" : "Export CSV"}
+            </Button>
+          </div>
+        </div>
       </div>
 
       {loading ? (
