@@ -356,7 +356,13 @@ export const sendDebtSms = createServerFn({ method: "POST" })
           phone: p.phone, message: data.message, kind: data.kind,
           status: r.status, twilio_sid: r.sid ?? null, error: r.error ?? null,
         });
-        if (r.status === "sent") {
+        await logSmsMessage({
+          owner_id: context.userId, org_id: mem.org_id, debt_case_id: data.case_id,
+          context: "debt_reminder", to_number: p.phone, from_number: data.from,
+          body: data.message, twilio_sid: r.sid ?? null, status: r.status,
+          error_message: r.error ?? null,
+        });
+        if (r.status === "sent" || r.status === "queued") {
           await context.supabase.from("debt_case_payers")
             .update({ last_reminder_sent_at: new Date().toISOString(), last_reminder_kind: data.kind })
             .eq("id", p.id);
