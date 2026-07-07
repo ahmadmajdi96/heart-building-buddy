@@ -43,6 +43,7 @@ import { Route as AppDebtCollectionIdRouteImport } from './routes/app.debt-colle
 import { Route as AppClientsClientIdRouteImport } from './routes/app.clients.$clientId'
 import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
 import { Route as ApiRagUploadRouteImport } from './routes/api.rag.upload'
+import { Route as ApiElevenlabsTranscribeRouteImport } from './routes/api.elevenlabs.transcribe'
 import { Route as ApiElevenlabsScribeTokenRouteImport } from './routes/api.elevenlabs.scribe-token'
 import { Route as AppMeetingsJoinRoomRouteImport } from './routes/app.meetings.join.$room'
 import { Route as ApiPublicHooksTwilioStatusRouteImport } from './routes/api.public.hooks.twilio-status'
@@ -218,6 +219,11 @@ const ApiRagUploadRoute = ApiRagUploadRouteImport.update({
   path: '/api/rag/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiElevenlabsTranscribeRoute = ApiElevenlabsTranscribeRouteImport.update({
+  id: '/api/elevenlabs/transcribe',
+  path: '/api/elevenlabs/transcribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiElevenlabsScribeTokenRoute =
   ApiElevenlabsScribeTokenRouteImport.update({
     id: '/api/elevenlabs/scribe-token',
@@ -267,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/share/$token': typeof ShareTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
+  '/api/elevenlabs/transcribe': typeof ApiElevenlabsTranscribeRoute
   '/api/rag/upload': typeof ApiRagUploadRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
@@ -306,6 +313,7 @@ export interface FileRoutesByTo {
   '/share/$token': typeof ShareTokenRoute
   '/app': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
+  '/api/elevenlabs/transcribe': typeof ApiElevenlabsTranscribeRoute
   '/api/rag/upload': typeof ApiRagUploadRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
@@ -347,6 +355,7 @@ export interface FileRoutesById {
   '/share/$token': typeof ShareTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
+  '/api/elevenlabs/transcribe': typeof ApiElevenlabsTranscribeRoute
   '/api/rag/upload': typeof ApiRagUploadRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
@@ -389,6 +398,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/app/'
     | '/api/elevenlabs/scribe-token'
+    | '/api/elevenlabs/transcribe'
     | '/api/rag/upload'
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
@@ -428,6 +438,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/app'
     | '/api/elevenlabs/scribe-token'
+    | '/api/elevenlabs/transcribe'
     | '/api/rag/upload'
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
@@ -468,6 +479,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/app/'
     | '/api/elevenlabs/scribe-token'
+    | '/api/elevenlabs/transcribe'
     | '/api/rag/upload'
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
@@ -491,6 +503,7 @@ export interface RootRouteChildren {
   SetPasswordRoute: typeof SetPasswordRoute
   ShareTokenRoute: typeof ShareTokenRoute
   ApiElevenlabsScribeTokenRoute: typeof ApiElevenlabsScribeTokenRoute
+  ApiElevenlabsTranscribeRoute: typeof ApiElevenlabsTranscribeRoute
   ApiRagUploadRoute: typeof ApiRagUploadRoute
   ApiPublicHooksDebtRemindersRoute: typeof ApiPublicHooksDebtRemindersRoute
   ApiPublicHooksTwilioStatusRoute: typeof ApiPublicHooksTwilioStatusRoute
@@ -736,6 +749,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRagUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/elevenlabs/transcribe': {
+      id: '/api/elevenlabs/transcribe'
+      path: '/api/elevenlabs/transcribe'
+      fullPath: '/api/elevenlabs/transcribe'
+      preLoaderRoute: typeof ApiElevenlabsTranscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/elevenlabs/scribe-token': {
       id: '/api/elevenlabs/scribe-token'
       path: '/api/elevenlabs/scribe-token'
@@ -840,6 +860,7 @@ const rootRouteChildren: RootRouteChildren = {
   SetPasswordRoute: SetPasswordRoute,
   ShareTokenRoute: ShareTokenRoute,
   ApiElevenlabsScribeTokenRoute: ApiElevenlabsScribeTokenRoute,
+  ApiElevenlabsTranscribeRoute: ApiElevenlabsTranscribeRoute,
   ApiRagUploadRoute: ApiRagUploadRoute,
   ApiPublicHooksDebtRemindersRoute: ApiPublicHooksDebtRemindersRoute,
   ApiPublicHooksTwilioStatusRoute: ApiPublicHooksTwilioStatusRoute,
