@@ -26,6 +26,8 @@ import { getTimeEntriesByIds } from "@/lib/time-entries.functions";
 import { listOrgDebtPayments } from "@/lib/debt-collection.functions";
 import { listClients, saveClient } from "@/lib/clients.functions";
 import { listUnpaidInvoicesForClient, createPaymentPlan, markSchedulePaid, deletePaymentPlan, getPaymentPlan, pausePaymentPlan, resumePaymentPlan, cancelPaymentPlan, reschedulePaymentPlan } from "@/lib/payment-plans.functions";
+import { FinancialsToolbar } from "@/components/financials/financials-toolbar";
+import { toCsv, downloadCsv, inRange } from "@/lib/csv-export";
 
 
 import { ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Layers } from "lucide-react";
@@ -140,10 +142,14 @@ function PaymentsTab() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [method, setMethod] = useState<string>("all");
+  const [from, setFrom] = useState(""); const [to, setTo] = useState("");
 
   async function load() {
     if (!org) return;
-    const { data } = await supabase.from("payments").select("*").eq("org_id", org.id).order("paid_at", { ascending: false });
+    // Include invoice and case joins so exports carry full context.
+    const { data } = await supabase.from("payments")
+      .select("*, tax_invoices(id, number, case_id, cases(id, title, case_number))")
+      .eq("org_id", org.id).order("paid_at", { ascending: false });
     setRows(data ?? []); setLoading(false);
   }
   useEffect(() => { load(); }, [org?.id]);
@@ -151,22 +157,39 @@ function PaymentsTab() {
   const methods = useMemo(() => ["all", ...Array.from(new Set(rows.map((r) => r.method).filter(Boolean)))], [rows]);
   const filtered = useMemo(() => rows.filter((r) => {
     if (method !== "all" && r.method !== method) return false;
+    if (!inRange(r.paid_at, from, to)) return false;
     if (!q.trim()) return true;
     const s = q.toLowerCase();
     return (r.client_name ?? "").toLowerCase().includes(s) || (r.reference ?? "").toLowerCase().includes(s);
-  }), [rows, q, method]);
+  }), [rows, q, method, from, to]);
+
+  function exportCsv() {
+    const headers = ["Paid at","Client","Invoice #","Case","Case #","Method","Amount","Currency","Reference","Notes"];
+    const rowsCsv = filtered.map((r: any) => [
+      r.paid_at, r.client_name ?? "",
+      r.tax_invoices?.number ?? "", r.tax_invoices?.cases?.title ?? "", r.tax_invoices?.cases?.case_number ?? "",
+      r.method, r.amount, r.currency, r.reference ?? "", r.notes ?? "",
+    ]);
+    downloadCsv(`payments_${new Date().toISOString().slice(0,10)}.csv`, toCsv(headers, rowsCsv));
+  }
 
   return (
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 border-b p-4">
         <div className="text-sm font-semibold mr-auto">{locale === "ar" ? "سجل المدفوعات" : "Payment log"} <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span></div>
-        <TableFilter q={q} setQ={setQ} status={method} setStatus={setMethod} statuses={methods} placeholder={locale === "ar" ? "ابحث بالعميل/المرجع…" : "Search client / reference…"} locale={locale as any} />
         {can("edit_financials") && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button size="sm" variant="gold"><Plus className="size-4"/>{locale === "ar" ? "تسجيل دفعة" : "Record payment"}</Button></DialogTrigger>
             <PaymentDialog onSaved={() => { setOpen(false); load(); }} onClose={() => setOpen(false)} />
           </Dialog>
         )}
+      </div>
+      <div className="border-b p-4">
+        <FinancialsToolbar q={q} setQ={setQ} status={method} setStatus={setMethod} statuses={methods}
+          fromLabel={locale === "ar" ? "من (تاريخ الدفع)" : "From (paid at)"}
+          from={from} setFrom={setFrom} to={to} setTo={setTo}
+          onExport={exportCsv} exportDisabled={filtered.length === 0}
+          placeholder={locale === "ar" ? "ابحث بالعميل/المرجع…" : "Search client / reference…"} locale={locale as any} />
       </div>
       {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={locale === "ar" ? "لا نتائج." : "No matches."}/> : (
         <table className="w-full text-sm">
