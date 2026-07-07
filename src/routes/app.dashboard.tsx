@@ -45,8 +45,8 @@ function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={locale === "ar" ? "التحليلات والمؤشرات" : "Analytics & Insights"}
-        subtitle={locale === "ar" ? "صورة شاملة بناءً على بياناتك الفعلية." : "Real-time view of your firm's performance."}
+        title={locale === "ar" ? `مرحباً، ${orgName} 👋` : `Welcome back, ${orgName} 👋`}
+        subtitle={locale === "ar" ? "نظرة شاملة على نشاط المكتب." : "A complete snapshot of your firm."}
         actions={<Button variant="gold" size="sm" className="gap-1.5" onClick={runInsights} disabled={insightsLoading}>
           {insightsLoading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
           {locale === "ar" ? "رؤى الذكاء الاصطناعي" : "AI insights"}
