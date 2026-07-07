@@ -457,6 +457,18 @@ function MeetingRoom() {
             {recording ? <MicOff className="size-4" /> : <Mic className="size-4" />}
             {recording ? (locale === "ar" ? "إيقاف التفريغ" : "Stop transcribing") : (locale === "ar" ? "ابدأ التفريغ" : "Start transcribing")}
           </Button>
+          <label className="flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs text-muted-foreground">
+            <span>{locale === "ar" ? "مصدر التفريغ" : "Diarize from"}</span>
+            <select
+              value={diarizationSource}
+              onChange={(e) => setDiarizationSource(e.target.value as "mixed" | "mic" | "tab")}
+              className="bg-transparent text-xs outline-none"
+            >
+              <option value="mixed">{locale === "ar" ? "مدمج" : "Mixed"}</option>
+              <option value="mic">{locale === "ar" ? "الميكروفون فقط" : "Mic only"}</option>
+              <option value="tab">{locale === "ar" ? "التبويب فقط" : "Tab only"}</option>
+            </select>
+          </label>
           <Button variant="outline" size="sm" onClick={enhanceNow} disabled={enhancing}>
             {enhancing ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
             {locale === "ar" ? "تحسين الدقة" : "Enhance"}
