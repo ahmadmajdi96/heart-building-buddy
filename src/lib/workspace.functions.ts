@@ -148,3 +148,27 @@ export const getWorkspaceCase = createServerFn({ method: "POST" })
       deadlines: deadlines.data ?? [],
     };
   });
+
+/**
+ * Assign a case to a specific workspace (or clear it by passing org_id: null).
+ * Caller must be an active member of the target workspace.
+ */
+export const assignCaseToWorkspace = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    case_id: z.string().uuid(),
+    org_id: z.string().uuid().nullable(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    if (data.org_id) {
+      const { data: mem } = await context.supabase
+        .from("organization_members")
+        .select("org_id").eq("user_id", context.userId).eq("org_id", data.org_id).eq("status", "active").maybeSingle();
+      if (!mem) throw new Error("You are not a member of that workspace");
+    }
+    const { data: row, error } = await context.supabase
+      .from("cases").update({ org_id: data.org_id }).eq("id", data.case_id).select().maybeSingle();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
