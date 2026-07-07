@@ -163,47 +163,56 @@ function WorkspacePage() {
         onChanged={async () => { await refreshOrg(); }}
       />
 
+      {/* Active workspace hero */}
+      {activeOrg && (
+        <div className="relative overflow-hidden rounded-2xl border border-gold/20 bg-gradient-to-br from-pearl/60 via-card to-champagne/20 p-6 shadow-[0_8px_40px_-16px_oklch(0.76_0.14_82/0.35)]">
+          <div className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-gradient-to-br from-gold/25 to-transparent blur-3xl" />
+          <div className="relative flex flex-wrap items-start justify-between gap-6">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="grid size-14 place-items-center rounded-2xl border border-gold/30 bg-gold/10 text-gold shadow-sm">
+                <Building2 className="size-6" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase tracking-[0.3em] text-gold/80">
+                  {ar ? "مساحة العمل النشطة" : "Active workspace"}
+                </div>
+                <h2 className="mt-1 font-serif text-2xl md:text-3xl tracking-tight text-onyx truncate">
+                  {activeOrg.display_name || activeOrg.legal_name}
+                </h2>
+                <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <Badge variant="outline" className="border-gold/30 text-gold uppercase tracking-wider text-[10px]">
+                    {activeOrg.type ?? "firm"}
+                  </Badge>
+                  <span>·</span>
+                  <span>{teammates.length} {ar ? "عضو" : "members"}</span>
+                  <span>·</span>
+                  <span>{cases.length} {ar ? "قضية" : "cases"}</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => setManageOpen(true)} className="border-gold/30 hover:border-gold/60 hover:bg-gold/5">
+                <Pencil className="size-3.5" />{ar ? "إدارة" : "Manage"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Analytics strip */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">{ar ? "قضايا" : "Total cases"}</div>
-              <div className="mt-1 text-2xl font-serif">{analytics.total}</div>
-            </div>
-            <div className="grid size-10 place-items-center rounded-full bg-gold/15 text-gold"><Briefcase className="size-4" /></div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">{ar ? "نشطة" : "Active"}</div>
-              <div className="mt-1 text-2xl font-serif">{analytics.active}</div>
-              <div className="text-xs text-muted-foreground">{ar ? "مفتوحة + قيد الانتظار" : "open + pending"}</div>
-            </div>
-            <div className="grid size-10 place-items-center rounded-full bg-emerald-500/15 text-emerald-700"><Activity className="size-4" /></div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">{ar ? "معدل الفوز" : "Win rate"}</div>
-              <div className="mt-1 text-2xl font-serif">{analytics.winRate == null ? "—" : `${analytics.winRate}%`}</div>
-              <div className="text-xs text-muted-foreground">{analytics.won} {ar ? "فوز" : "won"} · {analytics.lost} {ar ? "خسارة" : "lost"}</div>
-            </div>
-            <div className="grid size-10 place-items-center rounded-full bg-sky-500/15 text-sky-700"><TrendingUp className="size-4" /></div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">{ar ? "مغلقة" : "Closed"}</div>
-              <div className="mt-1 text-2xl font-serif">{analytics.closed}</div>
-              <div className="text-xs text-muted-foreground">{teammates.length} {ar ? "زميل" : "teammates"}</div>
-            </div>
-            <div className="grid size-10 place-items-center rounded-full bg-slate-500/15 text-slate-700"><CheckCircle2 className="size-4" /></div>
-          </div>
-        </Card>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatTile label={ar ? "قضايا" : "Total cases"} value={String(analytics.total)}
+          icon={<Briefcase className="size-4" />} tone="gold" index={0} />
+        <StatTile label={ar ? "نشطة" : "Active"} value={String(analytics.active)}
+          delta={ar ? "مفتوحة + قيد الانتظار" : "open + pending"}
+          icon={<Activity className="size-4" />} tone="success" index={1} />
+        <StatTile label={ar ? "معدل الفوز" : "Win rate"}
+          value={analytics.winRate == null ? "—" : `${analytics.winRate}%`}
+          delta={`${analytics.won} ${ar ? "فوز" : "won"} · ${analytics.lost} ${ar ? "خسارة" : "lost"}`}
+          icon={<TrendingUp className="size-4" />} tone="default" index={2} />
+        <StatTile label={ar ? "مغلقة" : "Closed"} value={String(analytics.closed)}
+          delta={`${teammates.length} ${ar ? "زميل" : "teammates"}`}
+          icon={<CheckCircle2 className="size-4" />} index={3} />
       </div>
 
       {/* Case-load leaderboard + priority mix */}
