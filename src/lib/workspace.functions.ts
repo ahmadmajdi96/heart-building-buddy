@@ -1,17 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getActiveOrgId } from "./active-org.server";
+import { z } from "zod";
 
 async function getCallerOrgId(ctx: { supabase: any; userId: string }) {
-  const { data, error } = await ctx.supabase
-    .from("organization_members")
-    .select("org_id")
-    .eq("user_id", ctx.userId)
-    .eq("status", "active")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  return (data?.org_id as string | undefined) ?? null;
+  return await getActiveOrgId(ctx);
 }
 
 /**
@@ -31,16 +24,18 @@ export const getWorkspaceOverview = createServerFn({ method: "GET" })
         .select("user_id, role, status, invited_email, created_at")
         .eq("org_id", orgId)
         .eq("status", "active"),
-      // cases don't have org_id — scope through owner_id ∈ org members
+      // Cases are scoped by org_id (new) or fall back to owner ∈ org for legacy rows.
       (async () => {
         const { data: orgMems } = await context.supabase
           .from("organization_members").select("user_id").eq("org_id", orgId).eq("status", "active");
         const ownerIds = (orgMems ?? []).map((m: any) => m.user_id).filter(Boolean);
-        if (ownerIds.length === 0) return { data: [] as any[], error: null };
+        const orFilter = ownerIds.length > 0
+          ? `org_id.eq.${orgId},and(org_id.is.null,owner_id.in.(${ownerIds.join(",")}))`
+          : `org_id.eq.${orgId}`;
         return await context.supabase
           .from("cases")
-          .select("id, title, case_number, status, priority, opened_at, owner_id, client_id, clients(id, name)")
-          .in("owner_id", ownerIds)
+          .select("id, title, case_number, status, priority, opened_at, owner_id, org_id, client_id, clients(id, name)")
+          .or(orFilter)
           .order("opened_at", { ascending: false });
       })(),
     ]);
