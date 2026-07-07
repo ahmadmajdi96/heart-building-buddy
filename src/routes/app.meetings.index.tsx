@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { createMeeting, listMeetings, deleteMeeting } from "@/lib/meetings.functions";
 import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
-import { Video, Plus, Trash2, Copy, ArrowRight, Loader2, Search } from "lucide-react";
+import { Video, Plus, Trash2, Copy, ArrowRight, Loader2, Search, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/meetings/")({ component: MeetingsPage });

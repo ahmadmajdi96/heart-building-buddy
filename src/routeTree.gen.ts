@@ -45,6 +45,7 @@ import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
 import { Route as ApiRagUploadRouteImport } from './routes/api.rag.upload'
 import { Route as ApiElevenlabsTranscribeRouteImport } from './routes/api.elevenlabs.transcribe'
 import { Route as ApiElevenlabsScribeTokenRouteImport } from './routes/api.elevenlabs.scribe-token'
+import { Route as AppMeetingsTranscriptIdRouteImport } from './routes/app.meetings.transcript.$id'
 import { Route as AppMeetingsJoinRoomRouteImport } from './routes/app.meetings.join.$room'
 import { Route as ApiPublicHooksTwilioStatusRouteImport } from './routes/api.public.hooks.twilio-status'
 import { Route as ApiPublicHooksDebtRemindersRouteImport } from './routes/api.public.hooks.debt-reminders'
@@ -230,6 +231,11 @@ const ApiElevenlabsScribeTokenRoute =
     path: '/api/elevenlabs/scribe-token',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AppMeetingsTranscriptIdRoute = AppMeetingsTranscriptIdRouteImport.update({
+  id: '/meetings/transcript/$id',
+  path: '/meetings/transcript/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMeetingsJoinRoomRoute = AppMeetingsJoinRoomRouteImport.update({
   id: '/meetings/join/$room',
   path: '/meetings/join/$room',
@@ -288,6 +294,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
   '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
+  '/app/meetings/transcript/$id': typeof AppMeetingsTranscriptIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -328,6 +335,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
   '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
+  '/app/meetings/transcript/$id': typeof AppMeetingsTranscriptIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -370,6 +378,7 @@ export interface FileRoutesById {
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
   '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
+  '/app/meetings/transcript/$id': typeof AppMeetingsTranscriptIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -413,6 +422,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/debt-reminders'
     | '/api/public/hooks/twilio-status'
     | '/app/meetings/join/$room'
+    | '/app/meetings/transcript/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -453,6 +463,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/debt-reminders'
     | '/api/public/hooks/twilio-status'
     | '/app/meetings/join/$room'
+    | '/app/meetings/transcript/$id'
   id:
     | '__root__'
     | '/'
@@ -494,6 +505,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/debt-reminders'
     | '/api/public/hooks/twilio-status'
     | '/app/meetings/join/$room'
+    | '/app/meetings/transcript/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -763,6 +775,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiElevenlabsScribeTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/meetings/transcript/$id': {
+      id: '/app/meetings/transcript/$id'
+      path: '/meetings/transcript/$id'
+      fullPath: '/app/meetings/transcript/$id'
+      preLoaderRoute: typeof AppMeetingsTranscriptIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/meetings/join/$room': {
       id: '/app/meetings/join/$room'
       path: '/meetings/join/$room'
@@ -817,6 +836,7 @@ interface AppRouteChildren {
   AppMeetingsIndexRoute: typeof AppMeetingsIndexRoute
   AppWorkspaceIndexRoute: typeof AppWorkspaceIndexRoute
   AppMeetingsJoinRoomRoute: typeof AppMeetingsJoinRoomRoute
+  AppMeetingsTranscriptIdRoute: typeof AppMeetingsTranscriptIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -849,6 +869,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMeetingsIndexRoute: AppMeetingsIndexRoute,
   AppWorkspaceIndexRoute: AppWorkspaceIndexRoute,
   AppMeetingsJoinRoomRoute: AppMeetingsJoinRoomRoute,
+  AppMeetingsTranscriptIdRoute: AppMeetingsTranscriptIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
