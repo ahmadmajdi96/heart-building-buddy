@@ -20,6 +20,7 @@ import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
 import { Plus, Loader2, Pencil, Trash2, Play, Square, Clock, Search, Receipt, Download } from "lucide-react";
 import { toast } from "sonner";
+import { downloadCsv } from "@/lib/csv-export";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
