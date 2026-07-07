@@ -102,12 +102,24 @@ function DeadlinesPage() {
   const kindMeta = (k: string) => KINDS.find((x) => x.v === k) ?? KINDS[KINDS.length - 1];
   const kindLabel = (k: string) => { const m = kindMeta(k); return ar ? m.ar : m.en; };
 
+  const filteredRows = useMemo(() => {
+    const fromMs = fromDate ? new Date(fromDate).getTime() : null;
+    const toMs = toDate ? (() => { const d = new Date(toDate); d.setHours(23,59,59,999); return d.getTime(); })() : null;
+    return rows.filter((r) => {
+      if (filterKind !== "all" && r.kind !== filterKind) return false;
+      const t = new Date(r.due_at).getTime();
+      if (fromMs !== null && t < fromMs) return false;
+      if (toMs !== null && t > toMs) return false;
+      return true;
+    });
+  }, [rows, filterKind, fromDate, toDate]);
+
   const groups = useMemo(() => {
     const now = Date.now();
     const eod = new Date(); eod.setHours(23, 59, 59, 999);
     const week = now + 7 * 86400000;
     const overdue: any[] = [], today: any[] = [], soon: any[] = [], later: any[] = [], completed: any[] = [];
-    for (const r of rows) {
+    for (const r of filteredRows) {
       const t = new Date(r.due_at).getTime();
       if (r.status === "completed") completed.push(r);
       else if (t < now) overdue.push(r);
@@ -116,7 +128,22 @@ function DeadlinesPage() {
       else later.push(r);
     }
     return { overdue, today, soon, later, completed };
-  }, [rows]);
+  }, [filteredRows]);
+
+  function handleExport() {
+    const caseMap = new Map(cases.map((c) => [c.id, c.title] as const));
+    const headers = ["Kind","Title","Due at","Status","Matter","Court","Notes"];
+    const csv = toCsv(headers, filteredRows.map((r) => [
+      kindLabel(r.kind), r.title, new Date(r.due_at).toISOString(),
+      r.status, r.case_id ? (caseMap.get(r.case_id) ?? "") : "",
+      r.court ?? "", (r.description ?? "").replace(/\s+/g, " "),
+    ]));
+    downloadCsv(`deadlines-${new Date().toISOString().slice(0,10)}.csv`, csv);
+    toast.success(ar ? `تم تصدير ${filteredRows.length} موعد` : `Exported ${filteredRows.length} deadlines`);
+  }
+
+  const hasExtraFilters = filterKind !== "all" || fromDate || toDate;
+
 
   return (
     <div className="space-y-6">
