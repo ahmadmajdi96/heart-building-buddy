@@ -243,34 +243,72 @@ function MeetingRoom() {
 
     const mime = pickRecorderMime();
     recorderMimeRef.current = mime || "audio/webm";
-    const rec = mime ? new MediaRecorder(combined, { mimeType: mime, audioBitsPerSecond: 128_000 }) : new MediaRecorder(combined);
-    recorderChunksRef.current = [];
-    rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) recorderChunksRef.current.push(e.data); };
-    rec.start(1000);
-    recorderRef.current = rec;
+    chunksRef.current = { mic: [], tab: [], mixed: [] };
+    recordersRef.current = {};
+
+    const makeRec = (track: Track, stream: MediaStream) => {
+      const rec = mime
+        ? new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 128_000 })
+        : new MediaRecorder(stream);
+      rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunksRef.current[track].push(e.data); };
+      rec.start(1000);
+      recordersRef.current[track] = rec;
+    };
+
+    // Always record mic on its own track.
+    makeRec("mic", mic);
+    // Always record the "mixed" track so live scribe input matches it (mic-only when no tab).
+    makeRec("mixed", combined);
+    // If tab audio is available, record it separately too.
+    if (displayStreamRef.current) {
+      const tabOnly = new MediaStream(displayStreamRef.current.getAudioTracks());
+      makeRec("tab", tabOnly);
+    }
   }
 
-  function stopLocalRecorder(): Promise<Blob | null> {
+  function stopLocalRecorder(): Promise<Record<Track, Blob | null>> {
     return new Promise((resolve) => {
-      const rec = recorderRef.current;
-      if (!rec) return resolve(null);
-      const done = () => {
-        try {
-          const blob = new Blob(recorderChunksRef.current, { type: recorderMimeRef.current });
-          resolve(blob.size > 0 ? blob : null);
-        } catch { resolve(null); }
-        recorderRef.current = null;
+      const recs = recordersRef.current;
+      const tracks: Track[] = ["mic", "tab", "mixed"];
+      const active = tracks.filter((t) => recs[t]);
+      if (active.length === 0) return resolve({ mic: null, tab: null, mixed: null });
+      const out: Record<Track, Blob | null> = { mic: null, tab: null, mixed: null };
+      let remaining = active.length;
+      const finish = () => {
         micStreamRef.current?.getTracks().forEach((t) => t.stop());
         displayStreamRef.current?.getTracks().forEach((t) => t.stop());
         micStreamRef.current = null;
         displayStreamRef.current = null;
         try { audioCtxRef.current?.close(); } catch {}
         audioCtxRef.current = null;
+        recordersRef.current = {};
+        resolve(out);
       };
-      rec.onstop = done;
-      try { rec.stop(); } catch { done(); }
+      active.forEach((track) => {
+        const rec = recs[track]!;
+        rec.onstop = () => {
+          try {
+            const blob = new Blob(chunksRef.current[track], { type: recorderMimeRef.current });
+            out[track] = blob.size > 0 ? blob : null;
+          } catch { out[track] = null; }
+          remaining -= 1;
+          if (remaining === 0) finish();
+        };
+        try { rec.stop(); } catch {
+          remaining -= 1;
+          if (remaining === 0) finish();
+        }
+      });
     });
   }
+
+  function pickBlob(blobs: Record<Track, Blob | null>): Blob | null {
+    const preferred = blobs[diarizationSource];
+    if (preferred && preferred.size > 4096) return preferred;
+    // Fallback chain: mixed → mic → tab
+    return blobs.mixed || blobs.mic || blobs.tab || preferred;
+  }
+
 
   async function toggleRec() {
     if (recording) {
