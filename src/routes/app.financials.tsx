@@ -1080,6 +1080,7 @@ function InvoicesTab() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
+  const [from, setFrom] = useState(""); const [to, setTo] = useState("");
   const [payTarget, setPayTarget] = useState<Invoice | null>(null);
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
   const [payBusy, setPayBusy] = useState(false);
@@ -1087,7 +1088,9 @@ function InvoicesTab() {
   async function load() {
     if (!org) return;
     try { await sweep(); } catch { /* non-fatal */ }
-    const { data } = await supabase.from("tax_invoices").select("*").eq("org_id", org.id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("tax_invoices")
+      .select("*, cases(id, title, case_number), clients(id, name, email, phone)")
+      .eq("org_id", org.id).order("created_at", { ascending: false });
     setRows(data ?? []); setLoading(false);
   }
   useEffect(() => { load(); }, [org?.id]);
@@ -1111,11 +1114,23 @@ function InvoicesTab() {
   const statuses = useMemo(() => ["all", "draft", "issued", "partial", "paid", "overdue", "void"], []);
   const filtered = useMemo(() => rows.filter((r) => {
     if (status !== "all" && r.status !== status) return false;
+    if (!inRange(r.issue_date, from, to)) return false;
     if (!q.trim()) return true;
     const s = q.toLowerCase();
     return (r.client_name ?? "").toLowerCase().includes(s) || (r.number ?? "").toLowerCase().includes(s);
-  }), [rows, q, status]);
+  }), [rows, q, status, from, to]);
   const overdueCount = rows.filter((r) => r.status === "overdue").length;
+
+  function exportCsv() {
+    const headers = ["Number","Issue date","Due date","Client","Client email","Client phone","Case","Case #","Currency","Subtotal","Tax","Total","Amount paid","Status","Notes"];
+    const rowsCsv = filtered.map((r: any) => [
+      r.number, r.issue_date, r.due_date ?? "",
+      r.client_name ?? "", r.clients?.email ?? "", r.clients?.phone ?? "",
+      r.cases?.title ?? "", r.cases?.case_number ?? "",
+      r.currency, r.subtotal, r.tax_amount, r.total, r.amount_paid, r.status, r.notes ?? "",
+    ]);
+    downloadCsv(`tax_invoices_${new Date().toISOString().slice(0,10)}.csv`, toCsv(headers, rowsCsv));
+  }
 
   return (
     <>
@@ -1130,13 +1145,19 @@ function InvoicesTab() {
               </button>
             )}
           </div>
-          <TableFilter q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses} placeholder={locale === "ar" ? "ابحث برقم/عميل…" : "Search by #/client…"} locale={locale as any} />
           {can("edit_financials") && (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild><Button size="sm" variant="gold"><Plus className="size-4"/>{locale === "ar" ? "فاتورة جديدة" : "New invoice"}</Button></DialogTrigger>
               <DocFormDialog kind="invoice" onSaved={() => { setOpen(false); load(); }} onClose={() => setOpen(false)} />
             </Dialog>
           )}
+        </div>
+        <div className="border-b p-4">
+          <FinancialsToolbar q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses}
+            fromLabel={locale === "ar" ? "من (الإصدار)" : "From (issued)"}
+            from={from} setFrom={setFrom} to={to} setTo={setTo}
+            onExport={exportCsv} exportDisabled={filtered.length === 0}
+            placeholder={locale === "ar" ? "ابحث برقم/عميل…" : "Search by #/client…"} locale={locale as any} />
         </div>
         {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={locale === "ar" ? "لا نتائج." : "No matches."}/> : (
           <table className="w-full text-sm">
