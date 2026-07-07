@@ -1459,6 +1459,16 @@ function DraftInvoicesTab() {
 
   const acceptEntryIds = (pendingAccept?.time_entry_ids ?? []) as string[];
 
+  function exportCsv() {
+    const headers = ["Issue date","Due date","Client","Case ID","Currency","Subtotal","Tax","Total","Status","Notes","Time entry IDs"];
+    const rowsCsv = filtered.map((r: any) => [
+      r.issue_date, r.due_date ?? "", r.client_name ?? "", r.case_id ?? "",
+      r.currency, r.subtotal, r.tax_amount, r.total, r.status, r.notes ?? "",
+      Array.isArray(r.time_entry_ids) ? r.time_entry_ids.join("|") : "",
+    ]);
+    downloadCsv(`draft_invoices_${new Date().toISOString().slice(0,10)}.csv`, toCsv(headers, rowsCsv));
+  }
+
   return (
     <>
       <Card className="overflow-hidden">
@@ -1472,6 +1482,9 @@ function DraftInvoicesTab() {
               <Check className="size-4" /> {ar ? `قبول ${selected.size}` : `Accept ${selected.size}`}
             </Button>
           )}
+          <Button size="sm" variant="outline" onClick={exportCsv} disabled={filtered.length === 0}>
+            <Download className="size-4"/>{ar ? "تصدير CSV" : "Export CSV"}
+          </Button>
           <TableFilter q={q} setQ={(v) => setSearch({ q: v })} status={status} setStatus={(v) => setSearch({ status: v })}
             statuses={["all", "draft", "accepted", "rejected"]}
             placeholder={ar ? "ابحث بالعميل أو الملاحظات…" : "Search by client or notes…"} locale={locale as any} />
