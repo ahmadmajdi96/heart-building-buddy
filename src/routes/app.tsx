@@ -122,10 +122,14 @@ function AppLayout() {
     return <div className="min-h-screen grid place-items-center"><Loader2 className="size-6 animate-spin text-gold" /></div>;
   }
 
-  const visibleNav = navItems.filter((i) => (!i.perm || !org || can(i.perm)) && (!i.firmOnly || org?.type === "firm"));
-  const primary = visibleNav.slice(0, PRIMARY_COUNT);
-  const overflow = visibleNav.slice(PRIMARY_COUNT);
+  const filterItem = (i: NavItem) => (!i.perm || !org || can(i.perm)) && (!i.firmOnly || org?.type === "firm");
+  const visibleSolo = soloItems.filter(filterItem);
+  const visibleGroups = navGroups
+    .map((g) => ({ ...g, items: g.items.filter(filterItem) }))
+    .filter((g) => g.items.length > 0);
+  const visibleNav: NavItem[] = [...visibleSolo, ...visibleGroups.flatMap((g) => g.items)];
   const isActive = (to: string) => pathname === to || (to !== "/app/dashboard" && pathname.startsWith(to));
+  const groupActive = (g: NavGroup) => g.items.some((i) => isActive(i.to));
 
   return (
     <div className="min-h-screen bg-secondary/30">
