@@ -28,7 +28,7 @@ function JoinRoom() {
     const ensureScript = () => new Promise<void>((resolve, reject) => {
       if ((window as any).JitsiMeetExternalAPI) return resolve();
       const s = document.createElement("script");
-      s.src = "https://meet.jit.si/external_api.js";
+      s.src = JITSI_EXTERNAL_API_URL;
       s.async = true;
       s.onload = () => resolve();
       s.onerror = () => reject(new Error("Failed to load Jitsi"));
@@ -37,7 +37,8 @@ function JoinRoom() {
     setTimeout(() => {
       ensureScript().then(() => {
         if (!holder.current) return;
-        apiRef.current = new (window as any).JitsiMeetExternalAPI("meet.jit.si", {
+        apiRef.current = new (window as any).JitsiMeetExternalAPI(JITSI_DOMAIN, {
+
           roomName: room,
           parentNode: holder.current,
           width: "100%", height: "100%",
