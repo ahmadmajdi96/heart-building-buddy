@@ -54,6 +54,7 @@ const dict = {
   m_clients: { ar: "العملاء", en: "Clients" },
   m_courtroom: { ar: "محاكاة المحكمة", en: "Courtroom Sim" },
   m_live_sessions: { ar: "الجلسات المباشرة", en: "Live Sessions" },
+  m_messages: { ar: "رسائل SMS", en: "SMS Messages" },
   m_meetings: { ar: "الاجتماعات", en: "Meetings" },
   m_time: { ar: "تتبع الوقت", en: "Time Tracking" },
   m_deadlines: { ar: "المواعيد", en: "Deadlines" },
