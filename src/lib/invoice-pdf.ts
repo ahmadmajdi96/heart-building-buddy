@@ -1,6 +1,8 @@
 import jsPDF from "jspdf";
+import { resolveLogoUrl } from "./logo";
 
-type Org = { legal_name?: string; display_name?: string | null; email?: string | null; phone?: string | null; address?: string | null; tax_id?: string | null };
+type Org = { legal_name?: string; display_name?: string | null; email?: string | null; phone?: string | null; address?: string | null; tax_id?: string | null; logo_path?: string | null };
+
 type Doc = {
   number?: string;
   client_name?: string;
@@ -20,20 +22,48 @@ function money(n: number | undefined) {
   return Number(n ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-export function downloadInvoicePdf(kind: "quote" | "invoice", doc: Doc, org?: Org | null) {
+async function fetchLogoDataUrl(path: string | null | undefined): Promise<{ dataUrl: string; ext: "PNG" | "JPEG" } | null> {
+  const url = await resolveLogoUrl(path ?? null);
+  if (!url) return null;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const ct = (res.headers.get("content-type") || blob.type || "").toLowerCase();
+    const ext: "PNG" | "JPEG" = ct.includes("png") ? "PNG" : "JPEG";
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+    return { dataUrl, ext };
+  } catch { return null; }
+}
+
+function drawHeaderLogo(pdf: jsPDF, logo: { dataUrl: string; ext: "PNG" | "JPEG" } | null, x: number, y: number, size = 48) {
+  if (!logo) return 0;
+  try { pdf.addImage(logo.dataUrl, logo.ext, x, y - 8, size, size); return size + 10; } catch { return 0; }
+}
+
+
+export async function downloadInvoicePdf(kind: "quote" | "invoice", doc: Doc, org?: Org | null) {
   const pdf = new jsPDF({ unit: "pt", format: "a4" });
   const W = pdf.internal.pageSize.getWidth();
   const M = 48;
   let y = M;
 
-  // Header
+  // Header (logo + name/details)
+  const logo = org ? await fetchLogoDataUrl(org.logo_path) : null;
+  const textX = M + drawHeaderLogo(pdf, logo, M, y);
   pdf.setFont("helvetica", "bold").setFontSize(16);
-  pdf.text(org?.display_name || org?.legal_name || "", M, y);
+  pdf.text(org?.display_name || org?.legal_name || "", textX, y + 4);
   pdf.setFont("helvetica", "normal").setFontSize(9);
   const rightLines = [org?.email, org?.phone, org?.address, org?.tax_id ? `VAT/TAX: ${org.tax_id}` : null].filter(Boolean) as string[];
   let ry = y;
   rightLines.forEach((line) => { pdf.text(String(line), W - M, ry, { align: "right" }); ry += 12; });
-  y = Math.max(y + 20, ry + 4);
+  y = Math.max(y + (logo ? 52 : 20), ry + 4);
+
 
   pdf.setDrawColor(200); pdf.line(M, y, W - M, y); y += 20;
 
@@ -112,19 +142,22 @@ type Receipt = {
   notes?: string | null;
 };
 
-export function downloadReceiptPdf(receipt: Receipt, org?: Org | null) {
+export async function downloadReceiptPdf(receipt: Receipt, org?: Org | null) {
   const pdf = new jsPDF({ unit: "pt", format: "a4" });
   const W = pdf.internal.pageSize.getWidth();
   const M = 48;
   let y = M;
 
+  const logo = org ? await fetchLogoDataUrl(org.logo_path) : null;
+  const textX = M + drawHeaderLogo(pdf, logo, M, y);
   pdf.setFont("helvetica", "bold").setFontSize(16);
-  pdf.text(org?.display_name || org?.legal_name || "", M, y);
+  pdf.text(org?.display_name || org?.legal_name || "", textX, y + 4);
   pdf.setFont("helvetica", "normal").setFontSize(9);
   const rightLines = [org?.email, org?.phone, org?.address, org?.tax_id ? `VAT/TAX: ${org.tax_id}` : null].filter(Boolean) as string[];
   let ry = y;
   rightLines.forEach((line) => { pdf.text(String(line), W - M, ry, { align: "right" }); ry += 12; });
-  y = Math.max(y + 20, ry + 4);
+  y = Math.max(y + (logo ? 52 : 20), ry + 4);
+
 
   pdf.setDrawColor(200); pdf.line(M, y, W - M, y); y += 24;
 
