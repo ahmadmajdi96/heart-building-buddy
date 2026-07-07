@@ -22,31 +22,50 @@ export const Route = createFileRoute("/app")({
 });
 
 type NavItem = { to: string; key: TKey; icon: ComponentType<{ className?: string }>; perm?: Permission; firmOnly?: boolean };
+type NavGroup = { key: TKey; items: NavItem[] };
 
-const navItems: NavItem[] = [
+const soloItems: NavItem[] = [
   { to: "/app/dashboard", key: "m_dashboard", icon: LayoutDashboard },
-  { to: "/app/cases", key: "m_cases", icon: Briefcase, perm: "view_cases" },
-  { to: "/app/documents", key: "m_documents", icon: FileText, perm: "view_cases" },
-  { to: "/app/time", key: "m_time", icon: Clock, perm: "view_cases" },
-  { to: "/app/deadlines", key: "m_deadlines", icon: AlertTriangle, perm: "view_cases" },
-  { to: "/app/calendar", key: "m_calendar", icon: CalendarDays },
-  { to: "/app/research", key: "m_research", icon: Search },
-  { to: "/app/drafting", key: "m_drafting", icon: Sparkles, perm: "edit_cases" },
-  { to: "/app/courtroom", key: "m_courtroom", icon: Gavel },
-  { to: "/app/live-sessions", key: "m_live_sessions", icon: Mic },
-  { to: "/app/meetings", key: "m_meetings", icon: Video },
-  { to: "/app/financials", key: "m_financials", icon: Receipt, perm: "view_financials" },
-  { to: "/app/debt-collection", key: "m_debt_collection", icon: Wallet, perm: "view_financials" },
-  { to: "/app/clients", key: "m_clients", icon: Building2, perm: "view_clients" },
-  { to: "/app/team", key: "m_team", icon: Users, firmOnly: true },
-  { to: "/app/workspace", key: "m_workspace", icon: Network, perm: "view_cases" },
-  { to: "/app/education", key: "m_education", icon: GraduationCap },
   { to: "/app/analytics", key: "m_analytics", icon: BarChart3, perm: "view_financials" },
   { to: "/app/activity", key: "m_activity", icon: History, perm: "manage_members" },
 ];
 
-// Primary items shown in the top bar; the rest fall into "More".
-const PRIMARY_COUNT = 7;
+const navGroups: NavGroup[] = [
+  {
+    key: "m_grp_management",
+    items: [
+      { to: "/app/cases", key: "m_cases", icon: Briefcase, perm: "view_cases" },
+      { to: "/app/documents", key: "m_documents", icon: FileText, perm: "view_cases" },
+      { to: "/app/clients", key: "m_clients", icon: Building2, perm: "view_clients" },
+      { to: "/app/team", key: "m_team", icon: Users, firmOnly: true },
+      { to: "/app/workspace", key: "m_workspace", icon: Network, perm: "view_cases" },
+      { to: "/app/debt-collection", key: "m_debt_collection", icon: Wallet, perm: "view_financials" },
+      { to: "/app/financials", key: "m_financials", icon: Receipt, perm: "view_financials" },
+    ],
+  },
+  {
+    key: "m_grp_scheduling",
+    items: [
+      { to: "/app/deadlines", key: "m_deadlines", icon: AlertTriangle, perm: "view_cases" },
+      { to: "/app/calendar", key: "m_calendar", icon: CalendarDays },
+      { to: "/app/meetings", key: "m_meetings", icon: Video },
+    ],
+  },
+  {
+    key: "m_grp_operations",
+    items: [
+      { to: "/app/time", key: "m_time", icon: Clock, perm: "view_cases" },
+      { to: "/app/research", key: "m_research", icon: Search },
+      { to: "/app/courtroom", key: "m_courtroom", icon: Gavel },
+      { to: "/app/drafting", key: "m_drafting", icon: Sparkles, perm: "edit_cases" },
+      { to: "/app/live-sessions", key: "m_live_sessions", icon: Mic },
+      { to: "/app/education", key: "m_education", icon: GraduationCap },
+    ],
+  },
+];
+
+const allNavItems: NavItem[] = [...soloItems, ...navGroups.flatMap((g) => g.items)];
+
 
 function AppLayout() {
   const { t } = useI18n();
@@ -103,10 +122,14 @@ function AppLayout() {
     return <div className="min-h-screen grid place-items-center"><Loader2 className="size-6 animate-spin text-gold" /></div>;
   }
 
-  const visibleNav = navItems.filter((i) => (!i.perm || !org || can(i.perm)) && (!i.firmOnly || org?.type === "firm"));
-  const primary = visibleNav.slice(0, PRIMARY_COUNT);
-  const overflow = visibleNav.slice(PRIMARY_COUNT);
+  const filterItem = (i: NavItem) => (!i.perm || !org || can(i.perm)) && (!i.firmOnly || org?.type === "firm");
+  const visibleSolo = soloItems.filter(filterItem);
+  const visibleGroups = navGroups
+    .map((g) => ({ ...g, items: g.items.filter(filterItem) }))
+    .filter((g) => g.items.length > 0);
+  const visibleNav: NavItem[] = [...visibleSolo, ...visibleGroups.flatMap((g) => g.items)];
   const isActive = (to: string) => pathname === to || (to !== "/app/dashboard" && pathname.startsWith(to));
+  const groupActive = (g: NavGroup) => g.items.some((i) => isActive(i.to));
 
   return (
     <div className="min-h-screen bg-secondary/30">
@@ -162,7 +185,7 @@ function AppLayout() {
 
           {/* Primary nav (desktop) */}
           <nav className="hidden lg:flex items-center gap-1 min-w-0 flex-1 overflow-x-auto scrollbar-none">
-            {primary.map((item) => {
+            {visibleSolo.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.to);
               return (
@@ -181,30 +204,40 @@ function AppLayout() {
                 </Link>
               );
             })}
-            {overflow.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="rounded-full gap-1.5 text-foreground/65 hover:text-foreground">
-                    <MoreHorizontal className="size-4" />
-                    <span>{t("brand") && "More"}</span>
-                    <ChevronDown className="size-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  {overflow.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <DropdownMenuItem key={item.to} asChild>
-                        <Link to={item.to} className="flex items-center gap-2">
-                          <Icon className="size-4 opacity-70" /> {t(item.key)}
-                        </Link>
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            {visibleGroups.map((group) => {
+              const active = groupActive(group);
+              return (
+                <DropdownMenu key={group.key}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className={[
+                        "flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium whitespace-nowrap transition-colors",
+                        active
+                          ? "text-foreground bg-gold/12 ring-1 ring-gold/30"
+                          : "text-foreground/65 hover:text-foreground hover:bg-secondary",
+                      ].join(" ")}
+                    >
+                      <span>{t(group.key)}</span>
+                      <ChevronDown className="size-3.5 opacity-70" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <DropdownMenuItem key={item.to} asChild>
+                          <Link to={item.to} className="flex items-center gap-2">
+                            <Icon className="size-4 opacity-70" /> {t(item.key)}
+                          </Link>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            })}
           </nav>
+
 
           {/* Right actions */}
           <div className="ms-auto flex items-center gap-1.5">
