@@ -1702,6 +1702,8 @@ function CollectionsTab() {
   const listFn = useServerFn(listOrgDebtPayments);
   const { data: rows, isLoading } = useCollectionsQuery(listFn);
   const [q, setQ] = useState("");
+  const [method, setMethod] = useState<string>("all");
+  const [from, setFrom] = useState(""); const [to, setTo] = useState("");
 
   const totals = (rows ?? []).reduce((a, r: any) => ({
     received: a.received + Number(r.amount_received || 0),
@@ -1709,31 +1711,49 @@ function CollectionsTab() {
     forwarded: a.forwarded + Number(r.amount_forwarded || 0),
   }), { received: 0, fee: 0, forwarded: 0 });
 
-  const filtered = (rows ?? []).filter((r: any) =>
-    !q || r.debt_cases?.title?.toLowerCase().includes(q.toLowerCase())
-      || r.debt_case_payers?.name?.toLowerCase().includes(q.toLowerCase())
-      || r.forwarder_name?.toLowerCase().includes(q.toLowerCase())
-  );
+  const methods = useMemo(() => ["all", ...Array.from(new Set((rows ?? []).map((r: any) => r.method).filter(Boolean)))], [rows]);
+  const filtered = (rows ?? []).filter((r: any) => {
+    if (method !== "all" && r.method !== method) return false;
+    if (!inRange(r.paid_at, from, to)) return false;
+    if (!q) return true;
+    const s = q.toLowerCase();
+    return r.debt_cases?.title?.toLowerCase().includes(s)
+      || r.debt_case_payers?.name?.toLowerCase().includes(s)
+      || r.forwarder_name?.toLowerCase().includes(s);
+  });
+
+  function exportCsv() {
+    const headers = ["Paid at","Debt case","Payer","Received","Fee","Forwarded","Currency","Method","Forwarder","Reference","Notes"];
+    const rowsCsv = filtered.map((r: any) => [
+      r.paid_at, r.debt_cases?.title ?? "", r.debt_case_payers?.name ?? "",
+      r.amount_received, r.service_fee, r.amount_forwarded, r.currency,
+      r.method, r.forwarder_name ?? "", r.reference ?? "", r.notes ?? "",
+    ]);
+    downloadCsv(`collections_${new Date().toISOString().slice(0,10)}.csv`, toCsv(headers, rowsCsv));
+  }
 
   return (
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 border-b p-4">
         <div className="text-sm font-semibold mr-auto">
           {ar ? "مدفوعات تحصيل الديون" : "Debt collection payments"}
-          <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length})</span>
+          <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{(rows ?? []).length})</span>
         </div>
         <div className="text-xs text-muted-foreground flex gap-4">
           <span>{ar ? "المُستلم" : "Received"}: <b className="text-foreground">{totals.received.toFixed(2)}</b></span>
           <span>{ar ? "المُحوَّل" : "Forwarded"}: <b className="text-foreground">{totals.forwarded.toFixed(2)}</b></span>
           <span>{ar ? "الرسوم" : "Fees"}: <b className="text-gold">{totals.fee.toFixed(2)}</b></span>
         </div>
-        <div className="relative w-56">
-          <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={ar ? "بحث…" : "Search…"} className="h-9 ps-9" />
-        </div>
         <Button size="sm" variant="outline" asChild>
           <Link to="/app/debt-collection">{ar ? "إدارة القضايا" : "Manage cases"}</Link>
         </Button>
+      </div>
+      <div className="border-b p-4">
+        <FinancialsToolbar q={q} setQ={setQ} status={method} setStatus={setMethod} statuses={methods}
+          fromLabel={ar ? "من (تاريخ الدفع)" : "From (paid at)"}
+          from={from} setFrom={setFrom} to={to} setTo={setTo}
+          onExport={exportCsv} exportDisabled={filtered.length === 0}
+          placeholder={ar ? "بحث…" : "Search case / payer / forwarder…"} locale={locale as any} />
       </div>
       {isLoading ? <Loading /> : filtered.length === 0 ? <Empty msg={ar ? "لا مدفوعات تحصيل" : "No collection payments yet"} /> : (
         <table className="w-full text-sm">
