@@ -41,6 +41,7 @@ import { Route as AppMeetingsIdRouteImport } from './routes/app.meetings.$id'
 import { Route as AppDebtCollectionIdRouteImport } from './routes/app.debt-collection.$id'
 import { Route as AppClientsClientIdRouteImport } from './routes/app.clients.$clientId'
 import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
+import { Route as ApiRagUploadRouteImport } from './routes/api.rag.upload'
 import { Route as ApiElevenlabsScribeTokenRouteImport } from './routes/api.elevenlabs.scribe-token'
 import { Route as AppMeetingsJoinRoomRouteImport } from './routes/app.meetings.join.$room'
 import { Route as ApiPublicHooksDebtRemindersRouteImport } from './routes/api.public.hooks.debt-reminders'
@@ -205,6 +206,11 @@ const AppCasesCaseIdRoute = AppCasesCaseIdRouteImport.update({
   path: '/cases/$caseId',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiRagUploadRoute = ApiRagUploadRouteImport.update({
+  id: '/api/rag/upload',
+  path: '/api/rag/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiElevenlabsScribeTokenRoute =
   ApiElevenlabsScribeTokenRouteImport.update({
     id: '/api/elevenlabs/scribe-token',
@@ -248,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/share/$token': typeof ShareTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
+  '/api/rag/upload': typeof ApiRagUploadRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/debt-collection/$id': typeof AppDebtCollectionIdRoute
@@ -284,6 +291,7 @@ export interface FileRoutesByTo {
   '/share/$token': typeof ShareTokenRoute
   '/app': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
+  '/api/rag/upload': typeof ApiRagUploadRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/debt-collection/$id': typeof AppDebtCollectionIdRoute
@@ -322,6 +330,7 @@ export interface FileRoutesById {
   '/share/$token': typeof ShareTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
+  '/api/rag/upload': typeof ApiRagUploadRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/debt-collection/$id': typeof AppDebtCollectionIdRoute
@@ -361,6 +370,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/app/'
     | '/api/elevenlabs/scribe-token'
+    | '/api/rag/upload'
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
     | '/app/debt-collection/$id'
@@ -397,6 +407,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/app'
     | '/api/elevenlabs/scribe-token'
+    | '/api/rag/upload'
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
     | '/app/debt-collection/$id'
@@ -434,6 +445,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/app/'
     | '/api/elevenlabs/scribe-token'
+    | '/api/rag/upload'
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
     | '/app/debt-collection/$id'
@@ -454,6 +466,7 @@ export interface RootRouteChildren {
   SetPasswordRoute: typeof SetPasswordRoute
   ShareTokenRoute: typeof ShareTokenRoute
   ApiElevenlabsScribeTokenRoute: typeof ApiElevenlabsScribeTokenRoute
+  ApiRagUploadRoute: typeof ApiRagUploadRoute
   ApiPublicHooksDebtRemindersRoute: typeof ApiPublicHooksDebtRemindersRoute
 }
 
@@ -683,6 +696,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCasesCaseIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/rag/upload': {
+      id: '/api/rag/upload'
+      path: '/api/rag/upload'
+      fullPath: '/api/rag/upload'
+      preLoaderRoute: typeof ApiRagUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/elevenlabs/scribe-token': {
       id: '/api/elevenlabs/scribe-token'
       path: '/api/elevenlabs/scribe-token'
@@ -788,6 +808,7 @@ const rootRouteChildren: RootRouteChildren = {
   SetPasswordRoute: SetPasswordRoute,
   ShareTokenRoute: ShareTokenRoute,
   ApiElevenlabsScribeTokenRoute: ApiElevenlabsScribeTokenRoute,
+  ApiRagUploadRoute: ApiRagUploadRoute,
   ApiPublicHooksDebtRemindersRoute: ApiPublicHooksDebtRemindersRoute,
 }
 export const routeTree = rootRouteImport

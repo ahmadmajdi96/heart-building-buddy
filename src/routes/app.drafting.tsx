@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { generateDraft, saveDraft, listDrafts, deleteDraft, getDraft } from "@/lib/drafting.functions";
 import { listTemplateDocuments } from "@/lib/documents.functions";
+import { getRagJob, queryRag, deleteRagDoc } from "@/lib/rag.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { useOrg } from "@/lib/org-context";
 import { exportDraftPdf, exportDraftDocx } from "@/lib/draft-export";
 import { EditorContent, useEditor } from "@tiptap/react";
@@ -16,9 +18,17 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import {
   Sparkles, FileText, Wand2, RefreshCw, Loader2, Plus, X, Save, Trash2,
-  Bold, Italic, List, ListOrdered, Heading2, FileDown, FolderOpen,
+  Bold, Italic, List, ListOrdered, Heading2, FileDown, FolderOpen, Upload, CheckCircle2, AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+
+type RagDoc = {
+  documentId: string;
+  jobId: string;
+  filename: string;
+  status: "queued" | "running" | "succeeded" | "failed";
+  error?: string;
+};
 
 export const Route = createFileRoute("/app/drafting")({ component: DraftingPage });
 
