@@ -27,7 +27,7 @@ export type SmsResult = {
 async function logSms(row: Record<string, any>): Promise<string | undefined> {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin.from("sms_messages").insert(row).select("id").maybeSingle();
+    const { data } = await (supabaseAdmin as any).from("sms_messages").insert(row).select("id").maybeSingle();
     return data?.id;
   } catch (e) {
     console.warn("[sms] failed to log:", (e as any)?.message);
