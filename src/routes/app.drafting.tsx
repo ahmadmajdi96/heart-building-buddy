@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { generateDraft, saveDraft, listDrafts, deleteDraft, getDraft } from "@/lib/drafting.functions";
 import { listTemplateDocuments } from "@/lib/documents.functions";
+import { getRagJob, queryRag, deleteRagDoc } from "@/lib/rag.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { useOrg } from "@/lib/org-context";
 import { exportDraftPdf, exportDraftDocx } from "@/lib/draft-export";
 import { EditorContent, useEditor } from "@tiptap/react";
@@ -16,9 +18,17 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import {
   Sparkles, FileText, Wand2, RefreshCw, Loader2, Plus, X, Save, Trash2,
-  Bold, Italic, List, ListOrdered, Heading2, FileDown, FolderOpen,
+  Bold, Italic, List, ListOrdered, Heading2, FileDown, FolderOpen, Upload, CheckCircle2, AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+
+type RagDoc = {
+  documentId: string;
+  jobId: string;
+  filename: string;
+  status: "queued" | "running" | "succeeded" | "failed";
+  error?: string;
+};
 
 export const Route = createFileRoute("/app/drafting")({ component: DraftingPage });
 
@@ -34,6 +44,10 @@ function DraftingPage() {
   const getOne = useServerFn(getDraft);
   const listTpl = useServerFn(listTemplateDocuments);
 
+  const getJob = useServerFn(getRagJob);
+  const askRag = useServerFn(queryRag);
+  const delRag = useServerFn(deleteRagDoc);
+
   const [prompt, setPrompt] = useState("");
   const [variables, setVariables] = useState<{ key: string; value: string }[]>([{ key: "ClientName", value: "" }, { key: "Date", value: "" }]);
   const [templates, setTemplates] = useState<TemplateDoc[]>([]);
@@ -43,6 +57,11 @@ function DraftingPage() {
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
+
+  // Private RAG uploads (per-user tenant)
+  const [ragDocs, setRagDocs] = useState<RagDoc[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [ragSources, setRagSources] = useState<Array<{ filename: string; page?: number; excerpt?: string }>>([]);
 
   const editor = useEditor({
     extensions: [
@@ -90,25 +109,110 @@ function DraftingPage() {
     });
   }
 
+  const readyRagDocs = ragDocs.filter((d) => d.status === "succeeded");
+
   async function generate() {
-    if (!prompt.trim() && selectedTpls.length === 0) {
-      toast.error(locale === "ar" ? "اكتب وصفاً أو اختر قالباً." : "Describe the document or pick a template.");
+    if (!prompt.trim() && selectedTpls.length === 0 && readyRagDocs.length === 0) {
+      toast.error(locale === "ar" ? "اكتب وصفاً أو اختر قالباً أو ارفع ملفاً." : "Describe the document, pick a template, or upload a file.");
       return;
     }
     setGenerating(true);
+    setRagSources([]);
     try {
       const varsMap: Record<string, string> = {};
       variables.forEach((v) => { if (v.key.trim()) varsMap[v.key.trim()] = v.value; });
-      const res = await gen({ data: {
-        prompt, locale, variables: varsMap, templateIds: selectedTpls,
-      }});
-      // Convert markdown-ish AI output to simple HTML by paragraph splitting
-      const html = mdToHtml(res.draft);
-      editor?.commands.setContent(html);
-      if (!title) setTitle((prompt || (locale === "ar" ? "مسودة" : "Draft")).slice(0, 80));
+
+      // Route to the private RAG service when the user has uploaded (and indexed) their own files.
+      if (readyRagDocs.length > 0) {
+        const varsLine = Object.entries(varsMap).filter(([, v]) => v.trim())
+          .map(([k, v]) => `${k}: ${v}`).join("; ");
+        const langLine = locale === "ar"
+          ? "أجب باللغة العربية بصيغة مسودة قانونية جاهزة للاستخدام مع بنود مرقمة."
+          : "Answer in English as a polished, ready-to-use legal draft with numbered clauses.";
+        const question = [
+          langLine,
+          prompt.trim() || (locale === "ar" ? "اصِغ المستند بالاعتماد على الملفات المرفوعة." : "Draft the document based on the uploaded files."),
+          varsLine ? `${locale === "ar" ? "المتغيرات" : "Variables"}: ${varsLine}` : "",
+        ].filter(Boolean).join("\n\n");
+
+        const res = await askRag({ data: { question, top_k: 18, rerank_top_n: 6, temperature: 0.1, max_tokens: 1500 } });
+        editor?.commands.setContent(mdToHtml(res.answer || ""));
+        setRagSources((res.sources ?? []).map((s) => ({ filename: s.filename, page: s.page, excerpt: s.excerpt })));
+        if (!title) setTitle((prompt || readyRagDocs[0].filename || (locale === "ar" ? "مسودة" : "Draft")).slice(0, 80));
+      } else {
+        const res = await gen({ data: { prompt, locale, variables: varsMap, templateIds: selectedTpls } });
+        const html = mdToHtml(res.draft);
+        editor?.commands.setContent(html);
+        if (!title) setTitle((prompt || (locale === "ar" ? "مسودة" : "Draft")).slice(0, 80));
+      }
     } catch (e) { toast.error((e as Error).message); }
     finally { setGenerating(false); }
   }
+
+  async function uploadRagFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) throw new Error(locale === "ar" ? "يرجى تسجيل الدخول" : "Please sign in");
+      const fd = new FormData();
+      for (const f of Array.from(files)) fd.append("files", f, f.name);
+      const res = await fetch("/api/rag/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body?.error || `Upload failed (${res.status})`);
+      // body shape: { documents: [{id,filename,...}], jobs: [{id, document_id, status}] }
+      const docs: any[] = body.documents ?? [];
+      const jobs: any[] = body.jobs ?? [];
+      const added: RagDoc[] = docs.map((d) => {
+        const job = jobs.find((j) => j.document_id === d.id) ?? jobs[0];
+        return {
+          documentId: d.id,
+          jobId: job?.id ?? "",
+          filename: d.filename ?? d.name ?? "file",
+          status: (job?.status as RagDoc["status"]) ?? "queued",
+        };
+      });
+      setRagDocs((prev) => [...added, ...prev]);
+      toast.success(locale === "ar" ? "بدأت الفهرسة" : "Indexing started");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  // Poll pending jobs until they succeed or fail.
+  useEffect(() => {
+    const pending = ragDocs.filter((d) => d.jobId && (d.status === "queued" || d.status === "running"));
+    if (pending.length === 0) return;
+    let cancelled = false;
+    const t = setInterval(async () => {
+      for (const d of pending) {
+        try {
+          const j: any = await getJob({ data: { jobId: d.jobId } });
+          if (cancelled) return;
+          const status: RagDoc["status"] = j.status ?? d.status;
+          setRagDocs((prev) => prev.map((x) => x.jobId === d.jobId ? { ...x, status, error: j.error } : x));
+          if (status === "succeeded") toast.success(`${d.filename}: ${locale === "ar" ? "جاهز للسؤال" : "ready"}`);
+          if (status === "failed") toast.error(`${d.filename}: ${j.error || "failed"}`);
+        } catch { /* ignore transient */ }
+      }
+    }, 3000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [ragDocs, getJob, locale]);
+
+  async function removeRagDoc(documentId: string) {
+    try {
+      await delRag({ data: { documentId } });
+      setRagDocs((prev) => prev.filter((x) => x.documentId !== documentId));
+    } catch (e) { toast.error((e as Error).message); }
+  }
+
 
   async function saveIt() {
     const html = editor?.getHTML() ?? "";
@@ -209,6 +313,55 @@ function DraftingPage() {
         </div>
 
         <div>
+          <div className="mb-2 flex items-center justify-between">
+            <div className="text-sm font-semibold flex items-center gap-2">
+              <Upload className="size-4 text-gold" />
+              {locale === "ar" ? "ارفع مستنداتك (خاصة بك)" : "Upload your documents (private)"}
+            </div>
+            <label className="cursor-pointer text-xs rounded border px-2.5 py-1.5 hover:border-gold">
+              {uploading ? (
+                <span className="inline-flex items-center gap-1"><Loader2 className="size-3.5 animate-spin" />{locale === "ar" ? "جارٍ الرفع…" : "Uploading…"}</span>
+              ) : (
+                <span className="inline-flex items-center gap-1"><Plus className="size-3.5" />{locale === "ar" ? "إضافة ملفات" : "Add files"}</span>
+              )}
+              <input
+                type="file"
+                multiple
+                accept=".pdf,.docx,.txt,.md,.html,.csv,.xlsx,.pptx"
+                className="hidden"
+                disabled={uploading}
+                onChange={(e) => { void uploadRagFiles(e.target.files); e.currentTarget.value = ""; }}
+              />
+            </label>
+          </div>
+          <p className="text-[11px] text-muted-foreground mb-2">
+            {locale === "ar"
+              ? "عند رفع ملفات، ستُصاغ المسودة بالاعتماد على محتواها فقط (PDF/DOCX/TXT/MD/HTML/CSV/XLSX/PPTX)."
+              : "When files are uploaded, the draft is grounded strictly in their content (PDF/DOCX/TXT/MD/HTML/CSV/XLSX/PPTX)."}
+          </p>
+          {ragDocs.length > 0 && (
+            <ul className="grid gap-1.5 md:grid-cols-2 lg:grid-cols-3">
+              {ragDocs.map((d) => (
+                <li key={d.documentId} className={`flex items-center gap-2 rounded border px-2.5 py-2 text-xs ${d.status === "succeeded" ? "border-gold/50 bg-gold/5" : ""}`}>
+                  {d.status === "succeeded" ? <CheckCircle2 className="size-3.5 text-gold shrink-0" />
+                    : d.status === "failed" ? <AlertCircle className="size-3.5 text-destructive shrink-0" />
+                    : <Loader2 className="size-3.5 animate-spin shrink-0" />}
+                  <span className="min-w-0 flex-1 truncate" title={d.filename}>{d.filename}</span>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {d.status === "succeeded" ? (locale === "ar" ? "جاهز" : "ready")
+                      : d.status === "failed" ? (locale === "ar" ? "فشل" : "failed")
+                      : (locale === "ar" ? "معالجة…" : "indexing…")}
+                  </span>
+                  <button onClick={() => removeRagDoc(d.documentId)} className="text-muted-foreground hover:text-destructive">
+                    <X className="size-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div>
           <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
             <Sparkles className="size-4 text-gold" />
             {locale === "ar" ? "تعليمات إضافية" : "Additional instructions"}
@@ -289,6 +442,23 @@ function DraftingPage() {
           <EditorContent editor={editor} />
         </div>
       </div>
+
+      {ragSources.length > 0 && (
+        <div className="card-elev rounded-xl border bg-card p-5">
+          <div className="mb-3 text-sm font-semibold flex items-center gap-2">
+            <FileText className="size-4 text-gold" />
+            {locale === "ar" ? "المصادر من ملفاتك" : "Sources from your files"}
+          </div>
+          <ul className="space-y-2 text-xs">
+            {ragSources.map((s, i) => (
+              <li key={i} className="rounded border bg-background p-2.5">
+                <div className="font-medium">{s.filename}{s.page ? ` · p.${s.page}` : ""}</div>
+                {s.excerpt && <div className="mt-1 text-muted-foreground line-clamp-3">{s.excerpt}</div>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {drafts.length > 0 && (
         <div className="card-elev rounded-xl border bg-card p-5">
