@@ -170,7 +170,12 @@ function TranscriptEditor() {
       </div>
 
       <div className="card-elev rounded-xl border bg-card p-4 space-y-3">
-        <div className="text-sm font-semibold">{locale === "ar" ? "أسماء المتحدثين" : "Speaker names"}</div>
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-sm font-semibold">{locale === "ar" ? "أسماء المتحدثين" : "Speaker names"}</div>
+          <Button size="sm" variant="outline" onClick={addSpeaker}>
+            <Plus className="size-4" />{locale === "ar" ? "إضافة متحدث" : "Add speaker"}
+          </Button>
+        </div>
         <p className="text-xs text-muted-foreground">
           {locale === "ar"
             ? "أعِد تسمية المتحدثين هنا وسيتم تحديث جميع الأسطر تلقائيًا."
@@ -188,6 +193,9 @@ function TranscriptEditor() {
                 placeholder={defaultLabel(sp)}
                 className="h-9"
               />
+              <Button size="icon" variant="ghost" onClick={() => deleteSpeaker(sp)} title={locale === "ar" ? "حذف" : "Delete"}>
+                <Trash2 className="size-4 text-destructive" />
+              </Button>
             </div>
           ))}
         </div>
