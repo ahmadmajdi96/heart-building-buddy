@@ -138,16 +138,54 @@ function ClientsPage() {
     } finally { setDeleting(false); }
   }
 
+  const stats = useMemo(() => {
+    const total = clients.length;
+    const active = clients.filter((c) => (c.status ?? "active") === "active").length;
+    const companies = clients.filter((c) => c.type === "company").length;
+    const activeMatters = clients.reduce((s, c) => s + (c._active_cases ?? 0), 0);
+    const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+    const newThisMonth = clients.filter((c) => new Date(c.created_at) >= monthStart).length;
+    return { total, active, companies, individuals: total - companies, activeMatters, newThisMonth };
+  }, [clients]);
+
+  function handleExport() {
+    const headers = ["Name","Type","Status","Company","Country","Email","Phone","National ID","Tax ID","Address","Active matters","Total matters","Created","Last update","Notes"];
+    const csv = toCsv(headers, filtered.map((c) => [
+      c.name, c.type ?? "individual", c.status ?? "active", c.company ?? "", c.country ?? "",
+      c.email ?? "", c.phone ?? "", c.national_id ?? "", c.tax_id ?? "", (c.address ?? "").replace(/\s+/g," "),
+      String(c._active_cases ?? 0), String(c._total_cases ?? 0),
+      new Date(c.created_at).toISOString(),
+      c._last_interaction ? new Date(c._last_interaction).toISOString() : "",
+      (c.notes ?? "").replace(/\s+/g," "),
+    ]));
+    downloadCsv(`clients-${new Date().toISOString().slice(0,10)}.csv`, csv);
+    toast.success(locale === "ar" ? `تم تصدير ${filtered.length} موكل` : `Exported ${filtered.length} clients`);
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         title={locale === "ar" ? "الموكلون" : "Clients"}
         subtitle={locale === "ar" ? `${clients.length} موكل` : `${clients.length} clients on file`}
         actions={<div className="flex gap-2">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExport} disabled={filtered.length === 0}><Download className="size-4" />{locale === "ar" ? "تصدير CSV" : "Export CSV"}</Button>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setConflictOpen(true)}><ShieldAlert className="size-4" />{locale === "ar" ? "فحص تعارض" : "Conflict check"}</Button>
           <Button variant="gold" size="sm" className="gap-1.5" onClick={openNew}><Plus className="size-4" />{locale === "ar" ? "موكل جديد" : "New client"}</Button>
         </div>}
       />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatTile label={locale === "ar" ? "إجمالي الموكلين" : "Total clients"} value={String(stats.total)}
+          delta={locale === "ar" ? `${stats.newThisMonth} هذا الشهر` : `${stats.newThisMonth} this month`}
+          icon={<Users className="size-4" />} tone="gold" index={0} />
+        <StatTile label={locale === "ar" ? "نشطون" : "Active"} value={String(stats.active)}
+          delta={locale === "ar" ? `${stats.total - stats.active} غير نشط` : `${stats.total - stats.active} inactive`}
+          icon={<CheckCircle2 className="size-4" />} tone="success" index={1} />
+        <StatTile label={locale === "ar" ? "أفراد / شركات" : "Individuals / Companies"} value={`${stats.individuals} / ${stats.companies}`}
+          icon={<Building className="size-4" />} index={2} />
+        <StatTile label={locale === "ar" ? "قضايا نشطة" : "Active matters"} value={String(stats.activeMatters)}
+          icon={<Briefcase className="size-4" />} tone="default" index={3} />
+      </div>
 
       <div className="card-elev rounded-xl border bg-card">
         <div className="flex flex-wrap items-end gap-3 border-b p-4">
