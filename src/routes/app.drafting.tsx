@@ -109,25 +109,110 @@ function DraftingPage() {
     });
   }
 
+  const readyRagDocs = ragDocs.filter((d) => d.status === "succeeded");
+
   async function generate() {
-    if (!prompt.trim() && selectedTpls.length === 0) {
-      toast.error(locale === "ar" ? "اكتب وصفاً أو اختر قالباً." : "Describe the document or pick a template.");
+    if (!prompt.trim() && selectedTpls.length === 0 && readyRagDocs.length === 0) {
+      toast.error(locale === "ar" ? "اكتب وصفاً أو اختر قالباً أو ارفع ملفاً." : "Describe the document, pick a template, or upload a file.");
       return;
     }
     setGenerating(true);
+    setRagSources([]);
     try {
       const varsMap: Record<string, string> = {};
       variables.forEach((v) => { if (v.key.trim()) varsMap[v.key.trim()] = v.value; });
-      const res = await gen({ data: {
-        prompt, locale, variables: varsMap, templateIds: selectedTpls,
-      }});
-      // Convert markdown-ish AI output to simple HTML by paragraph splitting
-      const html = mdToHtml(res.draft);
-      editor?.commands.setContent(html);
-      if (!title) setTitle((prompt || (locale === "ar" ? "مسودة" : "Draft")).slice(0, 80));
+
+      // Route to the private RAG service when the user has uploaded (and indexed) their own files.
+      if (readyRagDocs.length > 0) {
+        const varsLine = Object.entries(varsMap).filter(([, v]) => v.trim())
+          .map(([k, v]) => `${k}: ${v}`).join("; ");
+        const langLine = locale === "ar"
+          ? "أجب باللغة العربية بصيغة مسودة قانونية جاهزة للاستخدام مع بنود مرقمة."
+          : "Answer in English as a polished, ready-to-use legal draft with numbered clauses.";
+        const question = [
+          langLine,
+          prompt.trim() || (locale === "ar" ? "اصِغ المستند بالاعتماد على الملفات المرفوعة." : "Draft the document based on the uploaded files."),
+          varsLine ? `${locale === "ar" ? "المتغيرات" : "Variables"}: ${varsLine}` : "",
+        ].filter(Boolean).join("\n\n");
+
+        const res = await askRag({ data: { question, top_k: 18, rerank_top_n: 6, temperature: 0.1, max_tokens: 1500 } });
+        editor?.commands.setContent(mdToHtml(res.answer || ""));
+        setRagSources((res.sources ?? []).map((s) => ({ filename: s.filename, page: s.page, excerpt: s.excerpt })));
+        if (!title) setTitle((prompt || readyRagDocs[0].filename || (locale === "ar" ? "مسودة" : "Draft")).slice(0, 80));
+      } else {
+        const res = await gen({ data: { prompt, locale, variables: varsMap, templateIds: selectedTpls } });
+        const html = mdToHtml(res.draft);
+        editor?.commands.setContent(html);
+        if (!title) setTitle((prompt || (locale === "ar" ? "مسودة" : "Draft")).slice(0, 80));
+      }
     } catch (e) { toast.error((e as Error).message); }
     finally { setGenerating(false); }
   }
+
+  async function uploadRagFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      if (!token) throw new Error(locale === "ar" ? "يرجى تسجيل الدخول" : "Please sign in");
+      const fd = new FormData();
+      for (const f of Array.from(files)) fd.append("files", f, f.name);
+      const res = await fetch("/api/rag/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body?.error || `Upload failed (${res.status})`);
+      // body shape: { documents: [{id,filename,...}], jobs: [{id, document_id, status}] }
+      const docs: any[] = body.documents ?? [];
+      const jobs: any[] = body.jobs ?? [];
+      const added: RagDoc[] = docs.map((d) => {
+        const job = jobs.find((j) => j.document_id === d.id) ?? jobs[0];
+        return {
+          documentId: d.id,
+          jobId: job?.id ?? "",
+          filename: d.filename ?? d.name ?? "file",
+          status: (job?.status as RagDoc["status"]) ?? "queued",
+        };
+      });
+      setRagDocs((prev) => [...added, ...prev]);
+      toast.success(locale === "ar" ? "بدأت الفهرسة" : "Indexing started");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  // Poll pending jobs until they succeed or fail.
+  useEffect(() => {
+    const pending = ragDocs.filter((d) => d.jobId && (d.status === "queued" || d.status === "running"));
+    if (pending.length === 0) return;
+    let cancelled = false;
+    const t = setInterval(async () => {
+      for (const d of pending) {
+        try {
+          const j: any = await getJob({ data: { jobId: d.jobId } });
+          if (cancelled) return;
+          const status: RagDoc["status"] = j.status ?? d.status;
+          setRagDocs((prev) => prev.map((x) => x.jobId === d.jobId ? { ...x, status, error: j.error } : x));
+          if (status === "succeeded") toast.success(`${d.filename}: ${locale === "ar" ? "جاهز للسؤال" : "ready"}`);
+          if (status === "failed") toast.error(`${d.filename}: ${j.error || "failed"}`);
+        } catch { /* ignore transient */ }
+      }
+    }, 3000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [ragDocs, getJob, locale]);
+
+  async function removeRagDoc(documentId: string) {
+    try {
+      await delRag({ data: { documentId } });
+      setRagDocs((prev) => prev.filter((x) => x.documentId !== documentId));
+    } catch (e) { toast.error((e as Error).message); }
+  }
+
 
   async function saveIt() {
     const html = editor?.getHTML() ?? "";
