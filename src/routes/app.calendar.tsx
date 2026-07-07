@@ -12,7 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { listAppointments, saveAppointment, deleteAppointment } from "@/lib/appointments.functions";
 import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
-import { Plus, ChevronLeft, ChevronRight, Trash2, Clock, MapPin, Loader2 } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Trash2, Clock, MapPin, Loader2, Download, Filter } from "lucide-react";
+import { toCsv, downloadCsv } from "@/lib/csv-export";
+
 import { toast } from "sonner";
 import {
   addDays, addMonths, addWeeks, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfDay,
@@ -47,6 +49,14 @@ function CalendarPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Partial<Appt> | null>(null);
   const [open, setOpen] = useState(false);
+  // Filters (apply to the calendar grid + export)
+  const [filterKind, setFilterKind] = useState<string>("all");
+  const [filterCase, setFilterCase] = useState<string>("all");
+  const [filterClient, setFilterClient] = useState<string>("all");
+  const [exportFrom, setExportFrom] = useState<string>("");
+  const [exportTo, setExportTo] = useState<string>("");
+  const [exporting, setExporting] = useState(false);
+
 
   const range = useMemo(() => {
     if (view === "month") return { from: startOfWeek(startOfMonth(cursor)), to: endOfWeek(endOfMonth(cursor)) };

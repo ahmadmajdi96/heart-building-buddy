@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useI18n } from "@/lib/i18n";
 import { PageHeader } from "@/components/app/primitives";
@@ -16,7 +16,9 @@ import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { extractTextFromFile, validateDocFile, ALLOWED_DOC_EXT, MAX_DOC_BYTES } from "@/lib/extract-text";
-import { FileText, Upload, Download, Trash2, Loader2, Search, BookMarked, Eye } from "lucide-react";
+import { FileText, Upload, Download, Trash2, Loader2, Search, BookMarked, Eye, X, Users, Briefcase, FileStack } from "lucide-react";
+import { Label } from "@/components/ui/label";
+
 import { toast } from "sonner";
 import { DocumentPreviewBody } from "@/components/documents/preview-body";
 
@@ -51,6 +53,13 @@ function DocsPage() {
   const [deleting, setDeleting] = useState(false);
   const [preview, setPreview] = useState<{ url: string; name: string; mime: string | null } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  // Filter state
+  const [typeFilter, setTypeFilter] = useState<"all" | "template" | "case" | "client">("all");
+  const [filterCase, setFilterCase] = useState<string>("all");
+  const [filterClient, setFilterClient] = useState<string>("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
 
   async function refresh() {
     setLoading(true);
@@ -144,7 +153,48 @@ function DocsPage() {
     } finally { setDeleting(false); }
   }
 
-  const filtered = docs.filter((d) => !q || d.name.toLowerCase().includes(q.toLowerCase()));
+  const filtered = useMemo(() => docs.filter((d) => {
+    // Type filter
+    if (typeFilter === "template" && !d.is_template) return false;
+    if (typeFilter === "case" && !d.case_id) return false;
+    if (typeFilter === "client" && (!d.client_id || d.case_id)) return false;
+    // Explicit case/client filters
+    if (filterCase !== "all") {
+      if (filterCase === "none" ? d.case_id : d.case_id !== filterCase) return false;
+    }
+    if (filterClient !== "all") {
+      if (filterClient === "none" ? d.client_id : d.client_id !== filterClient) return false;
+    }
+    // Date range
+    if (fromDate || toDate) {
+      const t = new Date(d.created_at).getTime();
+      if (fromDate && t < new Date(fromDate).getTime()) return false;
+      if (toDate) {
+        const to = new Date(toDate); to.setHours(23,59,59,999);
+        if (t > to.getTime()) return false;
+      }
+    }
+    if (!q) return true;
+    const s = q.toLowerCase();
+    return d.name.toLowerCase().includes(s)
+      || (d.cases?.title ?? "").toLowerCase().includes(s)
+      || (d.clients?.name ?? "").toLowerCase().includes(s);
+  }), [docs, q, typeFilter, filterCase, filterClient, fromDate, toDate]);
+
+  const analytics = useMemo(() => {
+    const total = docs.length;
+    const templates = docs.filter((d) => d.is_template).length;
+    const caseDocs = docs.filter((d) => d.case_id).length;
+    const clientDocs = docs.filter((d) => d.client_id && !d.case_id).length;
+    const totalSize = docs.reduce((a, d) => a + (d.size ?? 0), 0);
+    return { total, templates, caseDocs, clientDocs, totalSize };
+  }, [docs]);
+
+  const hasFilters = q || typeFilter !== "all" || filterCase !== "all" || filterClient !== "all" || fromDate || toDate;
+  function clearFilters() {
+    setQ(""); setTypeFilter("all"); setFilterCase("all"); setFilterClient("all"); setFromDate(""); setToDate("");
+  }
+
   const accept = ".pdf,.doc,.docx,.csv,.jpg,.jpeg";
 
   return (
@@ -186,16 +236,82 @@ function DocsPage() {
         </div>
       </div>
 
+      {/* Analytics */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {[
+          { l: locale === "ar" ? "الإجمالي" : "Total", v: analytics.total, icon: FileStack },
+          { l: locale === "ar" ? "قوالب" : "Templates", v: analytics.templates, icon: BookMarked },
+          { l: locale === "ar" ? "مرتبطة بقضايا" : "Case-related", v: analytics.caseDocs, icon: Briefcase },
+          { l: locale === "ar" ? "مرتبطة بموكلين" : "Client-related", v: analytics.clientDocs, icon: Users },
+          { l: locale === "ar" ? "الحجم الكلي" : "Total size", v: formatBytes(analytics.totalSize) },
+        ].map((t, i) => (
+          <div key={i} className="card-elev rounded-xl border bg-card p-4">
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+              {t.icon && <t.icon className="size-3.5" />}{t.l}
+            </div>
+            <div className="mt-1 font-serif text-2xl tabular-nums">{t.v}</div>
+          </div>
+        ))}
+      </div>
+
       <div className="card-elev rounded-xl border bg-card">
-        <div className="border-b p-4">
-          <div className="relative max-w-sm">
-            <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={locale === "ar" ? "ابحث…" : "Search documents…"} className="h-9 ps-9" />
+        <div className="space-y-3 border-b p-4">
+          <div className="flex flex-wrap gap-1.5">
+            {(["all","template","case","client"] as const).map((t) => (
+              <Button key={t} size="sm" variant={typeFilter === t ? "default" : "ghost"} onClick={() => setTypeFilter(t)}>
+                {t === "all" ? (locale === "ar" ? "الكل" : "All")
+                  : t === "template" ? (locale === "ar" ? "القوالب" : "Templates")
+                  : t === "case" ? (locale === "ar" ? "قضايا" : "Case-related")
+                  : (locale === "ar" ? "موكلين" : "Client-related")}
+              </Button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="relative min-w-[220px] flex-1">
+              <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={locale === "ar" ? "ابحث…" : "Search documents…"} className="h-9 ps-9" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "الموكل" : "Client"}</Label>
+              <Select value={filterClient} onValueChange={setFilterClient}>
+                <SelectTrigger className="h-9 w-[170px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{locale === "ar" ? "كل الموكلين" : "All clients"}</SelectItem>
+                  <SelectItem value="none">{locale === "ar" ? "بدون موكل" : "No client"}</SelectItem>
+                  {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "القضية" : "Case"}</Label>
+              <Select value={filterCase} onValueChange={setFilterCase}>
+                <SelectTrigger className="h-9 w-[170px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{locale === "ar" ? "كل القضايا" : "All cases"}</SelectItem>
+                  <SelectItem value="none">{locale === "ar" ? "بدون قضية" : "No case"}</SelectItem>
+                  {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "من" : "From"}</Label>
+              <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-9 w-[150px]" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "إلى" : "To"}</Label>
+              <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 w-[150px]" />
+            </div>
+            {hasFilters && (
+              <Button size="sm" variant="ghost" onClick={clearFilters} className="gap-1.5">
+                <X className="size-3.5" />{locale === "ar" ? "مسح" : "Clear"}
+              </Button>
+            )}
           </div>
         </div>
 
+
         {loading ? <div className="grid place-items-center p-12"><Loader2 className="size-5 animate-spin text-gold" /></div>
-        : filtered.length === 0 ? <div className="p-12 text-center text-muted-foreground text-sm">{locale === "ar" ? "لا توجد مستندات بعد." : "No documents uploaded yet."}</div>
+        : filtered.length === 0 ? <div className="p-12 text-center text-muted-foreground text-sm">{hasFilters ? (locale === "ar" ? "لا توجد نتائج مطابقة." : "No matching documents.") : (locale === "ar" ? "لا توجد مستندات بعد." : "No documents uploaded yet.")}</div>
         : <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 p-4">
           {filtered.map((d) => (
             <div key={d.id} className="card-elev rounded-xl border bg-card p-4 flex gap-3 relative">
