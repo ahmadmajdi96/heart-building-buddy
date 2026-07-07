@@ -290,9 +290,14 @@ export const listOrgDebtPayments = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
-/* ============================ SMS ============================ */
+/* ============================ WhatsApp ============================ */
 
-async function sendTwilioSms(to: string, body: string, from: string): Promise<{ sid?: string; error?: string; status: string }> {
+function toWa(n: string) {
+  const s = String(n || "").trim();
+  return s.startsWith("whatsapp:") ? s : `whatsapp:${s}`;
+}
+
+async function sendTwilioWhatsApp(to: string, body: string, from: string): Promise<{ sid?: string; error?: string; status: string }> {
   const key = process.env.LOVABLE_API_KEY;
   const twKey = process.env.TWILIO_API_KEY;
   if (!key || !twKey) return { status: "failed", error: "Twilio not configured" };
@@ -304,7 +309,7 @@ async function sendTwilioSms(to: string, body: string, from: string): Promise<{ 
         "X-Connection-Api-Key": twKey,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({ To: to, From: from, Body: body }),
+      body: new URLSearchParams({ To: toWa(to), From: toWa(from), Body: body }),
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) return { status: "failed", error: JSON.stringify(json).slice(0, 500) };
@@ -313,6 +318,8 @@ async function sendTwilioSms(to: string, body: string, from: string): Promise<{ 
     return { status: "failed", error: String(e?.message || e) };
   }
 }
+const sendTwilioSms = sendTwilioWhatsApp;
+
 
 const SendSmsInput = z.object({
   case_id: z.string().uuid(),
