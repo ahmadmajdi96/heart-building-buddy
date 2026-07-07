@@ -173,7 +173,7 @@ Continue the hearing with 1-3 turns (judge and/or opposing counsel reacting).`;
   });
 
 // ---------- Persistence ----------
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
 
 const SaveSimInput = z.object({
   id: z.string().uuid().optional(),
