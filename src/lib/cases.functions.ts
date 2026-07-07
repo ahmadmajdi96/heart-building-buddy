@@ -17,7 +17,9 @@ const CaseInput = z.object({
   opposing_party: z.string().optional(),
   opposing_counsel: z.string().optional(),
   responsible_lawyer: z.string().uuid().nullable().optional(),
+  locale: z.enum(["ar", "en"]).optional(),
 });
+
 
 export const listCases = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -57,13 +59,14 @@ export const saveCase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => CaseInput.parse(d))
   .handler(async ({ data, context }) => {
+    const { locale = "en", ...caseData } = data;
     const payload: any = {
-      ...data,
-      client_id: data.client_id || null,
-      responsible_lawyer: data.responsible_lawyer || null,
+      ...caseData,
+      client_id: caseData.client_id || null,
+      responsible_lawyer: caseData.responsible_lawyer || null,
       owner_id: context.userId,
     };
-    if (data.id) {
+    if (caseData.id) {
       const { id, ...rest } = payload;
       const { data: row, error } = await context.supabase.from("cases").update(rest).eq("id", id!).select().maybeSingle();
       if (error) throw new Error(error.message);
@@ -77,13 +80,18 @@ export const saveCase = createServerFn({ method: "POST" })
         .from("clients").select("name, phone").eq("id", row.client_id).maybeSingle();
       if (client?.phone) {
         try {
-          const { sendSms } = await import("./whatsapp.server");
-          const ref = row.case_number ? ` (Ref: ${row.case_number})` : "";
-          await sendSms(
-            client.phone,
-            `Hello ${client.name || ""}, a new case has been assigned to you: "${row.title}"${ref}. We will keep you updated on its progress. — Legal Team`,
-            { owner_id: context.userId, client_id: row.client_id, case_id: row.id, context: "case_assignment" },
-          );
+          const [{ sendSms }, { resolveSenderName }] = await Promise.all([
+            import("./whatsapp.server"),
+            import("./sender-name.server"),
+          ]);
+          const sender = await resolveSenderName(context.supabase as any, context.userId, locale);
+          const name = client.name || "";
+          const body = locale === "ar"
+            ? `مرحباً ${name}، تم إسناد قضية جديدة إليك: «${row.title}»${row.case_number ? ` (رقم: ${row.case_number})` : ""}. سنبقيك على اطلاع بمستجداتها. — ${sender}`
+            : `Hello ${name}, a new case has been assigned to you: "${row.title}"${row.case_number ? ` (Ref: ${row.case_number})` : ""}. We will keep you updated on its progress. — ${sender}`;
+          await sendSms(client.phone, body, {
+            owner_id: context.userId, client_id: row.client_id, case_id: row.id, context: "case_assignment",
+          });
         } catch (e) {
           console.warn("[cases.saveCase] assignment SMS failed:", (e as any)?.message);
         }
@@ -91,6 +99,7 @@ export const saveCase = createServerFn({ method: "POST" })
     }
     return row;
   });
+
 
 export const deleteCase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
