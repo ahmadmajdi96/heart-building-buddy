@@ -112,7 +112,7 @@ function DebtCaseDetail() {
           <TabsTrigger value="payers">{ar ? "الدافعون" : "Payers"} ({data.payers.length}/25)</TabsTrigger>
           <TabsTrigger value="team">{ar ? "الفريق" : "Team"} ({data.assignees.length})</TabsTrigger>
           <TabsTrigger value="payments">{ar ? "المدفوعات" : "Payments"} ({data.payments.length})</TabsTrigger>
-          <TabsTrigger value="sms">{ar ? "الرسائل" : "SMS log"} ({data.sms.length})</TabsTrigger>
+          <TabsTrigger value="sms">{ar ? "واتساب" : "WhatsApp log"} ({data.sms.length})</TabsTrigger>
           <TabsTrigger value="settings"><Settings2 className="size-4" />{ar ? "الإعدادات" : "Settings"}</TabsTrigger>
         </TabsList>
 
@@ -178,7 +178,7 @@ function PayersTab({ caseId, caseData, payers, assignees, ar }: any) {
         <div className="flex gap-2">
           {selected.length > 0 && (
             <Dialog open={openSms} onOpenChange={setOpenSms}>
-              <DialogTrigger asChild><Button size="sm" variant="outline"><MessageSquare className="size-4" />{ar ? "إرسال SMS" : "Send SMS"} ({selected.length})</Button></DialogTrigger>
+              <DialogTrigger asChild><Button size="sm" variant="outline"><MessageSquare className="size-4" />{ar ? "إرسال واتساب" : "Send WhatsApp"} ({selected.length})</Button></DialogTrigger>
               <SendSmsDialog caseId={caseId} caseData={caseData} payerIds={selected} assigneeUserIds={[]}
                 onSubmit={(v: any) => send.mutate(v)} pending={send.isPending} ar={ar} />
             </Dialog>
@@ -320,7 +320,7 @@ function TeamTab({ caseId, assignees, ar }: any) {
         <div className="flex gap-2">
           {selected.length > 0 && (
             <Dialog open={openSms} onOpenChange={setOpenSms}>
-              <DialogTrigger asChild><Button size="sm" variant="outline"><MessageSquare className="size-4" />{ar ? "إرسال إشعار SMS" : "Notify by SMS"}</Button></DialogTrigger>
+              <DialogTrigger asChild><Button size="sm" variant="outline"><MessageSquare className="size-4" />{ar ? "إشعار عبر واتساب" : "Notify via WhatsApp"}</Button></DialogTrigger>
               <SendSmsDialog caseId={caseId} caseData={{ title: "" }} payerIds={[]} assigneeUserIds={selected}
                 onSubmit={(v: any) => send.mutate(v)} pending={send.isPending} ar={ar} defaultKind="assignment" />
             </Dialog>
@@ -344,7 +344,7 @@ function TeamTab({ caseId, assignees, ar }: any) {
                   <div className="text-xs text-muted-foreground flex items-center gap-3">
                     <span className="capitalize">{a.role}</span>
                     {a.phone && <span className="flex items-center gap-1"><Phone className="size-3" />{a.phone}</span>}
-                    {!a.phone && <span className="text-warning">{ar ? "لا يوجد رقم SMS" : "No SMS number"}</span>}
+                    {!a.phone && <span className="text-warning">{ar ? "لا يوجد رقم واتساب" : "No WhatsApp number"}</span>}
                   </div>
                 </div>
               </div>
@@ -387,7 +387,7 @@ function AssignDialog({ caseId, members, onSubmit, pending, ar }: any) {
         </div>
         <div className="flex items-center gap-2">
           <Checkbox id="notify" checked={form.notify_sms} onCheckedChange={(v: boolean | "indeterminate") => setForm({ ...form, notify_sms: !!v })} />
-          <Label htmlFor="notify" className="cursor-pointer">{ar ? "إشعار عبر SMS" : "Notify by SMS"}</Label>
+          <Label htmlFor="notify" className="cursor-pointer">{ar ? "إشعار عبر واتساب" : "Notify via WhatsApp"}</Label>
         </div>
       </div>
       <DialogFooter>
@@ -545,7 +545,7 @@ function SmsTab({ sms, ar }: any) {
   return (
     <Card className="p-4">
       {sms.length === 0 ? (
-        <div className="py-10 text-center text-sm text-muted-foreground">{ar ? "لا توجد رسائل مُرسلة" : "No SMS sent yet"}</div>
+        <div className="py-10 text-center text-sm text-muted-foreground">{ar ? "لا توجد رسائل واتساب مُرسلة" : "No WhatsApp messages sent yet"}</div>
       ) : (
         <Table>
           <TableHeader>
@@ -587,10 +587,10 @@ function SendSmsDialog({ caseId, caseData, payerIds, assigneeUserIds, onSubmit, 
   });
   return (
     <DialogContent>
-      <DialogHeader><DialogTitle>{ar ? "إرسال SMS عبر Twilio" : "Send SMS via Twilio"}</DialogTitle></DialogHeader>
+      <DialogHeader><DialogTitle>{ar ? "إرسال واتساب عبر Twilio" : "Send WhatsApp via Twilio"}</DialogTitle></DialogHeader>
       <div className="grid gap-3">
         <div>
-          <Label>{ar ? "رقم المُرسِل (Twilio, E.164)" : "Sender number (Twilio, E.164)"}</Label>
+          <Label>{ar ? "رقم واتساب المُرسِل (Twilio, E.164)" : "WhatsApp sender (Twilio, E.164)"}</Label>
           <Input value={form.from} onChange={(e) => setForm({ ...form, from: e.target.value })} placeholder="+15558675310" />
         </div>
         <div>
