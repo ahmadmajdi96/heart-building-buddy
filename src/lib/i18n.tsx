@@ -62,6 +62,9 @@ const dict = {
   m_workspace: { ar: "مساحة العمل", en: "Workspace" },
   m_debt_collection: { ar: "تحصيل الديون", en: "Debt Collection" },
   m_settings: { ar: "الإعدادات", en: "Settings" },
+  m_grp_management: { ar: "الإدارة", en: "Management" },
+  m_grp_scheduling: { ar: "الجدولة", en: "Scheduling" },
+  m_grp_operations: { ar: "العمليات", en: "Operations" },
 
   m_dashboard_desc: { ar: "نظرة شاملة على أداء المكتب والإنذارات والمهام.", en: "Firm-wide overview of performance, alerts and tasks." },
   m_cases_desc: { ar: "تتبع القضايا، الأطراف، الجلسات، والوثائق المرتبطة.", en: "Track matters, parties, hearings and linked documents." },
