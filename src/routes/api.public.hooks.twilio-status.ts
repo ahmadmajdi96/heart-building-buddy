@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/public/hooks/twilio-status")({
           if (errorMessage) patch.error_message = errorMessage;
           if (status === "delivered") patch.delivered_at = new Date().toISOString();
 
-          await supabaseAdmin.from("sms_messages").update(patch).eq("twilio_sid", sid);
+          await (supabaseAdmin as any).from("sms_messages").update(patch).eq("twilio_sid", sid);
 
           // Best-effort mirror into legacy debt_sms_log by twilio_sid
           if (["delivered", "failed", "undelivered", "sent"].includes(status)) {

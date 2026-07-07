@@ -44,6 +44,7 @@ import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
 import { Route as ApiRagUploadRouteImport } from './routes/api.rag.upload'
 import { Route as ApiElevenlabsScribeTokenRouteImport } from './routes/api.elevenlabs.scribe-token'
 import { Route as AppMeetingsJoinRoomRouteImport } from './routes/app.meetings.join.$room'
+import { Route as ApiPublicHooksTwilioStatusRouteImport } from './routes/api.public.hooks.twilio-status'
 import { Route as ApiPublicHooksDebtRemindersRouteImport } from './routes/api.public.hooks.debt-reminders'
 
 const SetPasswordRoute = SetPasswordRouteImport.update({
@@ -222,6 +223,12 @@ const AppMeetingsJoinRoomRoute = AppMeetingsJoinRoomRouteImport.update({
   path: '/meetings/join/$room',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicHooksTwilioStatusRoute =
+  ApiPublicHooksTwilioStatusRouteImport.update({
+    id: '/api/public/hooks/twilio-status',
+    path: '/api/public/hooks/twilio-status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksDebtRemindersRoute =
   ApiPublicHooksDebtRemindersRouteImport.update({
     id: '/api/public/hooks/debt-reminders',
@@ -265,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
+  '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesByTo {
@@ -302,6 +310,7 @@ export interface FileRoutesByTo {
   '/app/meetings': typeof AppMeetingsIndexRoute
   '/app/workspace': typeof AppWorkspaceIndexRoute
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
+  '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRoutesById {
@@ -341,6 +350,7 @@ export interface FileRoutesById {
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
+  '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
 }
 export interface FileRouteTypes {
@@ -381,6 +391,7 @@ export interface FileRouteTypes {
     | '/app/meetings/'
     | '/app/workspace/'
     | '/api/public/hooks/debt-reminders'
+    | '/api/public/hooks/twilio-status'
     | '/app/meetings/join/$room'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -418,6 +429,7 @@ export interface FileRouteTypes {
     | '/app/meetings'
     | '/app/workspace'
     | '/api/public/hooks/debt-reminders'
+    | '/api/public/hooks/twilio-status'
     | '/app/meetings/join/$room'
   id:
     | '__root__'
@@ -456,6 +468,7 @@ export interface FileRouteTypes {
     | '/app/meetings/'
     | '/app/workspace/'
     | '/api/public/hooks/debt-reminders'
+    | '/api/public/hooks/twilio-status'
     | '/app/meetings/join/$room'
   fileRoutesById: FileRoutesById
 }
@@ -468,6 +481,7 @@ export interface RootRouteChildren {
   ApiElevenlabsScribeTokenRoute: typeof ApiElevenlabsScribeTokenRoute
   ApiRagUploadRoute: typeof ApiRagUploadRoute
   ApiPublicHooksDebtRemindersRoute: typeof ApiPublicHooksDebtRemindersRoute
+  ApiPublicHooksTwilioStatusRoute: typeof ApiPublicHooksTwilioStatusRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -717,6 +731,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMeetingsJoinRoomRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/hooks/twilio-status': {
+      id: '/api/public/hooks/twilio-status'
+      path: '/api/public/hooks/twilio-status'
+      fullPath: '/api/public/hooks/twilio-status'
+      preLoaderRoute: typeof ApiPublicHooksTwilioStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/debt-reminders': {
       id: '/api/public/hooks/debt-reminders'
       path: '/api/public/hooks/debt-reminders'
@@ -810,6 +831,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiElevenlabsScribeTokenRoute: ApiElevenlabsScribeTokenRoute,
   ApiRagUploadRoute: ApiRagUploadRoute,
   ApiPublicHooksDebtRemindersRoute: ApiPublicHooksDebtRemindersRoute,
+  ApiPublicHooksTwilioStatusRoute: ApiPublicHooksTwilioStatusRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
