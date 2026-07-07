@@ -105,7 +105,9 @@ function ClientsPage() {
         country: editing.country ?? "",
         tax_id: editing.tax_id ?? "",
         status: (editing.status as any) ?? "active",
+        locale,
       }});
+
       toast.success(
         isNew
           ? (locale === "ar" ? "تم إضافة الموكل بنجاح" : "Client added successfully")
