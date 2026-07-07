@@ -86,6 +86,31 @@ function TranscriptEditor() {
   function renameSpeaker(sp: string, name: string) {
     setLabels((prev) => ({ ...prev, [sp]: name }));
   }
+  function addSpeaker() {
+    let n = speakers.length;
+    let key = `custom_${n}`;
+    while (labels[key] || speakers.includes(key)) { n += 1; key = `custom_${n}`; }
+    setLabels((prev) => ({ ...prev, [key]: `Speaker ${n + 1}` }));
+    // Seed with an empty turn so the speaker appears in dropdowns immediately.
+    setTurns((prev) => [...prev, { speaker: key, text: "", t: Date.now() }]);
+  }
+  function deleteSpeaker(sp: string) {
+    const remaining = speakers.filter((s) => s !== sp);
+    if (remaining.length === 0) {
+      if (!confirm(locale === "ar" ? "سيؤدي هذا إلى حذف جميع الأسطر. متابعة؟" : "This will delete all turns. Continue?")) return;
+      setTurns([]);
+    } else {
+      const fallback = remaining[0];
+      const msg = locale === "ar"
+        ? `نقل أسطر هذا المتحدث إلى "${labels[fallback] || defaultLabel(fallback)}"؟ (إلغاء = حذف الأسطر)`
+        : `Reassign this speaker's turns to "${labels[fallback] || defaultLabel(fallback)}"? (Cancel = delete turns)`;
+      const reassign = confirm(msg);
+      setTurns((prev) => reassign
+        ? prev.map((t) => (t.speaker === sp ? { ...t, speaker: fallback } : t))
+        : prev.filter((t) => t.speaker !== sp));
+    }
+    setLabels((prev) => { const c = { ...prev }; delete c[sp]; return c; });
+  }
 
   async function persist() {
     setSaving(true);
