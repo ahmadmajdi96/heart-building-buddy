@@ -35,6 +35,22 @@ async function logSms(row: Record<string, any>): Promise<string | undefined> {
   }
 }
 
+/**
+ * Normalise a phone number to E.164. Twilio rejects local formats like
+ * "0792121204" with error 21211. Defaults unknown local numbers to Jordan (+962).
+ */
+export function toE164(raw: string, defaultCountry = "962"): string {
+  const s = String(raw || "").trim();
+  if (!s) return "";
+  if (s.startsWith("+")) return "+" + s.slice(1).replace(/\D/g, "");
+  const digits = s.replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("00")) return "+" + digits.slice(2);
+  if (digits.startsWith(defaultCountry)) return "+" + digits;
+  if (digits.startsWith("0")) return "+" + defaultCountry + digits.slice(1);
+  return "+" + digits;
+}
+
 export async function sendSms(
   to: string,
   body: string,
@@ -43,8 +59,9 @@ export async function sendSms(
 ): Promise<SmsResult> {
   const key = process.env.LOVABLE_API_KEY;
   const twKey = process.env.TWILIO_API_KEY;
-  const toNum = String(to || "").trim();
+  const toNum = toE164(to);
   const fromNum = String(from || "").trim();
+
 
   const baseRow = {
     owner_id: meta.owner_id ?? null,
