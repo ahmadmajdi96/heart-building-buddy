@@ -628,17 +628,20 @@ const TEMPLATE_VARS: { key: string; friendly: string; label: { ar: string; en: s
 
 function toFriendly(tpl: string) {
   let out = tpl;
-  for (const v of TEMPLATE_VARS) out = out.split(v.key).join(v.friendly);
+  const sorted = [...TEMPLATE_VARS].sort((a, b) => b.key.length - a.key.length);
+  for (const v of sorted) out = out.split(v.key).join(v.friendly);
   return out;
 }
 function toRaw(tpl: string) {
   let out = tpl;
-  for (const v of TEMPLATE_VARS) out = out.split(v.friendly).join(v.key);
+  const sorted = [...TEMPLATE_VARS].sort((a, b) => b.friendly.length - a.friendly.length);
+  for (const v of sorted) out = out.split(v.friendly).join(v.key);
   return out;
 }
 function renderPreview(tpl: string) {
   let out = toRaw(tpl);
-  for (const v of TEMPLATE_VARS) out = out.split(v.key).join(v.sample);
+  const sorted = [...TEMPLATE_VARS].sort((a, b) => b.key.length - a.key.length);
+  for (const v of sorted) out = out.split(v.key).join(v.sample);
   return out;
 }
 
