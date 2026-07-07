@@ -71,18 +71,22 @@ export const saveCase = createServerFn({ method: "POST" })
     }
     const { data: row, error } = await context.supabase.from("cases").insert(payload).select().maybeSingle();
     if (error) throw new Error(error.message);
-    // Notify client via SMS when a case is assigned to them
+    // Notify client via SMS when a case is assigned (awaited so the Worker doesn't kill the request).
     if (row?.client_id) {
       const { data: client } = await context.supabase
         .from("clients").select("name, phone").eq("id", row.client_id).maybeSingle();
       if (client?.phone) {
-        const { fireSms } = await import("./whatsapp.server");
-        const ref = row.case_number ? ` (Ref: ${row.case_number})` : "";
-        fireSms(
-          client.phone,
-          `Hello ${client.name || ""}, a new case has been assigned to you: "${row.title}"${ref}. We will keep you updated on its progress. — Legal Team`,
-          { owner_id: context.userId, client_id: row.client_id, case_id: row.id, context: "case_assignment" },
-        );
+        try {
+          const { sendSms } = await import("./whatsapp.server");
+          const ref = row.case_number ? ` (Ref: ${row.case_number})` : "";
+          await sendSms(
+            client.phone,
+            `Hello ${client.name || ""}, a new case has been assigned to you: "${row.title}"${ref}. We will keep you updated on its progress. — Legal Team`,
+            { owner_id: context.userId, client_id: row.client_id, case_id: row.id, context: "case_assignment" },
+          );
+        } catch (e) {
+          console.warn("[cases.saveCase] assignment SMS failed:", (e as any)?.message);
+        }
       }
     }
     return row;

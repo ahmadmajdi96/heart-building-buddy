@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export const Route = createFileRoute("/app/clients")({ component: ClientsPage });
+export const Route = createFileRoute("/app/clients/")({ component: ClientsPage });
 
 type Client = {
   id: string; name: string; email: string | null; phone: string | null; company: string | null;

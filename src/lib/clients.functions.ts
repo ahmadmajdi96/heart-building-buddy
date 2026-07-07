@@ -60,15 +60,19 @@ export const saveClient = createServerFn({ method: "POST" })
     }
     const { data: row, error } = await context.supabase.from("clients").insert(payload).select().maybeSingle();
     if (error) throw new Error(error.message);
-    // Fire-and-forget SMS welcome to new client
+    // Send welcome SMS to new client (awaited so the Worker doesn't kill the request).
     if (row?.phone) {
-      const { fireSms } = await import("./whatsapp.server");
-      const name = row.name || "";
-      fireSms(
-        row.phone,
-        `Hello ${name}, your client profile has been created successfully. We will be in touch regarding your matters. — Legal Team`,
-        { owner_id: context.userId, client_id: row.id, context: "client_welcome" },
-      );
+      try {
+        const { sendSms } = await import("./whatsapp.server");
+        const name = row.name || "";
+        await sendSms(
+          row.phone,
+          `Hello ${name}, your client profile has been created successfully. We will be in touch regarding your matters. — Legal Team`,
+          { owner_id: context.userId, client_id: row.id, context: "client_welcome" },
+        );
+      } catch (e) {
+        console.warn("[clients.saveClient] welcome SMS failed:", (e as any)?.message);
+      }
     }
     return row;
   });
