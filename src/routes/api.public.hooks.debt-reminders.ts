@@ -11,6 +11,11 @@ import { createFileRoute } from "@tanstack/react-router";
  * Path lives under /api/public/* so pg_cron can call it without auth.
  */
 
+function toWa(n: string) {
+  const s = String(n || "").trim();
+  return s.startsWith("whatsapp:") ? s : `whatsapp:${s}`;
+}
+
 async function sendSms(to: string, body: string, from: string) {
   const res = await fetch("https://connector-gateway.lovable.dev/twilio/Messages.json", {
     method: "POST",
@@ -19,11 +24,12 @@ async function sendSms(to: string, body: string, from: string) {
       "X-Connection-Api-Key": process.env.TWILIO_API_KEY!,
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: new URLSearchParams({ To: to, From: from, Body: body }),
+    body: new URLSearchParams({ To: toWa(to), From: toWa(from), Body: body }),
   });
   const json: any = await res.json().catch(() => ({}));
   return { ok: res.ok, sid: json.sid, error: !res.ok ? JSON.stringify(json).slice(0, 500) : undefined };
 }
+
 
 function render(tpl: string, vars: Record<string, string | number | null | undefined>) {
   return tpl.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => (vars[k] == null ? "" : String(vars[k])));
