@@ -12,17 +12,16 @@ export function toCsv(headers: string[], rows: (string | number | null | undefin
   return out.join("\r\n");
 }
 
-function toUtf16LeWithBom(text: string): Uint8Array {
-  const bytes = new Uint8Array(2 + text.length * 2);
+function toUtf16LeWithBom(text: string): ArrayBuffer {
+  const buffer = new ArrayBuffer(2 + text.length * 2);
+  const view = new DataView(buffer);
   // UTF-16 LE BOM
-  bytes[0] = 0xff;
-  bytes[1] = 0xfe;
+  view.setUint8(0, 0xff);
+  view.setUint8(1, 0xfe);
   for (let i = 0; i < text.length; i++) {
-    const code = text.charCodeAt(i);
-    bytes[2 + i * 2] = code & 0xff;
-    bytes[2 + i * 2 + 1] = (code >> 8) & 0xff;
+    view.setUint16(2 + i * 2, text.charCodeAt(i), true);
   }
-  return bytes;
+  return buffer;
 }
 
 export function downloadCsv(filename: string, csv: string) {
