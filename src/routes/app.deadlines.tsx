@@ -160,25 +160,60 @@ function DeadlinesPage() {
         <Tile color="primary" label={ar ? "خلال أسبوع" : "Due this week"} value={statsData?.week.length ?? 0} icon={<CalendarClock className="size-5" />} />
       </div>
 
-      {/* Filters */}
-      <div className="card-elev rounded-xl border bg-card p-4 flex flex-wrap items-center gap-3">
-        <Label className="text-xs uppercase tracking-wider text-muted-foreground">{ar ? "الحالة" : "Status"}</Label>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="open">{ar ? "مفتوحة" : "Open"}</SelectItem>
-            <SelectItem value="completed">{ar ? "مكتملة" : "Completed"}</SelectItem>
-            <SelectItem value="all">{ar ? "الكل" : "All"}</SelectItem>
-          </SelectContent>
-        </Select>
-        <Label className="text-xs uppercase tracking-wider text-muted-foreground ms-2">{ar ? "القضية" : "Matter"}</Label>
-        <Select value={filterCase} onValueChange={setFilterCase}>
-          <SelectTrigger className="w-60"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{ar ? "الكل" : "All matters"}</SelectItem>
-            {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
-          </SelectContent>
-        </Select>
+      {/* Filters + export */}
+      <div className="card-elev rounded-xl border bg-card p-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{ar ? "الحالة" : "Status"}</Label>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="h-9 w-36"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="open">{ar ? "مفتوحة" : "Open"}</SelectItem>
+                <SelectItem value="completed">{ar ? "مكتملة" : "Completed"}</SelectItem>
+                <SelectItem value="all">{ar ? "الكل" : "All"}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{ar ? "النوع" : "Kind"}</Label>
+            <Select value={filterKind} onValueChange={setFilterKind}>
+              <SelectTrigger className="h-9 w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{ar ? "الكل" : "All"}</SelectItem>
+                {KINDS.map((k) => <SelectItem key={k.v} value={k.v}>{ar ? k.ar : k.en}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{ar ? "القضية" : "Matter"}</Label>
+            <Select value={filterCase} onValueChange={setFilterCase}>
+              <SelectTrigger className="h-9 w-56"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{ar ? "الكل" : "All matters"}</SelectItem>
+                {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{ar ? "من تاريخ" : "From"}</Label>
+            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-9 w-[150px]" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{ar ? "إلى تاريخ" : "To"}</Label>
+            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 w-[150px]" />
+          </div>
+          {hasExtraFilters && (
+            <Button size="sm" variant="ghost" onClick={() => { setFilterKind("all"); setFromDate(""); setToDate(""); }}>
+              {ar ? "مسح" : "Clear"}
+            </Button>
+          )}
+          <div className="ms-auto flex items-center gap-3">
+            <span className="text-xs text-muted-foreground tabular-nums">{filteredRows.length} / {rows.length}</span>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={handleExport} disabled={filteredRows.length === 0}>
+              <Download className="size-4" />{ar ? "تصدير CSV" : "Export CSV"}
+            </Button>
+          </div>
+        </div>
       </div>
 
       {loading ? (
