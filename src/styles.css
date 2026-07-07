@@ -227,7 +227,7 @@
   /* Subtle damask / arabesque pattern in gold */
   .arabesque {
     background-image:
-      radial-gradient(circle at 1px 1px, oklch(0.91 0.17 100 / 0.08) 1px, transparent 0);
+      radial-gradient(circle at 1px 1px, oklch(0.80 0.16 92 / 0.10) 1px, transparent 0);
     background-size: 28px 28px;
   }
 
