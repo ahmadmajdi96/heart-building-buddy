@@ -43,6 +43,7 @@ function AnalyticsPage() {
 
   const statusData = Object.entries(stats.statusCounts).map(([k, v]) => ({ name: k, value: v }));
   const COLORS = ["#fce343", "#0f3460", "#16a34a", "#dc2626", "#9333ea"];
+  const orgName = org?.display_name || org?.legal_name || (locale === "ar" ? "مكتبك" : "your firm");
 
   return (
     <div className="space-y-6">
