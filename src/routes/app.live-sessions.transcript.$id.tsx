@@ -5,15 +5,15 @@ import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { getMeeting, saveMeetingTranscript } from "@/lib/meetings.functions";
+import { getLiveSession, saveLiveSession } from "@/lib/live-sessions.functions";
 import { ArrowLeft, Download, Loader2, Plus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/app/meetings/transcript/$id")({
-  component: TranscriptEditor,
+export const Route = createFileRoute("/app/live-sessions/transcript/$id")({
+  component: LiveTranscriptEditor,
 });
 
-type Turn = { speaker: string; text: string; t?: number };
+type Turn = { speaker: string; text: string; start?: number; end?: number };
 
 const SPEAKER_COLORS = [
   "bg-gold/15 text-gold border-gold/30",
@@ -29,13 +29,13 @@ function defaultLabel(speaker: string) {
   return `Speaker ${n}`;
 }
 
-function TranscriptEditor() {
+function LiveTranscriptEditor() {
   const { locale } = useI18n();
-  const { id } = useParams({ from: "/app/meetings/transcript/$id" });
-  const get = useServerFn(getMeeting);
-  const save = useServerFn(saveMeetingTranscript);
+  const { id } = useParams({ from: "/app/live-sessions/transcript/$id" });
+  const get = useServerFn(getLiveSession);
+  const save = useServerFn(saveLiveSession);
 
-  const [meeting, setMeeting] = useState<any>(null);
+  const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -45,8 +45,8 @@ function TranscriptEditor() {
     (async () => {
       try {
         const row: any = await get({ data: { id } });
-        setMeeting(row);
-        const t = (row.turns as Turn[]) || [];
+        setSession(row);
+        const t = ((row?.turns as Turn[]) || []).map((x) => ({ ...x }));
         setTurns(t);
         const unique = Array.from(new Set(t.map((x) => x.speaker)));
         const init: Record<string, string> = {};
@@ -58,12 +58,14 @@ function TranscriptEditor() {
   }, [id]);
 
   const speakers = useMemo(
-    () => Array.from(new Set(turns.map((t) => t.speaker))),
-    [turns],
+    () => Array.from(new Set(turns.map((t) => t.speaker))).concat(
+      Object.keys(labels).filter((k) => !turns.some((t) => t.speaker === k)),
+    ),
+    [turns, labels],
   );
 
   const transcriptText = useMemo(
-    () => turns.map((t) => `[${labels[t.speaker] || defaultLabel(t.speaker)}] ${t.text}`).join("\n"),
+    () => turns.map((t) => `${labels[t.speaker] || defaultLabel(t.speaker)}: ${t.text}`).join("\n"),
     [turns, labels],
   );
 
@@ -80,7 +82,7 @@ function TranscriptEditor() {
   function addTurn(afterIdx: number) {
     const sp = turns[afterIdx]?.speaker || speakers[0] || "speaker_0";
     const next = [...turns];
-    next.splice(afterIdx + 1, 0, { speaker: sp, text: "", t: Date.now() });
+    next.splice(afterIdx + 1, 0, { speaker: sp, text: "" });
     setTurns(next);
   }
   function renameSpeaker(sp: string, name: string) {
@@ -91,8 +93,7 @@ function TranscriptEditor() {
     let key = `custom_${n}`;
     while (labels[key] || speakers.includes(key)) { n += 1; key = `custom_${n}`; }
     setLabels((prev) => ({ ...prev, [key]: `Speaker ${n + 1}` }));
-    // Seed with an empty turn so the speaker appears in dropdowns immediately.
-    setTurns((prev) => [...prev, { speaker: key, text: "", t: Date.now() }]);
+    setTurns((prev) => [...prev, { speaker: key, text: "" }]);
   }
   function deleteSpeaker(sp: string) {
     const remaining = speakers.filter((s) => s !== sp);
@@ -115,14 +116,12 @@ function TranscriptEditor() {
   async function persist() {
     setSaving(true);
     try {
-      // Bake the speaker labels into the speaker id, so downstream reads
-      // (raw turns, plain transcript) both show the corrected names.
       const finalTurns: Turn[] = turns.map((t) => ({
         ...t,
         speaker: labels[t.speaker] || defaultLabel(t.speaker),
       }));
-      const finalText = finalTurns.map((t) => `[${t.speaker}] ${t.text}`).join("\n");
-      await save({ data: { id, transcript: finalText, turns: finalTurns } });
+      const finalText = finalTurns.map((t) => `${t.speaker}: ${t.text}`).join("\n");
+      await save({ data: { id, transcript: finalText, turns: finalTurns, finalize: false } });
       toast.success(locale === "ar" ? "تم الحفظ" : "Saved");
     } catch (e) { toast.error((e as Error).message); }
     finally { setSaving(false); }
@@ -132,7 +131,7 @@ function TranscriptEditor() {
     const blob = new Blob([transcriptText], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    const safe = (meeting?.title || "meeting").replace(/[^\w\-]+/g, "_");
+    const safe = (session?.title || "live-session").replace(/[^\w\-]+/g, "_");
     a.href = url;
     a.download = `${safe}-transcript.txt`;
     document.body.appendChild(a);
@@ -144,17 +143,17 @@ function TranscriptEditor() {
   if (loading) {
     return <div className="grid h-[60vh] place-items-center"><Loader2 className="size-6 animate-spin text-gold" /></div>;
   }
-  if (!meeting) return <p className="p-6 text-sm">{locale === "ar" ? "غير موجود" : "Not found"}</p>;
+  if (!session) return <p className="p-6 text-sm">{locale === "ar" ? "غير موجود" : "Not found"}</p>;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Link to="/app/meetings"><Button variant="ghost" size="sm"><ArrowLeft className="size-4" />{locale === "ar" ? "رجوع" : "Back"}</Button></Link>
+          <Link to="/app/live-sessions"><Button variant="ghost" size="sm"><ArrowLeft className="size-4" />{locale === "ar" ? "رجوع" : "Back"}</Button></Link>
           <div>
-            <h1 className="font-serif text-2xl">{meeting.title}</h1>
+            <h1 className="font-serif text-2xl">{session.title}</h1>
             <p className="text-xs text-muted-foreground">
-              {locale === "ar" ? "محرر النص المفرَّغ" : "Transcript editor"} · {new Date(meeting.started_at).toLocaleString()}
+              {locale === "ar" ? "محرر النص المفرَّغ" : "Transcript editor"} · {session.started_at ? new Date(session.started_at).toLocaleString() : ""}
             </p>
           </div>
         </div>
@@ -210,7 +209,7 @@ function TranscriptEditor() {
         </div>
         {turns.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-            {locale === "ar" ? "لا يوجد نص محفوظ لهذا الاجتماع." : "No transcript saved for this meeting."}
+            {locale === "ar" ? "لا يوجد نص محفوظ لهذه الجلسة." : "No transcript saved for this session."}
           </p>
         ) : (
           <ul className="divide-y">

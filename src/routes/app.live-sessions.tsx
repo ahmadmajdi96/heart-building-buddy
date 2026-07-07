@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useScribe } from "@elevenlabs/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Mic, Square, Loader2, Trash2, Languages, Search } from "lucide-react";
+import { Mic, Square, Loader2, Trash2, Languages, Search, FileText } from "lucide-react";
 import {
   listLiveSessions,
   createLiveSession,
@@ -360,9 +360,16 @@ function PastSessions({ sessions, loading, isAr, onDelete }: {
                   <Badge variant="outline" className="text-[10px]">{s.status}</Badge>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => onDelete(s.id)} aria-label="Delete">
-                <Trash2 className="size-4 text-destructive" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <Link to="/app/live-sessions/transcript/$id" params={{ id: s.id }}>
+                  <Button variant="ghost" size="icon" aria-label="Edit transcript" title={isAr ? "تحرير النص" : "Edit transcript"}>
+                    <FileText className="size-4" />
+                  </Button>
+                </Link>
+                <Button variant="ghost" size="icon" onClick={() => onDelete(s.id)} aria-label="Delete">
+                  <Trash2 className="size-4 text-destructive" />
+                </Button>
+              </div>
             </Card>
           ))}
         </div>

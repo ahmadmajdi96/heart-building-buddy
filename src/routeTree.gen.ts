@@ -47,6 +47,7 @@ import { Route as ApiElevenlabsTranscribeRouteImport } from './routes/api.eleven
 import { Route as ApiElevenlabsScribeTokenRouteImport } from './routes/api.elevenlabs.scribe-token'
 import { Route as AppMeetingsTranscriptIdRouteImport } from './routes/app.meetings.transcript.$id'
 import { Route as AppMeetingsJoinRoomRouteImport } from './routes/app.meetings.join.$room'
+import { Route as AppLiveSessionsTranscriptIdRouteImport } from './routes/app.live-sessions.transcript.$id'
 import { Route as ApiPublicHooksTwilioStatusRouteImport } from './routes/api.public.hooks.twilio-status'
 import { Route as ApiPublicHooksDebtRemindersRouteImport } from './routes/api.public.hooks.debt-reminders'
 
@@ -241,6 +242,12 @@ const AppMeetingsJoinRoomRoute = AppMeetingsJoinRoomRouteImport.update({
   path: '/meetings/join/$room',
   getParentRoute: () => AppRoute,
 } as any)
+const AppLiveSessionsTranscriptIdRoute =
+  AppLiveSessionsTranscriptIdRouteImport.update({
+    id: '/transcript/$id',
+    path: '/transcript/$id',
+    getParentRoute: () => AppLiveSessionsRoute,
+  } as any)
 const ApiPublicHooksTwilioStatusRoute =
   ApiPublicHooksTwilioStatusRouteImport.update({
     id: '/api/public/hooks/twilio-status',
@@ -269,7 +276,7 @@ export interface FileRoutesByFullPath {
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
-  '/app/live-sessions': typeof AppLiveSessionsRoute
+  '/app/live-sessions': typeof AppLiveSessionsRouteWithChildren
   '/app/messages': typeof AppMessagesRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
@@ -293,6 +300,7 @@ export interface FileRoutesByFullPath {
   '/app/workspace/': typeof AppWorkspaceIndexRoute
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
   '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
+  '/app/live-sessions/transcript/$id': typeof AppLiveSessionsTranscriptIdRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
   '/app/meetings/transcript/$id': typeof AppMeetingsTranscriptIdRoute
 }
@@ -310,7 +318,7 @@ export interface FileRoutesByTo {
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
-  '/app/live-sessions': typeof AppLiveSessionsRoute
+  '/app/live-sessions': typeof AppLiveSessionsRouteWithChildren
   '/app/messages': typeof AppMessagesRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
@@ -334,6 +342,7 @@ export interface FileRoutesByTo {
   '/app/workspace': typeof AppWorkspaceIndexRoute
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
   '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
+  '/app/live-sessions/transcript/$id': typeof AppLiveSessionsTranscriptIdRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
   '/app/meetings/transcript/$id': typeof AppMeetingsTranscriptIdRoute
 }
@@ -353,7 +362,7 @@ export interface FileRoutesById {
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
-  '/app/live-sessions': typeof AppLiveSessionsRoute
+  '/app/live-sessions': typeof AppLiveSessionsRouteWithChildren
   '/app/messages': typeof AppMessagesRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
@@ -377,6 +386,7 @@ export interface FileRoutesById {
   '/app/workspace/': typeof AppWorkspaceIndexRoute
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
   '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
+  '/app/live-sessions/transcript/$id': typeof AppLiveSessionsTranscriptIdRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
   '/app/meetings/transcript/$id': typeof AppMeetingsTranscriptIdRoute
 }
@@ -421,6 +431,7 @@ export interface FileRouteTypes {
     | '/app/workspace/'
     | '/api/public/hooks/debt-reminders'
     | '/api/public/hooks/twilio-status'
+    | '/app/live-sessions/transcript/$id'
     | '/app/meetings/join/$room'
     | '/app/meetings/transcript/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -462,6 +473,7 @@ export interface FileRouteTypes {
     | '/app/workspace'
     | '/api/public/hooks/debt-reminders'
     | '/api/public/hooks/twilio-status'
+    | '/app/live-sessions/transcript/$id'
     | '/app/meetings/join/$room'
     | '/app/meetings/transcript/$id'
   id:
@@ -504,6 +516,7 @@ export interface FileRouteTypes {
     | '/app/workspace/'
     | '/api/public/hooks/debt-reminders'
     | '/api/public/hooks/twilio-status'
+    | '/app/live-sessions/transcript/$id'
     | '/app/meetings/join/$room'
     | '/app/meetings/transcript/$id'
   fileRoutesById: FileRoutesById
@@ -789,6 +802,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMeetingsJoinRoomRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/live-sessions/transcript/$id': {
+      id: '/app/live-sessions/transcript/$id'
+      path: '/transcript/$id'
+      fullPath: '/app/live-sessions/transcript/$id'
+      preLoaderRoute: typeof AppLiveSessionsTranscriptIdRouteImport
+      parentRoute: typeof AppLiveSessionsRoute
+    }
     '/api/public/hooks/twilio-status': {
       id: '/api/public/hooks/twilio-status'
       path: '/api/public/hooks/twilio-status'
@@ -806,6 +826,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppLiveSessionsRouteChildren {
+  AppLiveSessionsTranscriptIdRoute: typeof AppLiveSessionsTranscriptIdRoute
+}
+
+const AppLiveSessionsRouteChildren: AppLiveSessionsRouteChildren = {
+  AppLiveSessionsTranscriptIdRoute: AppLiveSessionsTranscriptIdRoute,
+}
+
+const AppLiveSessionsRouteWithChildren = AppLiveSessionsRoute._addFileChildren(
+  AppLiveSessionsRouteChildren,
+)
+
 interface AppRouteChildren {
   AppActivityRoute: typeof AppActivityRoute
   AppAnalyticsRoute: typeof AppAnalyticsRoute
@@ -817,7 +849,7 @@ interface AppRouteChildren {
   AppDraftingRoute: typeof AppDraftingRoute
   AppEducationRoute: typeof AppEducationRoute
   AppFinancialsRoute: typeof AppFinancialsRoute
-  AppLiveSessionsRoute: typeof AppLiveSessionsRoute
+  AppLiveSessionsRoute: typeof AppLiveSessionsRouteWithChildren
   AppMessagesRoute: typeof AppMessagesRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppResearchRoute: typeof AppResearchRoute
@@ -850,7 +882,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDraftingRoute: AppDraftingRoute,
   AppEducationRoute: AppEducationRoute,
   AppFinancialsRoute: AppFinancialsRoute,
-  AppLiveSessionsRoute: AppLiveSessionsRoute,
+  AppLiveSessionsRoute: AppLiveSessionsRouteWithChildren,
   AppMessagesRoute: AppMessagesRoute,
   AppOnboardingRoute: AppOnboardingRoute,
   AppResearchRoute: AppResearchRoute,
