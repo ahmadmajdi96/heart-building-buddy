@@ -71,6 +71,19 @@ export const saveCase = createServerFn({ method: "POST" })
     }
     const { data: row, error } = await context.supabase.from("cases").insert(payload).select().maybeSingle();
     if (error) throw new Error(error.message);
+    // Notify client via WhatsApp when a case is assigned to them
+    if (row?.client_id) {
+      const { data: client } = await context.supabase
+        .from("clients").select("name, phone").eq("id", row.client_id).maybeSingle();
+      if (client?.phone) {
+        const { fireWhatsApp } = await import("./whatsapp.server");
+        const ref = row.case_number ? ` (Ref: ${row.case_number})` : "";
+        fireWhatsApp(
+          client.phone,
+          `Hello ${client.name || ""}, a new case has been assigned to you: "${row.title}"${ref}. We will keep you updated on its progress. — Legal Team`,
+        );
+      }
+    }
     return row;
   });
 
