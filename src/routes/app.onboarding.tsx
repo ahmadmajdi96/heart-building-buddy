@@ -90,7 +90,7 @@ function OnboardingPage() {
       };
       const { error: uErr } = await supabase.from("organizations").update(extras as any).eq("id", orgId);
       if (uErr) {
-        await logFailure({ data: { stage: "org_update_extras", code: (uErr as PgErr).code, message: uErr.message, details: (uErr as PgErr).details, hint: (uErr as PgErr).hint, payload: { orgId } } }).catch(() => {});
+        await logFailure({ data: { stage: "unknown", code: (uErr as PgErr).code, message: uErr.message, details: (uErr as PgErr).details, hint: (uErr as PgErr).hint, payload: { orgId } } }).catch(() => {});
         // Non-fatal: workspace exists and user is owner. Continue.
       }
       // Move any pending-uploaded logo into the real org folder
