@@ -185,7 +185,7 @@ function AppLayout() {
 
           {/* Primary nav (desktop) */}
           <nav className="hidden lg:flex items-center gap-1 min-w-0 flex-1 overflow-x-auto scrollbar-none">
-            {primary.map((item) => {
+            {visibleSolo.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.to);
               return (
@@ -204,30 +204,40 @@ function AppLayout() {
                 </Link>
               );
             })}
-            {overflow.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="rounded-full gap-1.5 text-foreground/65 hover:text-foreground">
-                    <MoreHorizontal className="size-4" />
-                    <span>{t("brand") && "More"}</span>
-                    <ChevronDown className="size-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  {overflow.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <DropdownMenuItem key={item.to} asChild>
-                        <Link to={item.to} className="flex items-center gap-2">
-                          <Icon className="size-4 opacity-70" /> {t(item.key)}
-                        </Link>
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            {visibleGroups.map((group) => {
+              const active = groupActive(group);
+              return (
+                <DropdownMenu key={group.key}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className={[
+                        "flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-medium whitespace-nowrap transition-colors",
+                        active
+                          ? "text-foreground bg-gold/12 ring-1 ring-gold/30"
+                          : "text-foreground/65 hover:text-foreground hover:bg-secondary",
+                      ].join(" ")}
+                    >
+                      <span>{t(group.key)}</span>
+                      <ChevronDown className="size-3.5 opacity-70" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <DropdownMenuItem key={item.to} asChild>
+                          <Link to={item.to} className="flex items-center gap-2">
+                            <Icon className="size-4 opacity-70" /> {t(item.key)}
+                          </Link>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            })}
           </nav>
+
 
           {/* Right actions */}
           <div className="ms-auto flex items-center gap-1.5">
