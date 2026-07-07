@@ -59,9 +59,11 @@ const navGroups: NavGroup[] = [
       { to: "/app/courtroom", key: "m_courtroom", icon: Gavel },
       { to: "/app/drafting", key: "m_drafting", icon: Sparkles, perm: "edit_cases" },
       { to: "/app/live-sessions", key: "m_live_sessions", icon: Mic },
+      { to: "/app/messages", key: "m_messages", icon: MessageSquare },
       { to: "/app/education", key: "m_education", icon: GraduationCap },
     ],
   },
+
 ];
 
 const allNavItems: NavItem[] = [...soloItems, ...navGroups.flatMap((g) => g.items)];
