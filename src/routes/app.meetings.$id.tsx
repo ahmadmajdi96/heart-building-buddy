@@ -67,6 +67,7 @@ function MeetingRoom() {
   const [recording, setRecording] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [captureTab, setCaptureTab] = useState(false);
+  const [diarizationSource, setDiarizationSource] = useState<"mixed" | "mic" | "tab">("mixed");
   const [saving, setSaving] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const jitsiHolder = useRef<HTMLDivElement>(null);
