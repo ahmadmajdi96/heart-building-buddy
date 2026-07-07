@@ -153,7 +153,9 @@ export const courtroomTurn = createServerFn({ method: "POST" })
     ].filter(Boolean).join("\n\n");
     const grounding = await ragContext(context.userId, ragQuestion);
 
-    const system = `You simulate a realistic court hearing in the Hashemite Kingdom of Jordan. Reply entirely in ${lang}.
+    const system = `${strictLanguageDirective(data.locale)}
+
+You simulate a realistic court hearing in the Hashemite Kingdom of Jordan. Reply entirely in ${lang}.
 Ground every legal argument, objection, and ruling in Jordanian law (Civil Code, Penal Code, Procedure codes, Labour Law, Cassation rulings, etc.). Cite specific article numbers or case numbers when possible, drawing on the RAG CONTEXT below.
 
 Roles:
