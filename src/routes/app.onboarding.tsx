@@ -63,29 +63,35 @@ function OnboardingPage() {
       const { data: sess } = await supabase.auth.getSession();
       const uid = sess.session?.user.id;
       if (!uid) { toast.error(locale === "ar" ? "غير مسجّل الدخول" : "Not signed in. Please sign in again."); return; }
-      const orgId = crypto.randomUUID();
-      const orgPayload = {
-        id: orgId,
-        type, legal_name: form.legal_name, display_name: form.display_name || form.legal_name,
-        email: form.email || sess.session!.user.email, phone: form.phone, address: form.address,
-        tax_id: form.tax_id, logo_path: form.logo_path || null, currency: form.currency,
-        default_tax_rate: Number(form.default_tax_rate) || 0, created_by: uid,
-        country: form.country || null,
-        preferred_language: form.preferred_language || "en",
-      };
-      const { error: oErr } = await supabase.from("organizations").insert(orgPayload);
-      if (oErr) {
-        toast.error(describeError(oErr as PgErr, locale));
-        await logFailure({ data: { stage: "org_insert", code: (oErr as PgErr).code, message: oErr.message, details: (oErr as PgErr).details, hint: (oErr as PgErr).hint, payload: { orgId, type } } }).catch(() => {});
+
+      // Atomic create via security-definer RPC (org + owner membership).
+      const { data: created, error: oErr } = await (supabase as any).rpc("create_workspace", {
+        _legal_name: form.legal_name,
+        _display_name: form.display_name || form.legal_name,
+        _type: type,
+        _currency: form.currency,
+        _preferred_language: form.preferred_language || "en",
+      });
+      if (oErr || !created) {
+        const err = (oErr ?? { message: "Failed to create workspace" }) as PgErr;
+        toast.error(describeError(err, locale));
+        await logFailure({ data: { stage: "org_insert", code: err.code, message: err.message, details: err.details, hint: err.hint, payload: { type } } }).catch(() => {});
         return;
       }
-      const { error: mErr } = await supabase.from("organization_members").insert({
-        org_id: orgId, user_id: uid, role: "owner", status: "active",
-      });
-      if (mErr) {
-        toast.error(describeError(mErr as PgErr, locale));
-        await logFailure({ data: { stage: "member_insert", code: (mErr as PgErr).code, message: mErr.message, details: (mErr as PgErr).details, hint: (mErr as PgErr).hint, payload: { orgId } } }).catch(() => {});
-        return;
+      const orgId = created.id as string;
+
+      // Persist the extra profile fields the RPC doesn't take.
+      const extras = {
+        email: form.email || sess.session!.user.email,
+        phone: form.phone, address: form.address, tax_id: form.tax_id,
+        logo_path: form.logo_path || null,
+        default_tax_rate: Number(form.default_tax_rate) || 0,
+        country: form.country || null,
+      };
+      const { error: uErr } = await supabase.from("organizations").update(extras as any).eq("id", orgId);
+      if (uErr) {
+        await logFailure({ data: { stage: "org_update_extras", code: (uErr as PgErr).code, message: uErr.message, details: (uErr as PgErr).details, hint: (uErr as PgErr).hint, payload: { orgId } } }).catch(() => {});
+        // Non-fatal: workspace exists and user is owner. Continue.
       }
       // Move any pending-uploaded logo into the real org folder
       if (form.logo_path && form.logo_path.startsWith(`pending/${uid}/`)) {
