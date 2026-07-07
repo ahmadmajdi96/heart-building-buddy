@@ -295,6 +295,7 @@ function SchedulesTab() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
+  const [from, setFrom] = useState(""); const [to, setTo] = useState("");
   const [markingId, setMarkingId] = useState<string | null>(null);
   const markPaidFn = useServerFn(markSchedulePaid);
   const deletePlanFn = useServerFn(deletePaymentPlan);
@@ -302,7 +303,7 @@ function SchedulesTab() {
   async function load() {
     if (!org) return;
     const { data } = await supabase.from("payment_schedules")
-      .select("*, tax_invoices(id,number,status)")
+      .select("*, tax_invoices(id,number,status,case_id,cases(id,title,case_number))")
       .eq("org_id", org.id)
       .order("plan_id", { ascending: false, nullsFirst: false })
       .order("due_date", { ascending: true });
@@ -324,10 +325,24 @@ function SchedulesTab() {
   const statuses = useMemo(() => ["all", ...Array.from(new Set(rows.map((r) => r.status).filter(Boolean)))], [rows]);
   const filtered = useMemo(() => rows.filter((r) => {
     if (status !== "all" && r.status !== status) return false;
+    if (!inRange(r.due_date, from, to)) return false;
     if (!q.trim()) return true;
     const s = q.toLowerCase();
     return (r.client_name ?? "").toLowerCase().includes(s) || (r.description ?? "").toLowerCase().includes(s);
-  }), [rows, q, status]);
+  }), [rows, q, status, from, to]);
+
+  function exportCsv() {
+    const headers = ["Due date","Plan ID","Installment","Client","Description","Invoice #","Case","Case #","Amount","Currency","Status"];
+    const rowsCsv = filtered.map((r: any) => [
+      r.due_date, r.plan_id ?? "",
+      r.installment_no ? `${r.installment_no}/${r.installment_count}` : "single",
+      r.client_name ?? "", r.description ?? "",
+      r.tax_invoices?.number ?? "",
+      r.tax_invoices?.cases?.title ?? "", r.tax_invoices?.cases?.case_number ?? "",
+      r.amount, r.currency, r.status,
+    ]);
+    downloadCsv(`schedules_${new Date().toISOString().slice(0,10)}.csv`, toCsv(headers, rowsCsv));
+  }
 
   // group by plan_id
   const grouped = useMemo(() => {
@@ -347,7 +362,6 @@ function SchedulesTab() {
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 border-b p-4">
         <div className="text-sm font-semibold mr-auto">{locale === "ar" ? "جدولة المدفوعات" : "Payment schedule"} <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span></div>
-        <TableFilter q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses} placeholder={locale === "ar" ? "ابحث…" : "Search…"} locale={locale as any} />
         {can("edit_financials") && (
           <>
             <Dialog open={openPlan} onOpenChange={setOpenPlan}>
