@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { z } from "zod";
 import { createAiGatewayProvider, getAiGatewayApiKey } from "./ai-gateway.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const MODEL = process.env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct";
 
@@ -9,17 +10,54 @@ function getGateway() {
   return createAiGatewayProvider(getAiGatewayApiKey());
 }
 
-// ---------- Legal research ----------
+async function ragJordanianContext(userId: string, question: string): Promise<string> {
+  try {
+    const { ragFetch } = await import("./rag.server");
+    const res = await ragFetch(`/v1/query`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tenant_id: `user:${userId}`,
+        question,
+        top_k: 18,
+        rerank_top_n: 6,
+        temperature: 0.1,
+        max_tokens: 800,
+      }),
+    });
+    if (!res.ok) return "";
+    const json = (await res.json()) as {
+      answer?: string;
+      sources?: Array<{ filename?: string; page?: number; excerpt?: string }>;
+    };
+    const parts: string[] = [];
+    if (json.answer) parts.push(json.answer.trim());
+    if (json.sources?.length) {
+      const src = json.sources
+        .slice(0, 6)
+        .map((s, i) => `[${i + 1}] ${s.filename ?? "source"}${s.page ? ` p.${s.page}` : ""}: ${(s.excerpt ?? "").slice(0, 500)}`)
+        .join("\n");
+      parts.push(`SOURCES:\n${src}`);
+    }
+    return parts.join("\n\n").slice(0, 5000);
+  } catch {
+    return "";
+  }
+}
+
+// ---------- Legal research (Jordanian law only) ----------
 const ResearchInput = z.object({
   query: z.string().min(2),
   locale: z.enum(["ar", "en"]).default("en"),
 });
 
 export const legalResearch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => ResearchInput.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const gateway = getGateway();
     const lang = data.locale === "ar" ? "Arabic" : "English";
+    const grounding = await ragJordanianContext(context.userId, data.query);
     const { text } = await generateText({
       model: gateway(MODEL),
       system: `You are an expert legal research assistant specialized EXCLUSIVELY in the Hashemite Kingdom of Jordan's laws, regulations and jurisprudence. Do NOT answer about any other jurisdiction — if asked, politely note you only cover Jordanian law.
@@ -45,7 +83,12 @@ Cover the FULL Jordanian legal corpus, citing primary articles, paragraphs and c
 - Official Gazette (الجريدة الرسمية) for any law/regulation issuance date.
 - Fatwas and circulars from the Ministry of Justice, Bar Association (نقابة المحامين الأردنيين), and relevant ministries.
 
-Answer concisely and professionally. Cite specific articles (e.g. "المادة 256 من القانون المدني الأردني") and case numbers. End with a "Sources / المصادر" list of every law and ruling referenced, with article numbers and year. Reply entirely in ${lang}.`,
+When RAG CONTEXT is provided below, prefer it as the authoritative source and cite the retrieved documents explicitly.
+
+Answer concisely and professionally. Cite specific articles (e.g. "المادة 256 من القانون المدني الأردني") and case numbers. End with a "Sources / المصادر" list of every law and ruling referenced, with article numbers and year. Reply entirely in ${lang}.
+
+RAG CONTEXT (Jordanian corpus, may be empty):
+${grounding || "(no retrieved context)"}`,
       prompt: data.query,
     });
     return { answer: text };

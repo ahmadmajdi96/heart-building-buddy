@@ -169,12 +169,17 @@ function CourtroomPage() {
     if (extra.trim()) blocks.push(`=== ${locale === "ar" ? "ملاحظات إضافية" : "Additional notes"} ===\n${extra.trim()}`);
     const combined = blocks.join("\n\n").slice(0, 60_000);
     const title = docs[0]?.name?.replace(/\.[^.]+$/, "") ?? (locale === "ar" ? "قضية مرفوعة" : "Uploaded case");
+    const docCount = docs.length;
+    const totalChars = docs.reduce((a, d) => a + d.text.length, 0);
+    const summary = locale === "ar"
+      ? `تم تحميل ${docCount} مستند${docCount === 1 ? "" : "ات"} (${totalChars.toLocaleString()} حرف). سيستخدم الذكاء الاصطناعي محتواها لإدارة الجلسة — لن يُعرض النص هنا.`
+      : `${docCount} document${docCount === 1 ? "" : "s"} loaded (${totalChars.toLocaleString()} chars). The AI will use their contents to run the hearing — raw text is not displayed here.`;
     setCaseBrief({
       title,
-      jurisdiction: locale === "ar" ? "غير محدد" : "Unspecified",
+      jurisdiction: locale === "ar" ? "المملكة الأردنية الهاشمية" : "Hashemite Kingdom of Jordan",
       court: locale === "ar" ? "محكمة عامة" : "General Court",
       caseNumber: "—",
-      summary: combined.slice(0, 400),
+      summary,
       facts: combined,
       charges: [],
       claimantName: locale === "ar" ? "الطرف الأول" : "Party A",
