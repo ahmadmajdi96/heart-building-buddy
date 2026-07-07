@@ -368,7 +368,9 @@ function MeetingRoom() {
   }
 
   async function enhanceNow() {
-    if (!recorderRef.current && recorderChunksRef.current.length === 0) {
+    const hasAny = Object.values(recordersRef.current).some(Boolean)
+      || (["mic", "tab", "mixed"] as const).some((k) => chunksRef.current[k].length > 0);
+    if (!hasAny) {
       toast.error(
         locale === "ar"
           ? "لا يوجد تسجيل. ابدأ التفريغ أولاً."
@@ -376,12 +378,12 @@ function MeetingRoom() {
       );
       return;
     }
-    const wasRecording = recording;
-    if (wasRecording) {
+    if (recording) {
       try { await scribe.disconnect(); } catch {}
       setRecording(false);
     }
-    const blob = await stopLocalRecorder();
+    const blobs = await stopLocalRecorder();
+    const blob = pickBlob(blobs);
     if (!blob) {
       toast.error(locale === "ar" ? "التسجيل فارغ" : "Recording is empty");
       return;
@@ -396,11 +398,13 @@ function MeetingRoom() {
   async function endMeeting() {
     let better: Turn[] | null = null;
     if (recording) { try { await scribe.disconnect(); } catch {} setRecording(false); }
-    const blob = await stopLocalRecorder();
+    const blobs = await stopLocalRecorder();
+    const blob = pickBlob(blobs);
     if (blob && blob.size > 4096) {
       better = await enhanceWithBatch(blob);
       if (better && better.length) setTurns(better);
     }
+
     try { apiRef.current?.executeCommand("hangup"); } catch {}
     // Save immediately using the enhanced turns if we got them
     setSaving(true);
