@@ -170,7 +170,9 @@ export const Route = createFileRoute("/api/public/hooks/debt-reminders")({
             kind === "reminder_upcoming" ? `Reminder: ${balance.toFixed(2)} ${ccy} due on ${p.due_date} — ${title}`
             : kind === "reminder_due" ? `Payment due today: ${balance.toFixed(2)} ${ccy} — ${title}`
             : `OVERDUE: ${balance.toFixed(2)} ${ccy} was due ${p.due_date} — ${title}`;
-          const r = await sendSms(p.phone, msg, from);
+          const r = await sendSms(p.phone, msg, from, {
+            org_id: p.debt_cases?.org_id ?? null, debt_case_id: p.case_id,
+          });
           await supabaseAdmin.from("debt_sms_log").insert({
             org_id: p.debt_cases?.org_id, case_id: p.case_id, payer_id: p.id,
             phone: p.phone, message: msg, kind,
