@@ -8,6 +8,8 @@ import { getMeeting, saveMeetingTranscript } from "@/lib/meetings.functions";
 import { useScribe } from "@elevenlabs/react";
 import { CommitStrategy } from "@elevenlabs/client";
 import { ArrowLeft, Copy, Mic, MicOff, Loader2, Save, PhoneOff } from "lucide-react";
+import { JITSI_DOMAIN, JITSI_EXTERNAL_API_URL } from "@/lib/jitsi-config";
+
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/meetings/$id")({ component: MeetingRoom });
@@ -81,7 +83,7 @@ function MeetingRoom() {
     const ensureScript = () => new Promise<void>((resolve, reject) => {
       if ((window as any).JitsiMeetExternalAPI) return resolve();
       const s = document.createElement("script");
-      s.src = "https://meet.jit.si/external_api.js";
+      s.src = JITSI_EXTERNAL_API_URL;
       s.async = true;
       s.onload = () => resolve();
       s.onerror = () => reject(new Error("Failed to load Jitsi"));
@@ -89,7 +91,8 @@ function MeetingRoom() {
     });
     ensureScript().then(() => {
       if (cancelled || !jitsiHolder.current) return;
-      const api = new (window as any).JitsiMeetExternalAPI("meet.jit.si", {
+      const api = new (window as any).JitsiMeetExternalAPI(JITSI_DOMAIN, {
+
         roomName: meeting.room_name,
         parentNode: jitsiHolder.current,
         width: "100%",

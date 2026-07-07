@@ -123,7 +123,9 @@ function CasesPage() {
         judge: editing.judge ?? undefined,
         opposing_party: editing.opposing_party ?? undefined,
         opposing_counsel: editing.opposing_counsel ?? undefined,
+        locale,
       }});
+
       setEditOpen(false); setEditing(null); refresh();
       toast.success(isNew
         ? (ar ? "تم إضافة القضية بنجاح" : "Case added successfully")
@@ -154,7 +156,9 @@ function CasesPage() {
         name: quickClient.name.trim(),
         email: quickClient.email, phone: quickClient.phone,
         company: quickClient.company, type: quickClient.type, status: "active",
+        locale,
       }});
+
       const newClient = { id: row.id as string, name: row.name as string };
       setClients((prev) => [newClient, ...prev]);
       setEditing((prev) => ({ ...(prev ?? {}), client_id: newClient.id }));

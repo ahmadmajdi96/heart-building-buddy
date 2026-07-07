@@ -15,6 +15,8 @@ const ClientInput = z.object({
   country: z.string().optional(),
   tax_id: z.string().optional(),
   status: z.enum(["active", "inactive"]).default("active"),
+  locale: z.enum(["ar", "en"]).optional(),
+
 });
 
 export const listClients = createServerFn({ method: "GET" })
@@ -51,8 +53,9 @@ export const saveClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => ClientInput.parse(d))
   .handler(async ({ data, context }) => {
-    const payload: any = { ...data, email: data.email || null, owner_id: context.userId };
-    if (data.id) {
+    const { locale = "en", ...clientData } = data;
+    const payload: any = { ...clientData, email: clientData.email || null, owner_id: context.userId };
+    if (clientData.id) {
       const { id, ...rest } = payload;
       const { data: row, error } = await context.supabase.from("clients").update(rest).eq("id", id!).select().maybeSingle();
       if (error) throw new Error(error.message);
@@ -63,19 +66,23 @@ export const saveClient = createServerFn({ method: "POST" })
     // Send welcome SMS to new client (awaited so the Worker doesn't kill the request).
     if (row?.phone) {
       try {
-        const { sendSms } = await import("./whatsapp.server");
+        const [{ sendSms }, { resolveSenderName }] = await Promise.all([
+          import("./whatsapp.server"),
+          import("./sender-name.server"),
+        ]);
+        const sender = await resolveSenderName(context.supabase as any, context.userId, locale);
         const name = row.name || "";
-        await sendSms(
-          row.phone,
-          `Hello ${name}, your client profile has been created successfully. We will be in touch regarding your matters. — Legal Team`,
-          { owner_id: context.userId, client_id: row.id, context: "client_welcome" },
-        );
+        const body = locale === "ar"
+          ? `مرحباً ${name}، تم إنشاء ملفك بنجاح. سنكون على تواصل بخصوص قضاياك. — ${sender}`
+          : `Hello ${name}, your client profile has been created successfully. We will be in touch regarding your matters. — ${sender}`;
+        await sendSms(row.phone, body, { owner_id: context.userId, client_id: row.id, context: "client_welcome" });
       } catch (e) {
         console.warn("[clients.saveClient] welcome SMS failed:", (e as any)?.message);
       }
     }
     return row;
   });
+
 
 export const deleteClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
