@@ -15,6 +15,8 @@ const ClientInput = z.object({
   country: z.string().optional(),
   tax_id: z.string().optional(),
   status: z.enum(["active", "inactive"]).default("active"),
+  locale: z.enum(["ar", "en"]).optional(),
+
 });
 
 export const listClients = createServerFn({ method: "GET" })
