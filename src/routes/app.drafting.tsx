@@ -44,6 +44,10 @@ function DraftingPage() {
   const getOne = useServerFn(getDraft);
   const listTpl = useServerFn(listTemplateDocuments);
 
+  const getJob = useServerFn(getRagJob);
+  const askRag = useServerFn(queryRag);
+  const delRag = useServerFn(deleteRagDoc);
+
   const [prompt, setPrompt] = useState("");
   const [variables, setVariables] = useState<{ key: string; value: string }[]>([{ key: "ClientName", value: "" }, { key: "Date", value: "" }]);
   const [templates, setTemplates] = useState<TemplateDoc[]>([]);
@@ -53,6 +57,11 @@ function DraftingPage() {
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
+
+  // Private RAG uploads (per-user tenant)
+  const [ragDocs, setRagDocs] = useState<RagDoc[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [ragSources, setRagSources] = useState<Array<{ filename: string; page?: number; excerpt?: string }>>([]);
 
   const editor = useEditor({
     extensions: [
