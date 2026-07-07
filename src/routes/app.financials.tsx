@@ -375,6 +375,15 @@ function SchedulesTab() {
           </>
         )}
       </div>
+      <div className="border-b p-4">
+        <FinancialsToolbar q={q} setQ={setQ} status={status} setStatus={setStatus} statuses={statuses}
+          fromLabel={locale === "ar" ? "من (الاستحقاق)" : "From (due)"}
+          from={from} setFrom={setFrom} to={to} setTo={setTo}
+          onExport={exportCsv} exportDisabled={filtered.length === 0}
+          placeholder={locale === "ar" ? "ابحث بالعميل/الوصف…" : "Search client / description…"} locale={locale as any} />
+      </div>
+
+
 
       {loading ? <Loading/> : filtered.length === 0 ? <Empty msg={locale === "ar" ? "لا نتائج." : "No matches."}/> : (
         <div className="divide-y">
