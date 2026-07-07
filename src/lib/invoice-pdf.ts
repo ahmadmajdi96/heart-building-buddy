@@ -47,20 +47,23 @@ function drawHeaderLogo(pdf: jsPDF, logo: { dataUrl: string; ext: "PNG" | "JPEG"
 }
 
 
-export function downloadInvoicePdf(kind: "quote" | "invoice", doc: Doc, org?: Org | null) {
+export async function downloadInvoicePdf(kind: "quote" | "invoice", doc: Doc, org?: Org | null) {
   const pdf = new jsPDF({ unit: "pt", format: "a4" });
   const W = pdf.internal.pageSize.getWidth();
   const M = 48;
   let y = M;
 
-  // Header
+  // Header (logo + name/details)
+  const logo = org ? await fetchLogoDataUrl(org.logo_path) : null;
+  const textX = M + drawHeaderLogo(pdf, logo, M, y);
   pdf.setFont("helvetica", "bold").setFontSize(16);
-  pdf.text(org?.display_name || org?.legal_name || "", M, y);
+  pdf.text(org?.display_name || org?.legal_name || "", textX, y + 4);
   pdf.setFont("helvetica", "normal").setFontSize(9);
   const rightLines = [org?.email, org?.phone, org?.address, org?.tax_id ? `VAT/TAX: ${org.tax_id}` : null].filter(Boolean) as string[];
   let ry = y;
   rightLines.forEach((line) => { pdf.text(String(line), W - M, ry, { align: "right" }); ry += 12; });
-  y = Math.max(y + 20, ry + 4);
+  y = Math.max(y + (logo ? 52 : 20), ry + 4);
+
 
   pdf.setDrawColor(200); pdf.line(M, y, W - M, y); y += 20;
 
