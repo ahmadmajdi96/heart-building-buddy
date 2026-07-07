@@ -22,6 +22,31 @@ function money(n: number | undefined) {
   return Number(n ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+async function fetchLogoDataUrl(path: string | null | undefined): Promise<{ dataUrl: string; ext: "PNG" | "JPEG" } | null> {
+  const url = await resolveLogoUrl(path ?? null);
+  if (!url) return null;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const ct = (res.headers.get("content-type") || blob.type || "").toLowerCase();
+    const ext: "PNG" | "JPEG" = ct.includes("png") ? "PNG" : "JPEG";
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+    return { dataUrl, ext };
+  } catch { return null; }
+}
+
+function drawHeaderLogo(pdf: jsPDF, logo: { dataUrl: string; ext: "PNG" | "JPEG" } | null, x: number, y: number, size = 48) {
+  if (!logo) return 0;
+  try { pdf.addImage(logo.dataUrl, logo.ext, x, y - 8, size, size); return size + 10; } catch { return 0; }
+}
+
+
 export function downloadInvoicePdf(kind: "quote" | "invoice", doc: Doc, org?: Org | null) {
   const pdf = new jsPDF({ unit: "pt", format: "a4" });
   const W = pdf.internal.pageSize.getWidth();
