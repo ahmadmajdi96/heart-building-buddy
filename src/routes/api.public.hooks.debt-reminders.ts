@@ -11,7 +11,14 @@ import { createFileRoute } from "@tanstack/react-router";
  * Path lives under /api/public/* so pg_cron can call it without auth.
  */
 
-async function sendSms(to: string, body: string, from: string) {
+async function sendSms(
+  to: string,
+  body: string,
+  from: string,
+  meta?: { org_id?: string | null; case_id?: string | null; debt_case_id?: string | null; client_id?: string | null },
+) {
+  const PROJECT_ID = "fb990850-3f8b-4251-83c6-f826e75969f7";
+  const StatusCallback = `https://project--${PROJECT_ID}.lovable.app/api/public/hooks/twilio-status`;
   const res = await fetch("https://connector-gateway.lovable.dev/twilio/Messages.json", {
     method: "POST",
     headers: {
@@ -19,9 +26,26 @@ async function sendSms(to: string, body: string, from: string) {
       "X-Connection-Api-Key": process.env.TWILIO_API_KEY!,
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: new URLSearchParams({ To: String(to).trim(), From: String(from).trim(), Body: body }),
+    body: new URLSearchParams({ To: String(to).trim(), From: String(from).trim(), Body: body, StatusCallback }),
   });
   const json: any = await res.json().catch(() => ({}));
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await (supabaseAdmin as any).from("sms_messages").insert({
+      org_id: meta?.org_id ?? null,
+      case_id: meta?.case_id ?? null,
+      debt_case_id: meta?.debt_case_id ?? null,
+      client_id: meta?.client_id ?? null,
+      context: "debt_reminder",
+      to_number: String(to).trim(),
+      from_number: String(from).trim(),
+      body,
+      twilio_sid: json?.sid ?? null,
+      status: res.ok ? (json?.status ?? "queued") : "failed",
+      error_code: !res.ok && json?.code ? String(json.code) : null,
+      error_message: !res.ok ? JSON.stringify(json).slice(0, 500) : null,
+    });
+  } catch {}
   return { ok: res.ok, sid: json.sid, error: !res.ok ? JSON.stringify(json).slice(0, 500) : undefined };
 }
 
