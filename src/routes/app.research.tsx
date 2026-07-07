@@ -31,18 +31,18 @@ function ResearchPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={locale === "ar" ? "البحث القانوني" : "Legal Research"}
-        subtitle={locale === "ar" ? "ابحث في التشريعات والاجتهاد القضائي." : "Search Arab and international legislation and case law."}
+        title={locale === "ar" ? "البحث القانوني — الأردن" : "Legal Research — Jordan"}
+        subtitle={locale === "ar" ? "بحث حصري في التشريعات والاجتهاد القضائي الأردني." : "Search Jordanian legislation and case law exclusively."}
       />
 
       <div className="card-elev rounded-2xl border bg-gradient-to-br from-card via-card to-gold/5 p-6">
         <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-gold">
-          <Sparkles className="size-3.5" /> {locale === "ar" ? "مدعوم بالذكاء الاصطناعي" : "AI-powered"}
+          <Sparkles className="size-3.5" /> {locale === "ar" ? "مدعوم بالذكاء الاصطناعي — القانون الأردني" : "AI-powered — Jordanian law"}
         </div>
         <div className="flex flex-wrap gap-2">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute start-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && run(q)} placeholder={locale === "ar" ? "اطرح سؤالاً قانونياً…" : "Ask a legal question…"} className="h-14 ps-12 text-base" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && run(q)} placeholder={locale === "ar" ? "اطرح سؤالاً في القانون الأردني…" : "Ask a question about Jordanian law…"} className="h-14 ps-12 text-base" />
           </div>
           <Button size="lg" variant="gold" className="h-14 px-6" onClick={() => run(q)} disabled={loading}>
             {loading ? <Loader2 className="size-4 animate-spin" /> : (locale === "ar" ? "ابحث" : "Search")}
@@ -50,8 +50,8 @@ function ResearchPage() {
         </div>
         <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
           {(locale === "ar"
-            ? ["تعويض الفسخ التعسفي", "شروط التحكيم الإلزامي", "حماية البيانات الشخصية"]
-            : ["Wrongful termination damages", "Mandatory arbitration clauses", "Personal data protection"]
+            ? ["تعويض الفصل التعسفي وفق قانون العمل الأردني", "شروط التحكيم في قانون التحكيم رقم 31 لسنة 2001", "المادة 256 من القانون المدني الأردني", "أحكام قانون الجرائم الإلكترونية رقم 17 لسنة 2023"]
+            : ["Wrongful dismissal under Jordanian Labour Law", "Arbitration clauses under Law No. 31/2001", "Article 256 of the Jordanian Civil Code", "Cybercrime Law No. 17/2023 provisions"]
           ).map((s) => (
             <button key={s} onClick={() => { setQ(s); run(s); }} className="rounded-full border bg-background px-3 py-1.5 hover:border-gold">{s}</button>
           ))}
