@@ -1,24 +1,19 @@
-// Server-only Twilio WhatsApp helper.
+// Server-only Twilio SMS helper.
 // Uses a single fixed sender number for the whole app.
 
-export const WHATSAPP_FROM_NUMBER = "+13502381721";
+export const SMS_FROM_NUMBER = "+13502381721";
+export const WHATSAPP_FROM_NUMBER = SMS_FROM_NUMBER; // legacy alias
 
-function toWa(n: string) {
-  const s = String(n || "").trim();
-  if (!s) return "";
-  return s.startsWith("whatsapp:") ? s : `whatsapp:${s}`;
-}
-
-export async function sendWhatsApp(
+export async function sendSms(
   to: string,
   body: string,
-  from: string = WHATSAPP_FROM_NUMBER,
+  from: string = SMS_FROM_NUMBER,
 ): Promise<{ status: "sent" | "failed" | "skipped"; sid?: string; error?: string }> {
   const key = process.env.LOVABLE_API_KEY;
   const twKey = process.env.TWILIO_API_KEY;
   if (!key || !twKey) return { status: "skipped", error: "Twilio not configured" };
-  const toNum = toWa(to);
-  const fromNum = toWa(from);
+  const toNum = String(to || "").trim();
+  const fromNum = String(from || "").trim();
   if (!toNum || !fromNum) return { status: "skipped", error: "Missing to/from number" };
   try {
     const res = await fetch("https://connector-gateway.lovable.dev/twilio/Messages.json", {
@@ -38,13 +33,18 @@ export async function sendWhatsApp(
   }
 }
 
+// Legacy alias — now sends SMS, not WhatsApp
+export const sendWhatsApp = sendSms;
+
 // Fire-and-forget: never throws; logs failures.
-export function fireWhatsApp(to: string | null | undefined, body: string) {
+export function fireSms(to: string | null | undefined, body: string) {
   if (!to) return;
-  sendWhatsApp(to, body).then((r) => {
+  sendSms(to, body).then((r) => {
     if (r.status === "failed") {
       // eslint-disable-next-line no-console
-      console.warn("[whatsapp] send failed:", r.error);
+      console.warn("[sms] send failed:", r.error);
     }
   });
 }
+export const fireWhatsApp = fireSms;
+
