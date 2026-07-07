@@ -315,6 +315,7 @@ export type Database = {
           opened_at: string
           opposing_counsel: string | null
           opposing_party: string | null
+          org_id: string | null
           owner_id: string
           priority: string | null
           responsible_lawyer: string | null
@@ -335,6 +336,7 @@ export type Database = {
           opened_at?: string
           opposing_counsel?: string | null
           opposing_party?: string | null
+          org_id?: string | null
           owner_id: string
           priority?: string | null
           responsible_lawyer?: string | null
@@ -355,6 +357,7 @@ export type Database = {
           opened_at?: string
           opposing_counsel?: string | null
           opposing_party?: string | null
+          org_id?: string | null
           owner_id?: string
           priority?: string | null
           responsible_lawyer?: string | null
@@ -368,6 +371,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cases_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
