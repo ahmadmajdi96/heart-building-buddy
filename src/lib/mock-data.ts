@@ -109,9 +109,16 @@ export const courses: Course[] = [
 ];
 
 export const researchSources = [
-  { id: "r1", titleAr: "النظام التجاري السعودي — المادة 217", titleEn: "Saudi Commercial Code — Art. 217", jurisdiction: "السعودية", year: 2024, type: "تشريع" },
-  { id: "r2", titleAr: "حكم محكمة التمييز الإماراتية — 2023/118", titleEn: "UAE Court of Cassation — 2023/118", jurisdiction: "الإمارات", year: 2023, type: "اجتهاد" },
-  { id: "r3", titleAr: "قانون التحكيم المصري رقم 27 لسنة 1994", titleEn: "Egyptian Arbitration Law No. 27/1994", jurisdiction: "مصر", year: 1994, type: "تشريع" },
-  { id: "r4", titleAr: "اتفاقية نيويورك بشأن الاعتراف بأحكام التحكيم", titleEn: "New York Convention on Arbitral Awards", jurisdiction: "دولي", year: 1958, type: "معاهدة" },
-  { id: "r5", titleAr: "نظام حماية البيانات الشخصية — السعودية", titleEn: "Personal Data Protection Law — KSA", jurisdiction: "السعودية", year: 2023, type: "تشريع" },
+  { id: "r1", titleAr: "الدستور الأردني لسنة 1952 وتعديلاته", titleEn: "Constitution of Jordan (1952) & amendments", jurisdiction: "الأردن", year: 1952, type: "دستور" },
+  { id: "r2", titleAr: "القانون المدني الأردني رقم 43 لسنة 1976", titleEn: "Jordanian Civil Code No. 43/1976", jurisdiction: "الأردن", year: 1976, type: "تشريع" },
+  { id: "r3", titleAr: "قانون العقوبات الأردني رقم 16 لسنة 1960", titleEn: "Jordanian Penal Code No. 16/1960", jurisdiction: "الأردن", year: 1960, type: "تشريع" },
+  { id: "r4", titleAr: "قانون العمل الأردني رقم 8 لسنة 1996", titleEn: "Jordanian Labour Law No. 8/1996", jurisdiction: "الأردن", year: 1996, type: "تشريع" },
+  { id: "r5", titleAr: "قانون الشركات الأردني رقم 22 لسنة 1997", titleEn: "Jordanian Companies Law No. 22/1997", jurisdiction: "الأردن", year: 1997, type: "تشريع" },
+  { id: "r6", titleAr: "قانون التحكيم الأردني رقم 31 لسنة 2001", titleEn: "Jordanian Arbitration Law No. 31/2001", jurisdiction: "الأردن", year: 2001, type: "تشريع" },
+  { id: "r7", titleAr: "قانون الأحوال الشخصية الأردني رقم 15 لسنة 2019", titleEn: "Jordanian Personal Status Law No. 15/2019", jurisdiction: "الأردن", year: 2019, type: "تشريع" },
+  { id: "r8", titleAr: "قانون الجرائم الإلكترونية رقم 17 لسنة 2023", titleEn: "Jordanian Cybercrime Law No. 17/2023", jurisdiction: "الأردن", year: 2023, type: "تشريع" },
+  { id: "r9", titleAr: "قانون حماية البيانات الشخصية رقم 24 لسنة 2023", titleEn: "Jordanian Personal Data Protection Law No. 24/2023", jurisdiction: "الأردن", year: 2023, type: "تشريع" },
+  { id: "r10", titleAr: "أحكام محكمة التمييز الأردنية (حقوق وجزاء)", titleEn: "Jordanian Court of Cassation rulings (civil & criminal)", jurisdiction: "الأردن", year: 2024, type: "اجتهاد" },
+  { id: "r11", titleAr: "أحكام المحكمة الإدارية والمحكمة الدستورية الأردنية", titleEn: "Jordanian Administrative & Constitutional Court rulings", jurisdiction: "الأردن", year: 2024, type: "اجتهاد" },
+  { id: "r12", titleAr: "الجريدة الرسمية الأردنية", titleEn: "Jordanian Official Gazette", jurisdiction: "الأردن", year: 2025, type: "مرجع" },
 ];
