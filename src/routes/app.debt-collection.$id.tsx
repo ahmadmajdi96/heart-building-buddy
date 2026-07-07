@@ -613,17 +613,42 @@ function SendSmsDialog({ caseId, caseData, payerIds, assigneeUserIds, onSubmit, 
 
 /* -------------- Settings: reminder rules -------------- */
 
-const TEMPLATE_VARS = [
-  { key: "{{name}}", label: "Payer name" },
-  { key: "{{amount_due}}", label: "Amount due" },
-  { key: "{{amount_paid}}", label: "Amount paid" },
-  { key: "{{balance}}", label: "Remaining balance" },
-  { key: "{{due_date}}", label: "Due date" },
-  { key: "{{case_title}}", label: "Case title" },
-  { key: "{{case_type}}", label: "Case type" },
-  { key: "{{reference}}", label: "Case reference" },
-  { key: "{{currency}}", label: "Currency" },
-  { key: "{{forwarder}}", label: "Forwarder name" },
+// Friendly tokens use bracketed English (works for both locales in UI) and
+// map to underlying template vars stored in the database.
+const TEMPLATE_VARS: { key: string; friendly: string; label: { ar: string; en: string }; sample: string }[] = [
+  { key: "{{name}}",       friendly: "[Payer name]",   label: { ar: "اسم الدافع",   en: "Payer name"        }, sample: "Ahmad" },
+  { key: "{{amount_due}}", friendly: "[Amount]",       label: { ar: "المبلغ",       en: "Amount"            }, sample: "500.00" },
+  { key: "{{amount_paid}}",friendly: "[Amount paid]",  label: { ar: "المدفوع",      en: "Amount paid"       }, sample: "0.00" },
+  { key: "{{balance}}",    friendly: "[Balance]",      label: { ar: "المتبقي",      en: "Remaining balance" }, sample: "500.00" },
+  { key: "{{due_date}}",   friendly: "[Due date]",     label: { ar: "تاريخ الاستحقاق", en: "Due date"       }, sample: "2026-07-15" },
+  { key: "{{case_title}}", friendly: "[Case]",         label: { ar: "القضية",       en: "Case title"        }, sample: "Rental arrears" },
+  { key: "{{currency}}",   friendly: "[Currency]",     label: { ar: "العملة",       en: "Currency"          }, sample: "JOD" },
+  { key: "{{reference}}",  friendly: "[Reference]",    label: { ar: "المرجع",       en: "Case reference"    }, sample: "REF-001" },
+];
+
+function toFriendly(tpl: string) {
+  let out = tpl;
+  for (const v of TEMPLATE_VARS) out = out.split(v.key).join(v.friendly);
+  return out;
+}
+function toRaw(tpl: string) {
+  let out = tpl;
+  for (const v of TEMPLATE_VARS) out = out.split(v.friendly).join(v.key);
+  return out;
+}
+function renderPreview(tpl: string) {
+  let out = toRaw(tpl);
+  for (const v of TEMPLATE_VARS) out = out.split(v.key).join(v.sample);
+  return out;
+}
+
+const REMINDER_PRESETS: { id: string; label: { ar: string; en: string }; template: string }[] = [
+  { id: "friendly", label: { ar: "لبق ومحترم", en: "Friendly & polite" },
+    template: "Hi [Payer name], a friendly reminder that [Amount] [Currency] is due on [Due date] for [Case]. Please let us know if you have any questions." },
+  { id: "firm", label: { ar: "رسمي وحازم", en: "Formal & firm" },
+    template: "Dear [Payer name], your payment of [Amount] [Currency] for [Case] is due on [Due date]. Kindly arrange settlement before that date to avoid further action." },
+  { id: "overdue", label: { ar: "متأخر السداد", en: "Overdue notice" },
+    template: "[Payer name], the payment of [Amount] [Currency] for [Case] was due on [Due date] and is now overdue. Please contact us immediately." },
 ];
 
 function offsetLabel(days: number, ar: boolean) {
