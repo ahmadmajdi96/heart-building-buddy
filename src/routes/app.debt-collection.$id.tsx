@@ -613,17 +613,45 @@ function SendSmsDialog({ caseId, caseData, payerIds, assigneeUserIds, onSubmit, 
 
 /* -------------- Settings: reminder rules -------------- */
 
-const TEMPLATE_VARS = [
-  { key: "{{name}}", label: "Payer name" },
-  { key: "{{amount_due}}", label: "Amount due" },
-  { key: "{{amount_paid}}", label: "Amount paid" },
-  { key: "{{balance}}", label: "Remaining balance" },
-  { key: "{{due_date}}", label: "Due date" },
-  { key: "{{case_title}}", label: "Case title" },
-  { key: "{{case_type}}", label: "Case type" },
-  { key: "{{reference}}", label: "Case reference" },
-  { key: "{{currency}}", label: "Currency" },
-  { key: "{{forwarder}}", label: "Forwarder name" },
+// Friendly tokens use bracketed English (works for both locales in UI) and
+// map to underlying template vars stored in the database.
+const TEMPLATE_VARS: { key: string; friendly: string; label: { ar: string; en: string }; sample: string }[] = [
+  { key: "{{name}}",       friendly: "[Payer name]",   label: { ar: "اسم الدافع",   en: "Payer name"        }, sample: "Ahmad" },
+  { key: "{{amount_due}}", friendly: "[Amount]",       label: { ar: "المبلغ",       en: "Amount"            }, sample: "500.00" },
+  { key: "{{amount_paid}}",friendly: "[Amount paid]",  label: { ar: "المدفوع",      en: "Amount paid"       }, sample: "0.00" },
+  { key: "{{balance}}",    friendly: "[Balance]",      label: { ar: "المتبقي",      en: "Remaining balance" }, sample: "500.00" },
+  { key: "{{due_date}}",   friendly: "[Due date]",     label: { ar: "تاريخ الاستحقاق", en: "Due date"       }, sample: "2026-07-15" },
+  { key: "{{case_title}}", friendly: "[Case]",         label: { ar: "القضية",       en: "Case title"        }, sample: "Rental arrears" },
+  { key: "{{currency}}",   friendly: "[Currency]",     label: { ar: "العملة",       en: "Currency"          }, sample: "JOD" },
+  { key: "{{reference}}",  friendly: "[Reference]",    label: { ar: "المرجع",       en: "Case reference"    }, sample: "REF-001" },
+];
+
+function toFriendly(tpl: string) {
+  let out = tpl;
+  const sorted = [...TEMPLATE_VARS].sort((a, b) => b.key.length - a.key.length);
+  for (const v of sorted) out = out.split(v.key).join(v.friendly);
+  return out;
+}
+function toRaw(tpl: string) {
+  let out = tpl;
+  const sorted = [...TEMPLATE_VARS].sort((a, b) => b.friendly.length - a.friendly.length);
+  for (const v of sorted) out = out.split(v.friendly).join(v.key);
+  return out;
+}
+function renderPreview(tpl: string) {
+  let out = toRaw(tpl);
+  const sorted = [...TEMPLATE_VARS].sort((a, b) => b.key.length - a.key.length);
+  for (const v of sorted) out = out.split(v.key).join(v.sample);
+  return out;
+}
+
+const REMINDER_PRESETS: { id: string; label: { ar: string; en: string }; template: string }[] = [
+  { id: "friendly", label: { ar: "لبق ومحترم", en: "Friendly & polite" },
+    template: "Hi [Payer name], a friendly reminder that [Amount] [Currency] is due on [Due date] for [Case]. Please let us know if you have any questions." },
+  { id: "firm", label: { ar: "رسمي وحازم", en: "Formal & firm" },
+    template: "Dear [Payer name], your payment of [Amount] [Currency] for [Case] is due on [Due date]. Kindly arrange settlement before that date to avoid further action." },
+  { id: "overdue", label: { ar: "متأخر السداد", en: "Overdue notice" },
+    template: "[Payer name], the payment of [Amount] [Currency] for [Case] was due on [Due date] and is now overdue. Please contact us immediately." },
 ];
 
 function offsetLabel(days: number, ar: boolean) {
@@ -705,7 +733,7 @@ function SettingsTab({ caseId, caseData, ar }: any) {
                   <Badge variant="outline" className="text-xs">{offsetLabel(r.offset_days, ar)}</Badge>
                   {!r.active && <Badge variant="secondary" className="text-xs">{ar ? "معطل" : "Inactive"}</Badge>}
                 </div>
-                <div className="mt-1 line-clamp-2 whitespace-pre-wrap text-xs text-muted-foreground">{r.message_template}</div>
+                <div className="mt-1 line-clamp-2 whitespace-pre-wrap text-xs text-muted-foreground">{toFriendly(r.message_template)}</div>
               </div>
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="sm" onClick={() => { setEditing(r); setOpenDialog(true); }}>
@@ -721,10 +749,10 @@ function SettingsTab({ caseId, caseData, ar }: any) {
       )}
 
       <div className="mt-4 rounded-md bg-muted/30 p-3 text-xs text-muted-foreground">
-        <div className="font-medium text-foreground">{ar ? "المتغيرات المتاحة" : "Available variables"}</div>
+        <div className="font-medium text-foreground">{ar ? "الحقول المتاحة (تُملأ تلقائياً)" : "Available fields (auto-filled)"}</div>
         <div className="mt-1 flex flex-wrap gap-1">
           {TEMPLATE_VARS.map((v) => (
-            <code key={v.key} className="rounded bg-background px-1.5 py-0.5">{v.key}</code>
+            <code key={v.key} className="rounded bg-background px-1.5 py-0.5">{v.friendly}</code>
           ))}
         </div>
       </div>
@@ -733,13 +761,15 @@ function SettingsTab({ caseId, caseData, ar }: any) {
 }
 
 function ReminderRuleDialog({ caseId, initial, onSubmit, pending, ar }: any) {
+  const initialTpl = initial?.message_template ?? "Hi [Payer name], this is a reminder that [Amount] [Currency] is due on [Due date] for [Case].";
   const [form, setForm] = useState(() => ({
     id: initial?.id,
     case_id: caseId,
     label: initial?.label ?? "",
     offset_days: initial?.offset_days ?? -3,
     kind: initial?.kind ?? "reminder_upcoming",
-    message_template: initial?.message_template ?? "Hi {{name}}, this is a reminder that {{amount_due}} {{currency}} is due on {{due_date}} for {{case_title}}.",
+    // Friendly (bracketed) text in the editor; converted to raw tokens on save.
+    message_template: toFriendly(initialTpl),
     active: initial?.active ?? true,
   }));
   const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
@@ -779,31 +809,66 @@ function ReminderRuleDialog({ caseId, initial, onSubmit, pending, ar }: any) {
             <Select value={form.kind} onValueChange={(v) => setForm({ ...form, kind: v as any })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="reminder_upcoming">Upcoming</SelectItem>
-                <SelectItem value="reminder_due">Due</SelectItem>
-                <SelectItem value="reminder_overdue">Overdue</SelectItem>
-                <SelectItem value="manual">Manual</SelectItem>
+                <SelectItem value="reminder_upcoming">{ar ? "قبل الاستحقاق" : "Upcoming"}</SelectItem>
+                <SelectItem value="reminder_due">{ar ? "يوم الاستحقاق" : "Due"}</SelectItem>
+                <SelectItem value="reminder_overdue">{ar ? "متأخر" : "Overdue"}</SelectItem>
+                <SelectItem value="manual">{ar ? "يدوي" : "Manual"}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
+
         <div>
-          <Label>{ar ? "محتوى الرسالة" : "Message content"}</Label>
-          <Textarea ref={textareaRef} rows={5} value={form.message_template} onChange={(e) => setForm({ ...form, message_template: e.target.value })} />
-          <div className="mt-2 flex flex-wrap gap-1">
-            {TEMPLATE_VARS.map((v) => (
+          <Label className="text-xs text-muted-foreground">{ar ? "قوالب جاهزة" : "Quick presets"}</Label>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {REMINDER_PRESETS.map((p) => (
               <button
-                key={v.key}
+                key={p.id}
                 type="button"
-                onClick={() => insertVar(v.key)}
-                className="rounded border border-border/60 bg-background px-1.5 py-0.5 text-xs hover:bg-muted"
-                title={v.label}
+                onClick={() => setForm({ ...form, message_template: p.template })}
+                className="rounded-md border border-border/60 bg-background px-2 py-1 text-xs hover:border-gold/50 hover:bg-gold/5"
               >
-                {v.key}
+                {ar ? p.label.ar : p.label.en}
               </button>
             ))}
           </div>
         </div>
+
+        <div>
+          <Label>{ar ? "محتوى الرسالة" : "Message content"}</Label>
+          <Textarea
+            ref={textareaRef}
+            rows={5}
+            value={form.message_template}
+            onChange={(e) => setForm({ ...form, message_template: e.target.value })}
+            placeholder={ar ? "اكتب رسالتك، وانقر على أي حقل أدناه لإدراجه." : "Type your message and click a field below to insert it."}
+          />
+          <div className="mt-2">
+            <div className="mb-1 text-[11px] uppercase tracking-wider text-muted-foreground">
+              {ar ? "أدرج حقلاً" : "Insert a field"}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {TEMPLATE_VARS.map((v) => (
+                <button
+                  key={v.key}
+                  type="button"
+                  onClick={() => insertVar(v.friendly)}
+                  className="rounded-md border border-border/60 bg-background px-2 py-1 text-xs hover:border-gold/50 hover:bg-gold/5"
+                  title={ar ? v.label.ar : v.label.en}
+                >
+                  {v.friendly}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="mt-3 rounded-md border border-dashed border-border/60 bg-muted/20 p-3">
+            <div className="mb-1 text-[11px] uppercase tracking-wider text-muted-foreground">
+              {ar ? "معاينة (بيانات تجريبية)" : "Preview (with sample data)"}
+            </div>
+            <div className="whitespace-pre-wrap text-sm">{renderPreview(form.message_template) || <span className="text-muted-foreground">—</span>}</div>
+          </div>
+        </div>
+
         <div className="flex items-center justify-between rounded-md border border-border/60 px-3 py-2">
           <div>
             <div className="text-sm font-medium">{ar ? "مفعل" : "Active"}</div>
@@ -813,7 +878,11 @@ function ReminderRuleDialog({ caseId, initial, onSubmit, pending, ar }: any) {
         </div>
       </div>
       <DialogFooter>
-        <Button variant="gold" disabled={pending || !form.label || !form.message_template} onClick={() => onSubmit(form)}>
+        <Button
+          variant="gold"
+          disabled={pending || !form.label || !form.message_template}
+          onClick={() => onSubmit({ ...form, message_template: toRaw(form.message_template) })}
+        >
           {pending ? <Loader2 className="size-4 animate-spin" /> : (ar ? "حفظ" : "Save")}
         </Button>
       </DialogFooter>

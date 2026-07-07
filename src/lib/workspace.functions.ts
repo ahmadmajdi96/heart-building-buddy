@@ -1,17 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getActiveOrgId } from "./active-org.server";
+import { z } from "zod";
 
 async function getCallerOrgId(ctx: { supabase: any; userId: string }) {
-  const { data, error } = await ctx.supabase
-    .from("organization_members")
-    .select("org_id")
-    .eq("user_id", ctx.userId)
-    .eq("status", "active")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  return (data?.org_id as string | undefined) ?? null;
+  return await getActiveOrgId(ctx);
 }
 
 /**
@@ -31,16 +24,18 @@ export const getWorkspaceOverview = createServerFn({ method: "GET" })
         .select("user_id, role, status, invited_email, created_at")
         .eq("org_id", orgId)
         .eq("status", "active"),
-      // cases don't have org_id — scope through owner_id ∈ org members
+      // Cases are scoped by org_id (new) or fall back to owner ∈ org for legacy rows.
       (async () => {
         const { data: orgMems } = await context.supabase
           .from("organization_members").select("user_id").eq("org_id", orgId).eq("status", "active");
         const ownerIds = (orgMems ?? []).map((m: any) => m.user_id).filter(Boolean);
-        if (ownerIds.length === 0) return { data: [] as any[], error: null };
+        const orFilter = ownerIds.length > 0
+          ? `org_id.eq.${orgId},and(org_id.is.null,owner_id.in.(${ownerIds.join(",")}))`
+          : `org_id.eq.${orgId}`;
         return await context.supabase
           .from("cases")
-          .select("id, title, case_number, status, priority, opened_at, owner_id, client_id, clients(id, name)")
-          .in("owner_id", ownerIds)
+          .select("id, title, case_number, status, priority, opened_at, owner_id, org_id, client_id, clients(id, name)")
+          .or(orFilter)
           .order("opened_at", { ascending: false });
       })(),
     ]);
@@ -153,3 +148,27 @@ export const getWorkspaceCase = createServerFn({ method: "POST" })
       deadlines: deadlines.data ?? [],
     };
   });
+
+/**
+ * Assign a case to a specific workspace (or clear it by passing org_id: null).
+ * Caller must be an active member of the target workspace.
+ */
+export const assignCaseToWorkspace = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    case_id: z.string().uuid(),
+    org_id: z.string().uuid().nullable(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    if (data.org_id) {
+      const { data: mem } = await context.supabase
+        .from("organization_members")
+        .select("org_id").eq("user_id", context.userId).eq("org_id", data.org_id).eq("status", "active").maybeSingle();
+      if (!mem) throw new Error("You are not a member of that workspace");
+    }
+    const { data: row, error } = await context.supabase
+      .from("cases").update({ org_id: data.org_id }).eq("id", data.case_id).select().maybeSingle();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+

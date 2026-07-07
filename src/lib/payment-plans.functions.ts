@@ -226,6 +226,22 @@ export const createPaymentPlan = createServerFn({ method: "POST" })
       });
     } catch { /* non-fatal */ }
 
+    // Auto-notify the client that a payment plan was created for them.
+    try {
+      const { data: client } = await context.supabase
+        .from("clients").select("phone").eq("id", data.client_id).maybeSingle();
+      if (client?.phone) {
+        const { sendSms } = await import("./whatsapp.server");
+        const perInstall = base.toFixed(2);
+        const body = `Hello ${data.client_name}, a payment plan has been arranged for your account: ${n} installments of about ${perInstall} ${currency} starting ${rows[0].due_date}. Total: ${totalRemaining.toFixed(2)} ${currency}. We will send you reminders before each installment.`;
+        await sendSms(client.phone, body, {
+          owner_id: context.userId, org_id: mem.org_id,
+          client_id: data.client_id, debt_case_id: debt_case_id,
+          context: "debt_reminder",
+        });
+      }
+    } catch (e) { console.warn("[createPaymentPlan] client SMS failed:", (e as any)?.message); }
+
     return { plan_id, debt_case_id, count: n, total: Number(totalRemaining.toFixed(2)) };
   });
 

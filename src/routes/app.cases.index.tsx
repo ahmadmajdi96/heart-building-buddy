@@ -18,6 +18,7 @@ import { listClients, saveClient } from "@/lib/clients.functions";
 import { Plus, Loader2, Pencil, Trash2, Search, UserPlus, Download, X } from "lucide-react";
 import { toast } from "sonner";
 import { toCsv, downloadCsv, inRange } from "@/lib/csv-export";
+import { useOrg } from "@/lib/org-context";
 
 export const Route = createFileRoute("/app/cases/")({ component: CasesPage });
 
@@ -83,7 +84,8 @@ function CasesPage() {
     } catch (e) { toast.error((e as Error).message); }
     finally { setLoading(false); }
   }
-  useEffect(() => { refresh(); }, []);
+  const { org: activeOrg } = useOrg();
+  useEffect(() => { refresh(); }, [activeOrg?.id]);
 
   const filtered = useMemo(() => cases.filter((c) => {
     if (status !== "all" && c.status !== status) return false;

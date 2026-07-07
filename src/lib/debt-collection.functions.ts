@@ -156,6 +156,23 @@ export const savePayer = createServerFn({ method: "POST" })
     }
     const { data: row, error } = await context.supabase.from("debt_case_payers").insert(payload).select().maybeSingle();
     if (error) throw new Error(error.message);
+    // Auto-notify newly added payer
+    if (row?.phone) {
+      try {
+        const { data: caseRow } = await context.supabase
+          .from("debt_cases").select("title, currency, org_id").eq("id", data.case_id).maybeSingle();
+        const { sendSms } = await import("./whatsapp.server");
+        const amt = Number(data.amount_due || 0).toFixed(2);
+        const ccy = caseRow?.currency ?? "";
+        const dueStr = data.due_date ? ` due on ${data.due_date}` : "";
+        const body = `Hello ${data.name}, you have been registered for the collection case "${caseRow?.title ?? ""}" with an amount of ${amt} ${ccy}${dueStr}. We will keep you updated with reminders.`;
+        await sendSms(row.phone, body, {
+          owner_id: context.userId, org_id: caseRow?.org_id ?? null,
+          debt_case_id: data.case_id, client_id: row.client_id ?? null,
+          context: "debt_reminder",
+        });
+      } catch (e) { console.warn("[savePayer] SMS failed:", (e as any)?.message); }
+    }
     return row;
   });
 
@@ -201,6 +218,22 @@ export const addAssignee = createServerFn({ method: "POST" })
       .upsert({ case_id: data.case_id, user_id: data.user_id, role: data.role, phone: data.phone || null, notify_sms: data.notify_sms })
       .select().maybeSingle();
     if (error) throw new Error(error.message);
+    // Auto-SMS the assigned lawyer if a phone was provided.
+    if (data.notify_sms && data.phone) {
+      try {
+        const { data: caseRow } = await context.supabase
+          .from("debt_cases").select("title, org_id").eq("id", data.case_id).maybeSingle();
+        const { data: prof } = await context.supabase
+          .from("profiles").select("full_name").eq("id", data.user_id).maybeSingle();
+        const { sendSms } = await import("./whatsapp.server");
+        const name = prof?.full_name ?? "Team member";
+        const body = `Hello ${name}, you have been assigned to the collection case "${caseRow?.title ?? ""}" as ${data.role}. Please review it in the app.`;
+        await sendSms(data.phone, body, {
+          owner_id: context.userId, org_id: caseRow?.org_id ?? null,
+          debt_case_id: data.case_id, context: "case_assignment",
+        });
+      } catch (e) { console.warn("[addAssignee] SMS failed:", (e as any)?.message); }
+    }
     return row;
   });
 

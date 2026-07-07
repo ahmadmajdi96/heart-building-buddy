@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getActiveOrgId } from "./active-org.server";
 
 const CaseInput = z.object({
   id: z.string().uuid().optional(),
@@ -24,10 +25,19 @@ const CaseInput = z.object({
 export const listCases = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+    const orgId = await getActiveOrgId(context);
+    let query = context.supabase
       .from("cases")
       .select("*, clients(id, name)")
       .order("opened_at", { ascending: false });
+    // Scope to active workspace when the user has one. Also include any
+    // legacy cases the user owns that have no org yet (won't leak across).
+    if (orgId) {
+      query = query.or(`org_id.eq.${orgId},and(org_id.is.null,owner_id.eq.${context.userId})`);
+    } else {
+      query = query.eq("owner_id", context.userId);
+    }
+    const { data, error } = await query;
     if (error) throw new Error(error.message);
     return data ?? [];
   });
@@ -60,11 +70,13 @@ export const saveCase = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => CaseInput.parse(d))
   .handler(async ({ data, context }) => {
     const { locale = "en", ...caseData } = data;
+    const orgId = await getActiveOrgId(context);
     const payload: any = {
       ...caseData,
       client_id: caseData.client_id || null,
       responsible_lawyer: caseData.responsible_lawyer || null,
       owner_id: context.userId,
+      org_id: orgId,
     };
     if (caseData.id) {
       const { id, ...rest } = payload;
