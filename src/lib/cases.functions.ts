@@ -70,11 +70,13 @@ export const saveCase = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => CaseInput.parse(d))
   .handler(async ({ data, context }) => {
     const { locale = "en", ...caseData } = data;
+    const orgId = await getActiveOrgId(context);
     const payload: any = {
       ...caseData,
       client_id: caseData.client_id || null,
       responsible_lawyer: caseData.responsible_lawyer || null,
       owner_id: context.userId,
+      org_id: orgId,
     };
     if (caseData.id) {
       const { id, ...rest } = payload;
