@@ -67,6 +67,7 @@ function MeetingRoom() {
   const [recording, setRecording] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [captureTab, setCaptureTab] = useState(false);
+  const [diarizationSource, setDiarizationSource] = useState<"mixed" | "mic" | "tab">("mixed");
   const [saving, setSaving] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const jitsiHolder = useRef<HTMLDivElement>(null);
@@ -75,13 +76,17 @@ function MeetingRoom() {
   const turnsRef = useRef<Turn[]>([]);
   turnsRef.current = turns;
 
-  // Local audio recorder for high-accuracy batch re-transcription
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const recorderChunksRef = useRef<Blob[]>([]);
+  // Local audio recorders for high-accuracy batch re-transcription.
+  // We keep mic, tab and mixed streams separate so the user can pick
+  // whichever track diarizes best.
+  type Track = "mic" | "tab" | "mixed";
+  const recordersRef = useRef<Partial<Record<Track, MediaRecorder>>>({});
+  const chunksRef = useRef<Record<Track, Blob[]>>({ mic: [], tab: [], mixed: [] });
   const recorderMimeRef = useRef<string>("audio/webm");
   const micStreamRef = useRef<MediaStream | null>(null);
   const displayStreamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+
 
   const scribe = useScribe({
     modelId: "scribe_v2_realtime",
@@ -238,34 +243,72 @@ function MeetingRoom() {
 
     const mime = pickRecorderMime();
     recorderMimeRef.current = mime || "audio/webm";
-    const rec = mime ? new MediaRecorder(combined, { mimeType: mime, audioBitsPerSecond: 128_000 }) : new MediaRecorder(combined);
-    recorderChunksRef.current = [];
-    rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) recorderChunksRef.current.push(e.data); };
-    rec.start(1000);
-    recorderRef.current = rec;
+    chunksRef.current = { mic: [], tab: [], mixed: [] };
+    recordersRef.current = {};
+
+    const makeRec = (track: Track, stream: MediaStream) => {
+      const rec = mime
+        ? new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 128_000 })
+        : new MediaRecorder(stream);
+      rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunksRef.current[track].push(e.data); };
+      rec.start(1000);
+      recordersRef.current[track] = rec;
+    };
+
+    // Always record mic on its own track.
+    makeRec("mic", mic);
+    // Always record the "mixed" track so live scribe input matches it (mic-only when no tab).
+    makeRec("mixed", combined);
+    // If tab audio is available, record it separately too.
+    if (displayStreamRef.current) {
+      const tabOnly = new MediaStream(displayStreamRef.current.getAudioTracks());
+      makeRec("tab", tabOnly);
+    }
   }
 
-  function stopLocalRecorder(): Promise<Blob | null> {
+  function stopLocalRecorder(): Promise<Record<Track, Blob | null>> {
     return new Promise((resolve) => {
-      const rec = recorderRef.current;
-      if (!rec) return resolve(null);
-      const done = () => {
-        try {
-          const blob = new Blob(recorderChunksRef.current, { type: recorderMimeRef.current });
-          resolve(blob.size > 0 ? blob : null);
-        } catch { resolve(null); }
-        recorderRef.current = null;
+      const recs = recordersRef.current;
+      const tracks: Track[] = ["mic", "tab", "mixed"];
+      const active = tracks.filter((t) => recs[t]);
+      if (active.length === 0) return resolve({ mic: null, tab: null, mixed: null });
+      const out: Record<Track, Blob | null> = { mic: null, tab: null, mixed: null };
+      let remaining = active.length;
+      const finish = () => {
         micStreamRef.current?.getTracks().forEach((t) => t.stop());
         displayStreamRef.current?.getTracks().forEach((t) => t.stop());
         micStreamRef.current = null;
         displayStreamRef.current = null;
         try { audioCtxRef.current?.close(); } catch {}
         audioCtxRef.current = null;
+        recordersRef.current = {};
+        resolve(out);
       };
-      rec.onstop = done;
-      try { rec.stop(); } catch { done(); }
+      active.forEach((track) => {
+        const rec = recs[track]!;
+        rec.onstop = () => {
+          try {
+            const blob = new Blob(chunksRef.current[track], { type: recorderMimeRef.current });
+            out[track] = blob.size > 0 ? blob : null;
+          } catch { out[track] = null; }
+          remaining -= 1;
+          if (remaining === 0) finish();
+        };
+        try { rec.stop(); } catch {
+          remaining -= 1;
+          if (remaining === 0) finish();
+        }
+      });
     });
   }
+
+  function pickBlob(blobs: Record<Track, Blob | null>): Blob | null {
+    const preferred = blobs[diarizationSource];
+    if (preferred && preferred.size > 4096) return preferred;
+    // Fallback chain: mixed → mic → tab
+    return blobs.mixed || blobs.mic || blobs.tab || preferred;
+  }
+
 
   async function toggleRec() {
     if (recording) {
@@ -325,7 +368,9 @@ function MeetingRoom() {
   }
 
   async function enhanceNow() {
-    if (!recorderRef.current && recorderChunksRef.current.length === 0) {
+    const hasAny = Object.values(recordersRef.current).some(Boolean)
+      || (["mic", "tab", "mixed"] as const).some((k) => chunksRef.current[k].length > 0);
+    if (!hasAny) {
       toast.error(
         locale === "ar"
           ? "لا يوجد تسجيل. ابدأ التفريغ أولاً."
@@ -333,12 +378,12 @@ function MeetingRoom() {
       );
       return;
     }
-    const wasRecording = recording;
-    if (wasRecording) {
+    if (recording) {
       try { await scribe.disconnect(); } catch {}
       setRecording(false);
     }
-    const blob = await stopLocalRecorder();
+    const blobs = await stopLocalRecorder();
+    const blob = pickBlob(blobs);
     if (!blob) {
       toast.error(locale === "ar" ? "التسجيل فارغ" : "Recording is empty");
       return;
@@ -353,11 +398,13 @@ function MeetingRoom() {
   async function endMeeting() {
     let better: Turn[] | null = null;
     if (recording) { try { await scribe.disconnect(); } catch {} setRecording(false); }
-    const blob = await stopLocalRecorder();
+    const blobs = await stopLocalRecorder();
+    const blob = pickBlob(blobs);
     if (blob && blob.size > 4096) {
       better = await enhanceWithBatch(blob);
       if (better && better.length) setTurns(better);
     }
+
     try { apiRef.current?.executeCommand("hangup"); } catch {}
     // Save immediately using the enhanced turns if we got them
     setSaving(true);
@@ -410,6 +457,18 @@ function MeetingRoom() {
             {recording ? <MicOff className="size-4" /> : <Mic className="size-4" />}
             {recording ? (locale === "ar" ? "إيقاف التفريغ" : "Stop transcribing") : (locale === "ar" ? "ابدأ التفريغ" : "Start transcribing")}
           </Button>
+          <label className="flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs text-muted-foreground">
+            <span>{locale === "ar" ? "مصدر التفريغ" : "Diarize from"}</span>
+            <select
+              value={diarizationSource}
+              onChange={(e) => setDiarizationSource(e.target.value as "mixed" | "mic" | "tab")}
+              className="bg-transparent text-xs outline-none"
+            >
+              <option value="mixed">{locale === "ar" ? "مدمج" : "Mixed"}</option>
+              <option value="mic">{locale === "ar" ? "الميكروفون فقط" : "Mic only"}</option>
+              <option value="tab">{locale === "ar" ? "التبويب فقط" : "Tab only"}</option>
+            </select>
+          </label>
           <Button variant="outline" size="sm" onClick={enhanceNow} disabled={enhancing}>
             {enhancing ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
             {locale === "ar" ? "تحسين الدقة" : "Enhance"}

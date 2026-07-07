@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { createMeeting, listMeetings, deleteMeeting } from "@/lib/meetings.functions";
 import { listCases } from "@/lib/cases.functions";
 import { listClients } from "@/lib/clients.functions";
-import { Video, Plus, Trash2, Copy, ArrowRight, Loader2, Search } from "lucide-react";
+import { Video, Plus, Trash2, Copy, ArrowRight, Loader2, Search, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/meetings/")({ component: MeetingsPage });
@@ -166,6 +166,9 @@ function MeetingsPage() {
                 </div>
                 <Button size="sm" variant="ghost" onClick={() => copyLink(m.room_name)} title={locale === "ar" ? "نسخ الرابط" : "Copy invite link"}>
                   <Copy className="size-4" />
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => navigate({ to: "/app/meetings/transcript/$id", params: { id: m.id } })} title={locale === "ar" ? "عرض/تحرير النص" : "View / edit transcript"}>
+                  <FileText className="size-4" />
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => navigate({ to: "/app/meetings/$id", params: { id: m.id } })}>
                   {locale === "ar" ? "فتح" : "Open"} <ArrowRight className="size-3.5" />
