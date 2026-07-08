@@ -1,0 +1,1 @@
+ALTER VIEW public.invoice_balances SET (security_invoker = on);
