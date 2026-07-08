@@ -119,6 +119,40 @@ export const saveCase = createServerFn({ method: "POST" })
     return row;
   });
 
+/** Sync the case retainer to an actual payments row (idempotent per case).
+ *  Called from saveCase after insert/update. */
+async function syncRetainerPayment(ctx: any, orgId: string | null, caseRow: any) {
+  if (!orgId || !caseRow?.id) return;
+  const retainer = Number(caseRow.retainer_amount || 0);
+  const reference = `retainer:${caseRow.id}`;
+  const currency = caseRow.fee_currency || "JOD";
+  // Look up client name for the payment label.
+  let client_name = "";
+  let client_id: string | null = caseRow.client_id ?? null;
+  if (client_id) {
+    const { data: cl } = await ctx.supabase.from("clients").select("name").eq("id", client_id).maybeSingle();
+    client_name = cl?.name || "";
+  }
+  const { data: existing } = await ctx.supabase
+    .from("payments").select("id, amount").eq("org_id", orgId).eq("reference", reference).maybeSingle();
+  if (retainer <= 0) {
+    if (existing) await ctx.supabase.from("payments").delete().eq("id", existing.id);
+    return;
+  }
+  if (existing) {
+    if (Number(existing.amount) !== retainer) {
+      await ctx.supabase.from("payments").update({ amount: retainer, currency, client_name, client_id }).eq("id", existing.id);
+    }
+    return;
+  }
+  await ctx.supabase.from("payments").insert({
+    org_id: orgId, created_by: ctx.userId, invoice_id: null, client_id, client_name: client_name || "Retainer",
+    amount: retainer, currency, method: "bank_transfer",
+    reference, paid_at: new Date().toISOString().slice(0, 10),
+    notes: `Case retainer (down payment) — ${caseRow.title ?? caseRow.case_number ?? ""}`.trim(),
+  });
+}
+
 
 export const deleteCase = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
