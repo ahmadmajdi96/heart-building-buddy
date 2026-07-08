@@ -18,6 +18,7 @@ import { getCase, addCaseEvent, deleteCaseEvent, closeCase, saveCase } from "@/l
 import { saveDraftInvoice } from "@/lib/draft-invoices.functions";
 import { createDocument, getSignedDownloadUrl, deleteDocument } from "@/lib/documents.functions";
 import { saveAppointment } from "@/lib/appointments.functions";
+import { saveDeadline, completeDeadline, deleteDeadline } from "@/lib/deadlines.functions";
 import { listParties, saveParty, deleteParty, listNotes, addNote, deleteNote } from "@/lib/case-extras.functions";
 import { listCaseMembers, addCaseMember, removeCaseMember, updateCaseMemberRole, listAssignableUsers } from "@/lib/case-members.functions";
 import { supabase } from "@/integrations/supabase/client";
