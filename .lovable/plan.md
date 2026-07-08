@@ -1,58 +1,161 @@
-# Implementation Plan — Mohkam Law Overhaul
 
-Big batch across four areas. I'll ship a single migration first, then the UI/server changes.
+# Fill the payment-system gaps — phased plan
 
-## 1. Database migration (single migration)
+Scope is large, so I'll ship in the doc's migration order. Each phase is a self-contained batch that leaves the app in a working state. **WhatsApp is dropped everywhere — SMS only.** All reminder channels comply with Jordan TRC rules (see §J).
 
-New columns / tables:
-- `cases`: add `agreed_fee numeric`, `retainer_amount numeric`, `hourly_rate numeric`, `fee_currency text default 'JOD'`, `close_result text` (won/lost/settled/withdrawn/other), `closed_at timestamptz`.
-- `documents`: ensure `client_id uuid` FK exists (used by counter + client tab). Add index.
-- `debt_cases`: add `recurrence text` (none/weekly/monthly/yearly), `recurrence_interval int default 1`, `next_recur_at date`, `parent_debt_case_id uuid` (for tracking series).
-- `payment_schedules`: already exists — will reuse for installments.
-- New: `case_pricing` covered by columns on `cases` (no separate table).
+Nothing below is built yet; approve the plan and I'll execute phases in order.
 
-All new columns nullable so existing rows are safe. Migration also backfills `documents.client_id` from `cases.client_id` where a document has a `case_id` and no `client_id`.
+---
 
-## 2. Documents page
-- Add split "New" action → menu: **Upload file**, **From template**, and require selecting either a case or a client (or both). Templates come from existing `drafts` table.
-- Fix client-related counter: query `documents` by `client_id` OR by `case_id IN (client's cases)`.
+## Phase 1 — Single ledger + derived statuses (kills the over-count bug class)
 
-## 3. Case Management
-- **Close case button**: on case profile → opens dialog "Close case" with result select (Won / Lost / Settled / Withdrawn / Other) + optional note; sets `status='closed'`, `close_result`, `closed_at`.
-- **List → table with page-size selector** (25/50/100/200) mirroring the activity log pattern, with search + status filter.
-- **Pricing section** on case profile: agreed fee, retainer, hourly rate, currency. Editable inline.
-- Remove Invoices tab from case profile (moved to client).
+**Schema (one migration)**
+- New `payment_allocations` (payment_id, invoice_id?, schedule_id?, retainer_case_id?, amount, currency, created_at). One payment → many allocations.
+- `tax_invoices.status` enum gains `sent`, `viewed`, `written_off`. Keep existing values.
+- `tax_invoices.amount_paid` demoted to a **generated / view-computed** value; add trigger that recomputes from `SUM(payment_allocations.amount)` on allocation write. Status derived: paid = allocations ≥ total, partial > 0, overdue = due_date < today AND paid < total.
+- New `client_credits` (client_id, org_id, amount, currency, source_payment_id) for overpayments.
+- Backfill: existing `payments.invoice_id` → one allocation row per legacy payment.
 
-## 4. Clients Management
-- Client profile: expand tabs to **Overview, Cases, Documents, Meetings, Appointments, Invoices, Payments, Owed, Interactions, Activity**.
-  - Each tab lists items and supports add/delete (inline dialogs).
-  - Cases tab "Attach case" picker: only cases with `client_id IS NULL`.
-  - **Owed tab**: computes total owed = unpaid invoices + unbilled billable time entries + case retainer balance. Shows table + a **Convert to installments** button → opens dialog (amount, currency, N installments, frequency weekly/monthly, start date). Creates one debt case + N `payment_schedules` rows.
-- **List → paginated table** (same pattern as activity log).
-- Invoices are now shown per-client (query `tax_invoices` by client's case_ids + direct client_id). Migration keeps `case_id` — invoices list joins through cases.
+**Server**
+- Rewrite `markInvoicePaid`, `deletePayment`, retainer sync, and `debt_collection_payments` to write allocations.
+- Remove `setInvoiceStatus` for computed states (`paid/partial/overdue`); allow only `draft/sent/void/written_off` manual transitions.
+- Overpay → automatic client-credit row + auto-apply to next invoice.
 
-## 5. Debt Cases
-- Replace "Service fees" card on index with a more useful metric — **Collected this month** (sum of `debt_collection_payments.amount` where paid_at in current month).
-- **List → paginated table** with page-size selector.
-- Add recurrence: create/edit debt case dialog gets a "Recurring" section (none/weekly/monthly/yearly + interval). A daily cron (`api.public.hooks.debt-reminders` or new `debt-recurrence` hook) rolls over due recurring cases, creating a child case + updating `next_recur_at`.
-- Recurrence badge shown on the row.
+**UI**
+- Payments dialog gets a multi-invoice allocation picker.
+- Invoice detail shows allocations table.
+- Client profile shows a "Credit balance" tile.
 
-## Files touched
-- New migration
-- `src/lib/documents.functions.ts` — counter fix, template upload
-- `src/lib/cases.functions.ts` — close case, pricing fields
-- `src/lib/clients.functions.ts` — owed calculation, attach case, installment converter
-- `src/lib/debt-collection.functions.ts` — recurrence, monthly-collected metric
-- `src/routes/app.documents.tsx` — new/template picker, counter query
-- `src/routes/app.cases.index.tsx` — paginated table
-- `src/routes/app.cases.$caseId.tsx` — close button, pricing, drop invoices tab
-- `src/routes/app.clients.index.tsx` — paginated table
-- `src/routes/app.clients.$clientId.tsx` — new tabs, owed, installments
-- `src/routes/app.debt-collection.index.tsx` — new metric card, paginated table, recurrence UI
-- New shared `src/components/data-table-pager.tsx` — reusable page-size + pager (activity log pattern)
-- New `src/routes/api.public.hooks.debt-recurrence.ts` + cron insert
+---
 
-## Out of scope
-- No design token changes.
-- No auth changes.
-- Invoice UI itself unchanged; only where it's surfaced.
+## Phase 2 — Currency lockdown + written-off status
+- `payments/tax_invoices/payment_schedules.currency` default changes from `'SAR'` to workspace currency (`organizations.currency`, JOD).
+- Insert paths take currency from org, not payload.
+- Written-off flow (already added by enum in Phase 1) exposed as a case-closure / invoice action with a required reason.
+
+---
+
+## Phase 3 — Split own-fee installments from Debt Collection
+- Own-fee installment plans move onto `payment_schedules` linked only to `invoice_id` (Financials domain). The "Convert to installments" button on the Client Owed tab creates an **invoice + schedule set**, no longer a `debt_case`.
+- Existing debt cases created from client fees are migrated to the new plan model (data migration inside Phase 3 migration).
+- `debt_cases` becomes strictly third-party recovery (matching Principle 5).
+
+---
+
+## Phase 4 — Pre-bill review queue + expense/disbursement object
+
+**Schema**
+- New `expenses` (org_id, case_id, client_id, kind [court_fee/expert/translation/other], amount, currency, incurred_on, billable, status [wip/billed/written_off], invoice_id).
+- New `prebills` (org_id, case_id, period_start, period_end, status [draft/approved/billed], subtotal_time, subtotal_expenses, discount, narrative, approved_by, approved_at). A prebill snapshots `time_entries` + `expenses` in a WIP window.
+
+**UI**
+- New "Pre-bill" tab per case: shows current-period WIP (time + expenses), inline write-up/write-down, mark non-billable, edit client-facing narrative, "Approve → generate invoice".
+- `createInvoiceFromTime` becomes `createInvoiceFromPrebill`; direct time→invoice path deprecated.
+- Case + Client tabs add an Expenses list with CRUD.
+
+---
+
+## Phase 5 — Promise-to-pay, aging buckets, and the Jordan compliance rail
+
+**Schema**
+- Extend `debt_cases`/`debt_case_payers`: add `promise_to_pay_date`, `promise_amount`, `promised_at`, `dispute_reason`, `disputed_at`, `opted_out_at`, `last_reminder_at`.
+- New enum `debtor_status`: `new, contacted, promise_to_pay, partial, paid, disputed, formal_notice, in_litigation, judgment, enforcement, settled, written_off`. Derived from payer state.
+- New `sms_opt_outs` (org_id, phone unique, reason, opted_out_at).
+- `organizations` gets `sms_quiet_hours_start/end` (defaults **09:00** and **21:00** Asia/Amman), `sms_daily_cap_per_recipient` (default 1), `sms_sender_id` (approved TRC alphanumeric), `sms_bilingual_footer` (bool).
+
+**Server (aging + rail)**
+- View `debtor_aging` returning bucket in {0-30, 31-60, 61-90, 90+} per payer, driving ladder position.
+- SMS gateway wrapper (`whatsapp.server.ts` → renamed `sms.server.ts`, removes any WhatsApp branch) refuses to send when:
+  - recipient in `sms_opt_outs`,
+  - local time outside quiet-hours window (Asia/Amman),
+  - recipient already received `sms_daily_cap_per_recipient` messages today,
+  - status = `promise_to_pay` and today < promise date,
+  - status = `disputed`.
+- Every send logs to `sms_messages` with template id + language + segment count.
+
+**UI**
+- Debtor row: promise-to-pay action (date + amount), dispute action, opt-out marker.
+- Debt-collection index gets aging-bucket tiles.
+- Workspace Settings → SMS: sender ID, quiet hours, daily cap, opt-out list, compliance preview.
+
+**§J — Jordan SMS regulations enforced by the rail**
+- **Sender ID**: must be a TRC-approved alphanumeric; stored per org, injected into every send. UI blocks sends until set.
+- **Consent**: `clients`/`debt_case_payers` get `sms_consent_at` + `sms_consent_source`; sends refused without consent for commercial/reminder categories.
+- **Opt-out keywords**: inbound STOP / إيقاف / الغاء / UNSUB → write `sms_opt_outs`; every outbound message appends a bilingual opt-out line: `للإيقاف أرسل إيقاف · Reply STOP to unsubscribe`.
+- **Language + encoding**: template picked from client's `preferred_language`; Arabic body sent as UCS-2 (70-char segments), Latin as GSM-7 (160). Segment count computed and logged; UI warns before multi-segment sends.
+- **Quiet hours**: Amman local 21:00–09:00 blocked; queued for next open window.
+- **Frequency cap**: max 1 commercial SMS per recipient per 24h (configurable, default matches TRC guidance).
+- **Content limits**: no misleading sender, no third-party promotion, no unsolicited marketing to non-consenting recipients; templates reviewed and versioned in `sms_templates`.
+- **Record retention**: `sms_messages` keeps message body, sender id, delivery status, and consent snapshot for 12 months minimum (TRC audit).
+- No WhatsApp anywhere — connector references + UI paths removed.
+
+---
+
+## Phase 6 — Quote e-acceptance link; merge billing tabs
+
+- `quotes.share_token`, `accepted_at`, `accepted_ip`, `accepted_otp_hash`.
+- Public route `src/routes/share.quote.$token.tsx` shows the quote PDF preview and an OTP-to-accept flow (SMS OTP via the same rail).
+- On acceptance → auto-create invoice or engagement (fixed-fee → invoice, hourly → engagement record) and set quote status.
+- Financials IA collapses from three tabs (Quotes / Invoices / Tax Invoices) to two (Quotes / Invoices) with `Draft` as a status.
+
+---
+
+## Phase 7 — Payment links (CliQ / eFAWATEERcom) + auto-reconcile
+
+- Abstraction `payment_links` (invoice_id or schedule_id, provider, external_ref, url, qr_svg, status, paid_amount, paid_at).
+- Provider adapter interface with two implementations: **CliQ (JoPACC alias)** and **eFAWATEERcom (MADFOOATCOM)**. Public webhook routes under `src/routes/api/public/hooks/{cliq,efawateer}.ts` with HMAC verification; on paid callback create a payment + allocation automatically.
+- Invoice PDF + SMS templates embed the pay link + QR.
+- Secrets needed from user before this phase: PSP merchant id + webhook secret (add_secret at that point).
+
+---
+
+## Phase 8 — إنذار عدلي generation + debt-case → litigation
+
+- One-click "Generate formal notice" on a debt case: pulls debtor/evidence, calls the drafting module with a bilingual إنذار عدلي template, saves the PDF as a document on the case, logs delivery event.
+- "Escalate to litigation" button: creates a `cases` row with debtor as party, links `evidence`, copies amounts as claim value, marks debt case status `in_litigation`. Enforcement (`حجز/تنفيذ`) tracked as case events.
+
+---
+
+## Phase 9 — Remittance runs + client statements
+
+**Schema**
+- `remittance_runs` (org_id, client_id, period_start, period_end, total_collected, success_fee, net_remit, status [draft/awaiting_approval/approved/paid], client_approved_at, bank_ref, paid_at).
+- `remittance_lines` (run_id, debt_collection_payment_id, amount, fee).
+
+**UI**
+- Debt-collection → "Remit" opens a run wizard: pick client + period, preview كشف حساب PDF (bilingual), send to client for approval via signed link (same OTP as quote acceptance), mark remitted with bank reference.
+
+---
+
+## Phase 10 — Trust / retainer accounting (flagship)
+
+- Retainer stops being a synthetic payments row. New `trust_accounts` (org_id, client_id, currency, balance) + `trust_ledger` (account_id, direction [in/out], amount, kind [deposit/apply/refund/adjust], invoice_id?, note, created_by).
+- Case `retainer_amount` becomes an expected commitment; actual money lives in trust.
+- Apply-to-invoice writes both a trust `out` and a payment allocation of type `retainer`.
+- Trust reconciliation report; segregation warnings when firm cash and trust cash mix.
+
+---
+
+## Phase 11 — Reports (aging, realization, collection) + client-facing PDFs
+
+- New `/app/financials/reports` with three canonical KPIs (aging buckets, realization = billed ÷ worked, collection = collected ÷ billed).
+- Per-client recovery PDF report for debt-collection engagements.
+- Activity log gets consistent writes across payments/allocations/trust/remittance/prebill/expenses.
+
+---
+
+## Cross-cutting cleanup
+- Remove `WhatsApp` label and code paths from `whatsapp.server.ts`, `sms.functions.ts`, i18n strings, and UI.
+- Drop the 25-payer ceiling; CSV import for debt portfolios (Rung 0).
+- Fuzzy Arabic conflict-check against `cases` + `clients` on debtor intake.
+- Fee-agreement object on debt cases (success %, flat, hybrid, per-rung tier).
+
+---
+
+## Sequencing note
+Phases 1–5 are the bug-killers and the compliance rail — biggest wins. Phase 7 requires PSP credentials (I'll pause and request them at that point via the secure secrets form). Phase 10 is the flagship and depends on Phase 1's ledger, so it ships last.
+
+## Out of scope for this initiative
+- Design token / visual redesign.
+- Auth changes.
+- Native mobile app.
