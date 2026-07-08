@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { z } from "zod";
-import { createAiGatewayProvider, getAiGatewayApiKey, strictLanguageDirective } from "./ai-gateway.server";
+import { createAiGatewayProvider, getAiGatewayApiKey, sanitizeLanguageText, strictLanguageDirective } from "./ai-gateway.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const MODEL = process.env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct";
@@ -93,7 +93,7 @@ RAG CONTEXT (Jordanian corpus, may be empty):
 ${grounding || "(no retrieved context)"}`,
       prompt: data.query,
     });
-    return { answer: text };
+    return { answer: sanitizeLanguageText(text, data.locale) };
   });
 
 // ---------- AI drafting ----------
@@ -115,5 +115,5 @@ export const draftDocument = createServerFn({ method: "POST" })
 You are an expert Arab legal drafter. Produce a polished, ready-to-use legal document in ${lang} suitable for use in Arab jurisdictions. Use proper legal structure: title, parties, preamble, numbered clauses, governing law, signatures. Use bracket placeholders like [الاسم] / [Name] for variables. Output the document text only — no commentary.`,
       prompt: `${data.template ? `Template: ${data.template}\n\n` : ""}User request: ${data.prompt}`,
     });
-    return { draft: text };
+    return { draft: sanitizeLanguageText(text, data.locale) };
   });

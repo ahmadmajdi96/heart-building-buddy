@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { z } from "zod";
-import { createAiGatewayProvider, getAiGatewayApiKey, strictLanguageDirective } from "./ai-gateway.server";
+import { createAiGatewayProvider, getAiGatewayApiKey, sanitizeLanguageOutput, strictLanguageDirective } from "./ai-gateway.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const MODEL = process.env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct";
@@ -108,7 +108,7 @@ Return ONLY a JSON object with this exact shape (no markdown, no commentary):
 }`,
     });
     const parsed = CaseSchema.parse(extractJson(text));
-    return parsed;
+    return sanitizeLanguageOutput(parsed, data.locale);
   });
 
 // ---------- Courtroom turn ----------
@@ -190,7 +190,7 @@ Continue the hearing with 1-3 turns (judge and/or opposing counsel reacting), ci
       system,
       prompt: userPrompt,
     });
-    return TurnOutput.parse(extractJson(text));
+    return sanitizeLanguageOutput(TurnOutput.parse(extractJson(text)), data.locale);
   });
 
 // ---------- Persistence ----------
