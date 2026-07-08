@@ -79,7 +79,6 @@ function ClientProfilePage() {
         <TabsContent value="documents" className="mt-6">
           <SimpleList items={data.documents} kind="documents" empty={ar ? "لا مستندات" : "No documents"}
             render={(d: any) => ({ title: d.name, sub: `${d.cases?.title ?? "—"} · ${formatBytes(d.size)}`, date: d.created_at })}
-            onDelete={async (row) => { await (useServerFn as any); }}
             deleteFn={deleteDocument} onChanged={refresh} />
         </TabsContent>
         <TabsContent value="meetings" className="mt-6">
