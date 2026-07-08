@@ -89,6 +89,15 @@ export const attachCaseToClient = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const detachCaseFromClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ case_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await (context.supabase as any).from("cases").update({ client_id: null }).eq("id", data.case_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const listUnassignedCases = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
