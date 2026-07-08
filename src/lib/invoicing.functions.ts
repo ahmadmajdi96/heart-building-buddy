@@ -217,17 +217,8 @@ export const deletePayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    // If the payment was tied to an invoice, decrement its amount_paid.
-    const { data: p } = await context.supabase.from("payments").select("id, amount, invoice_id, org_id, reference").eq("id", data.id).maybeSingle();
-    if (!p) throw new Error("Payment not found");
-    if ((p as any).invoice_id) {
-      const { data: inv } = await context.supabase.from("tax_invoices").select("amount_paid, total").eq("id", (p as any).invoice_id).maybeSingle();
-      if (inv) {
-        const nextPaid = Math.max(0, Number((inv as any).amount_paid || 0) - Number((p as any).amount || 0));
-        const nextStatus = nextPaid <= 0 ? "issued" : (nextPaid >= Number((inv as any).total) ? "paid" : "partial");
-        await context.supabase.from("tax_invoices").update({ amount_paid: nextPaid, status: nextStatus }).eq("id", (p as any).invoice_id);
-      }
-    }
+    // Deleting the payment cascades its allocations; the trigger recomputes each
+    // affected invoice's amount_paid + status automatically.
     const { error } = await context.supabase.from("payments").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
