@@ -230,7 +230,7 @@ function DeadlinesPage() {
             <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 w-[150px]" />
           </div>
           {hasExtraFilters && (
-            <Button size="sm" variant="ghost" onClick={() => { setFilterKind("all"); setFromDate(""); setToDate(""); }}>
+            <Button size="sm" variant="ghost" onClick={() => { setFilterKind("all"); setFilterClient("all"); setFromDate(""); setToDate(""); }}>
               {ar ? "مسح" : "Clear"}
             </Button>
           )}
