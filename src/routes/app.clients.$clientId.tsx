@@ -76,11 +76,24 @@ function ClientProfilePage() {
 
         <TabsContent value="overview" className="mt-6"><OverviewTab data={data} /></TabsContent>
         <TabsContent value="cases" className="mt-6"><CasesTab data={data} clientId={clientId} onChange={refresh} /></TabsContent>
-        <TabsContent value="documents" className="mt-6"><SimpleList items={data.documents} kind="documents" empty={ar ? "لا مستندات" : "No documents"} render={(d: any) => ({ title: d.name, sub: `${d.cases?.title ?? "—"} · ${formatBytes(d.size)}`, date: d.created_at })} /></TabsContent>
-        <TabsContent value="meetings" className="mt-6"><SimpleList items={data.meetings} kind="meetings" empty={ar ? "لا اجتماعات" : "No meetings"} render={(m: any) => ({ title: m.title || "—", sub: m.cases?.title ?? "", date: m.starts_at })} /></TabsContent>
-        <TabsContent value="appointments" className="mt-6"><SimpleList items={data.appointments} kind="appointments" empty={ar ? "لا مواعيد" : "No appointments"} render={(a: any) => ({ title: a.title || "—", sub: `${a.cases?.title ?? ""} · ${a.location ?? ""}`, date: a.starts_at })} /></TabsContent>
-        <TabsContent value="invoices" className="mt-6"><InvoicesTab items={data.invoices} /></TabsContent>
-        <TabsContent value="payments" className="mt-6"><PaymentsTab items={data.payments} /></TabsContent>
+        <TabsContent value="documents" className="mt-6">
+          <SimpleList items={data.documents} kind="documents" empty={ar ? "لا مستندات" : "No documents"}
+            render={(d: any) => ({ title: d.name, sub: `${d.cases?.title ?? "—"} · ${formatBytes(d.size)}`, date: d.created_at })}
+            onDelete={async (row) => { await (useServerFn as any); }}
+            deleteFn={deleteDocument} onChanged={refresh} />
+        </TabsContent>
+        <TabsContent value="meetings" className="mt-6">
+          <SimpleList items={data.meetings} kind="meetings" empty={ar ? "لا اجتماعات" : "No meetings"}
+            render={(m: any) => ({ title: m.title || "—", sub: m.cases?.title ?? "", date: m.starts_at })}
+            deleteFn={deleteMeeting} onChanged={refresh} />
+        </TabsContent>
+        <TabsContent value="appointments" className="mt-6">
+          <SimpleList items={data.appointments} kind="appointments" empty={ar ? "لا مواعيد" : "No appointments"}
+            render={(a: any) => ({ title: a.title || "—", sub: `${a.cases?.title ?? ""} · ${a.location ?? ""}`, date: a.starts_at })}
+            deleteFn={deleteAppointment} onChanged={refresh} />
+        </TabsContent>
+        <TabsContent value="invoices" className="mt-6"><InvoicesTab items={data.invoices} onChange={refresh} /></TabsContent>
+        <TabsContent value="payments" className="mt-6"><PaymentsTab items={data.payments} onChange={refresh} /></TabsContent>
         <TabsContent value="owed" className="mt-6"><OwedTab data={data} clientId={clientId} onChange={refresh} /></TabsContent>
         <TabsContent value="interactions" className="mt-6"><InteractionsTab clientId={clientId} data={data} onChange={refresh} /></TabsContent>
       </Tabs>
