@@ -534,7 +534,7 @@ function ClientDetailSheet({ id, onClose }: { id: string | null; onClose: () => 
             <h3 className="text-sm font-semibold mb-2">{locale === "ar" ? "قضايا مرتبطة" : "Related cases"}</h3>
             {data.cases.length === 0 ? <p className="text-xs text-muted-foreground">{locale === "ar" ? "لا توجد" : "None yet"}</p> :
               <ul className="space-y-2">
-                {data.cases.map((c) => (
+                {data.cases.map((c: any) => (
                   <li key={c.id} className="rounded-md border p-3 text-sm">
                     <div className="font-medium">{c.title}</div>
                     <div className="text-xs text-muted-foreground">{c.case_number ?? ""} · {c.status}</div>
