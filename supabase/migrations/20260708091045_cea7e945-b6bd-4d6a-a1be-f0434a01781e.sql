@@ -1,0 +1,1 @@
+ALTER VIEW public.debtor_aging SET (security_invoker = true);

@@ -39,9 +39,11 @@ function SettingsPage() {
       <Tabs defaultValue="organization">
         <TabsList className="bg-secondary/60">
           <TabsTrigger value="organization">{locale === "ar" ? "المؤسسة" : "Organization"}</TabsTrigger>
+          <TabsTrigger value="sms">{locale === "ar" ? "الرسائل النصية" : "SMS"}</TabsTrigger>
           <TabsTrigger value="region">{locale === "ar" ? "اللغة والمنطقة" : "Region"}</TabsTrigger>
         </TabsList>
         <TabsContent value="organization" className="mt-6"><OrgTab editable={can("manage_org")}/></TabsContent>
+        <TabsContent value="sms" className="mt-6"><SmsTab editable={can("manage_org")}/></TabsContent>
         <TabsContent value="region" className="mt-6"><RegionTab/></TabsContent>
       </Tabs>
       {org.type === "firm" && (

@@ -49,6 +49,7 @@ import { Route as AppMeetingsTranscriptIdRouteImport } from './routes/app.meetin
 import { Route as AppMeetingsJoinRoomRouteImport } from './routes/app.meetings.join.$room'
 import { Route as AppLiveSessionsTranscriptIdRouteImport } from './routes/app.live-sessions.transcript.$id'
 import { Route as ApiPublicHooksTwilioStatusRouteImport } from './routes/api.public.hooks.twilio-status'
+import { Route as ApiPublicHooksTwilioInboundRouteImport } from './routes/api.public.hooks.twilio-inbound'
 import { Route as ApiPublicHooksDebtRemindersRouteImport } from './routes/api.public.hooks.debt-reminders'
 
 const SetPasswordRoute = SetPasswordRouteImport.update({
@@ -254,6 +255,12 @@ const ApiPublicHooksTwilioStatusRoute =
     path: '/api/public/hooks/twilio-status',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksTwilioInboundRoute =
+  ApiPublicHooksTwilioInboundRouteImport.update({
+    id: '/api/public/hooks/twilio-inbound',
+    path: '/api/public/hooks/twilio-inbound',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksDebtRemindersRoute =
   ApiPublicHooksDebtRemindersRouteImport.update({
     id: '/api/public/hooks/debt-reminders',
@@ -299,6 +306,7 @@ export interface FileRoutesByFullPath {
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
+  '/api/public/hooks/twilio-inbound': typeof ApiPublicHooksTwilioInboundRoute
   '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
   '/app/live-sessions/transcript/$id': typeof AppLiveSessionsTranscriptIdRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
@@ -341,6 +349,7 @@ export interface FileRoutesByTo {
   '/app/meetings': typeof AppMeetingsIndexRoute
   '/app/workspace': typeof AppWorkspaceIndexRoute
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
+  '/api/public/hooks/twilio-inbound': typeof ApiPublicHooksTwilioInboundRoute
   '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
   '/app/live-sessions/transcript/$id': typeof AppLiveSessionsTranscriptIdRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
@@ -385,6 +394,7 @@ export interface FileRoutesById {
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
+  '/api/public/hooks/twilio-inbound': typeof ApiPublicHooksTwilioInboundRoute
   '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
   '/app/live-sessions/transcript/$id': typeof AppLiveSessionsTranscriptIdRoute
   '/app/meetings/join/$room': typeof AppMeetingsJoinRoomRoute
@@ -430,6 +440,7 @@ export interface FileRouteTypes {
     | '/app/meetings/'
     | '/app/workspace/'
     | '/api/public/hooks/debt-reminders'
+    | '/api/public/hooks/twilio-inbound'
     | '/api/public/hooks/twilio-status'
     | '/app/live-sessions/transcript/$id'
     | '/app/meetings/join/$room'
@@ -472,6 +483,7 @@ export interface FileRouteTypes {
     | '/app/meetings'
     | '/app/workspace'
     | '/api/public/hooks/debt-reminders'
+    | '/api/public/hooks/twilio-inbound'
     | '/api/public/hooks/twilio-status'
     | '/app/live-sessions/transcript/$id'
     | '/app/meetings/join/$room'
@@ -515,6 +527,7 @@ export interface FileRouteTypes {
     | '/app/meetings/'
     | '/app/workspace/'
     | '/api/public/hooks/debt-reminders'
+    | '/api/public/hooks/twilio-inbound'
     | '/api/public/hooks/twilio-status'
     | '/app/live-sessions/transcript/$id'
     | '/app/meetings/join/$room'
@@ -531,6 +544,7 @@ export interface RootRouteChildren {
   ApiElevenlabsTranscribeRoute: typeof ApiElevenlabsTranscribeRoute
   ApiRagUploadRoute: typeof ApiRagUploadRoute
   ApiPublicHooksDebtRemindersRoute: typeof ApiPublicHooksDebtRemindersRoute
+  ApiPublicHooksTwilioInboundRoute: typeof ApiPublicHooksTwilioInboundRoute
   ApiPublicHooksTwilioStatusRoute: typeof ApiPublicHooksTwilioStatusRoute
 }
 
@@ -816,6 +830,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksTwilioStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/twilio-inbound': {
+      id: '/api/public/hooks/twilio-inbound'
+      path: '/api/public/hooks/twilio-inbound'
+      fullPath: '/api/public/hooks/twilio-inbound'
+      preLoaderRoute: typeof ApiPublicHooksTwilioInboundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/debt-reminders': {
       id: '/api/public/hooks/debt-reminders'
       path: '/api/public/hooks/debt-reminders'
@@ -916,6 +937,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiElevenlabsTranscribeRoute: ApiElevenlabsTranscribeRoute,
   ApiRagUploadRoute: ApiRagUploadRoute,
   ApiPublicHooksDebtRemindersRoute: ApiPublicHooksDebtRemindersRoute,
+  ApiPublicHooksTwilioInboundRoute: ApiPublicHooksTwilioInboundRoute,
   ApiPublicHooksTwilioStatusRoute: ApiPublicHooksTwilioStatusRoute,
 }
 export const routeTree = rootRouteImport
