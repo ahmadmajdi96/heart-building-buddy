@@ -57,6 +57,7 @@ export const legalResearch = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const gateway = getGateway();
     const lang = data.locale === "ar" ? "Arabic" : "English";
+    const sourcesLabel = data.locale === "ar" ? "المصادر" : "Sources";
     const grounding = await ragJordanianContext(context.userId, data.query);
     const { text } = await generateText({
       model: gateway(MODEL),
@@ -87,7 +88,7 @@ Cover the FULL Jordanian legal corpus, citing primary articles, paragraphs and c
 
 When RAG CONTEXT is provided below, prefer it as the authoritative source and cite the retrieved documents explicitly.
 
-Answer concisely and professionally. Cite specific articles (e.g. "المادة 256 من القانون المدني الأردني") and case numbers. End with a "Sources / المصادر" list of every law and ruling referenced, with article numbers and year. Reply entirely in ${lang}.
+Answer concisely and professionally. Cite specific articles and case numbers in ${lang}. End with a "${sourcesLabel}" list of every law and ruling referenced, with article numbers and year. Reply entirely in ${lang}.
 
 RAG CONTEXT (Jordanian corpus, may be empty):
 ${grounding || "(no retrieved context)"}`,
@@ -108,11 +109,12 @@ export const draftDocument = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const gateway = getGateway();
     const lang = data.locale === "ar" ? "Arabic" : "English";
+    const placeholderExample = data.locale === "ar" ? "[الاسم]" : "[Name]";
     const { text } = await generateText({
       model: gateway(MODEL),
       system: `${strictLanguageDirective(data.locale)}
 
-You are an expert Arab legal drafter. Produce a polished, ready-to-use legal document in ${lang} suitable for use in Arab jurisdictions. Use proper legal structure: title, parties, preamble, numbered clauses, governing law, signatures. Use bracket placeholders like [الاسم] / [Name] for variables. Output the document text only — no commentary.`,
+You are an expert Arab legal drafter. Produce a polished, ready-to-use legal document in ${lang} suitable for use in Arab jurisdictions. Use proper legal structure: title, parties, preamble, numbered clauses, governing law, signatures. Use bracket placeholders like ${placeholderExample} for variables. Output the document text only — no commentary.`,
       prompt: `${data.template ? `Template: ${data.template}\n\n` : ""}User request: ${data.prompt}`,
     });
     return { draft: sanitizeLanguageText(text, data.locale) };
