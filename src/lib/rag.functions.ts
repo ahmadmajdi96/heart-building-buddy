@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { sanitizeLanguageText } from "./ai-gateway.server";
 
 async function ragCall(path: string, init: RequestInit = {}) {
   const { ragFetch } = await import("./rag.server");
@@ -26,6 +27,7 @@ export const queryRag = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z.object({
       question: z.string().min(1),
+      locale: z.enum(["ar", "en"]).default("en"),
       top_k: z.number().int().min(1).max(50).default(18),
       rerank_top_n: z.number().int().min(1).max(20).default(6),
       temperature: z.number().min(0).max(2).default(0.1),
@@ -34,13 +36,14 @@ export const queryRag = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const tenant = tenantFor(context.userId);
+    const { locale, ...ragData } = data;
     const res = await ragCall(`/v1/query`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tenant_id: tenant, ...data }),
+      body: JSON.stringify({ tenant_id: tenant, ...ragData }),
     });
     if (!res.ok) throw new Error(`RAG query ${res.status}: ${await res.text().catch(() => "")}`);
-    return res.json() as Promise<{
+    const json = (await res.json()) as {
       answer: string;
       sources?: Array<{
         source_id: string;
@@ -53,7 +56,15 @@ export const queryRag = createServerFn({ method: "POST" })
         excerpt?: string;
       }>;
       latency_ms?: number;
-    }>;
+    };
+    return {
+      ...json,
+      answer: sanitizeLanguageText(json.answer ?? "", locale),
+      sources: json.sources?.map((source) => ({
+        ...source,
+        excerpt: source.excerpt ? sanitizeLanguageText(source.excerpt, locale) : source.excerpt,
+      })),
+    };
   });
 
 export const deleteRagDoc = createServerFn({ method: "POST" })
