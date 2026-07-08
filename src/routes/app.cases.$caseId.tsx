@@ -149,9 +149,32 @@ function CloseCaseButton({ caseId, onDone }: { caseId: string; onDone: () => voi
 
 
 
-function OverviewTab({ data }: { data: NonNullable<Awaited<ReturnType<typeof getCase>>> }) {
+function OverviewTab({ data, onChange }: { data: NonNullable<Awaited<ReturnType<typeof getCase>>>; onChange: () => void }) {
   const { locale } = useI18n();
+  const ar = locale === "ar";
   const c = data.case! as any;
+  const save = useServerFn(saveCase);
+  const [pricingOpen, setPricingOpen] = useState(false);
+  const [pricing, setPricing] = useState({
+    agreed_fee: c.agreed_fee ?? "", retainer_amount: c.retainer_amount ?? "",
+    hourly_rate: c.hourly_rate ?? "", fee_currency: c.fee_currency ?? "JOD",
+  });
+  const [savingPricing, setSavingPricing] = useState(false);
+  async function submitPricing() {
+    setSavingPricing(true);
+    try {
+      await save({ data: {
+        id: c.id, title: c.title, status: c.status, priority: c.priority ?? "medium",
+        agreed_fee: pricing.agreed_fee === "" ? null : Number(pricing.agreed_fee),
+        retainer_amount: pricing.retainer_amount === "" ? null : Number(pricing.retainer_amount),
+        hourly_rate: pricing.hourly_rate === "" ? null : Number(pricing.hourly_rate),
+        fee_currency: pricing.fee_currency,
+      }});
+      toast.success(ar ? "تم حفظ التسعير" : "Pricing saved");
+      setPricingOpen(false); onChange();
+    } catch (e) { toast.error((e as Error).message); } finally { setSavingPricing(false); }
+  }
+
   const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
     <div className="grid grid-cols-[160px_1fr] gap-3 py-2 border-b last:border-b-0">
       <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
@@ -159,36 +182,63 @@ function OverviewTab({ data }: { data: NonNullable<Awaited<ReturnType<typeof get
     </div>
   );
   const billableHours = data.timeEntries.filter((t: any) => t.billable).reduce((s: number, t: any) => s + Number(t.duration_seconds || 0), 0) / 3600;
-  const invoicedTotal = data.invoices.reduce((s: number, i: any) => s + Number(i.total || 0), 0);
-  const paidTotal = data.invoices.reduce((s: number, i: any) => s + Number(i.amount_paid || 0), 0);
+  const cur = c.fee_currency ?? "";
   return (
     <div className="grid gap-6 md:grid-cols-3">
       <div className="card-elev rounded-xl border bg-card p-5 md:col-span-2">
-        <h3 className="font-serif text-lg mb-3">{locale === "ar" ? "تفاصيل القضية" : "Case details"}</h3>
-        <Row label={locale === "ar" ? "الرقم" : "Reference"} value={c.case_number} />
-        <Row label={locale === "ar" ? "الموكل" : "Client"} value={c.clients?.name} />
-        <Row label={locale === "ar" ? "المحكمة" : "Court"} value={c.court} />
-        <Row label={locale === "ar" ? "القاعة" : "Court room"} value={c.court_room} />
-        <Row label={locale === "ar" ? "الاختصاص" : "Jurisdiction"} value={c.jurisdiction} />
-        <Row label={locale === "ar" ? "القاضي" : "Judge"} value={c.judge} />
-        <Row label={locale === "ar" ? "الطرف المعارض" : "Opposing party"} value={c.opposing_party} />
-        <Row label={locale === "ar" ? "محامي الخصم" : "Opposing counsel"} value={c.opposing_counsel} />
-        <Row label={locale === "ar" ? "الأولوية" : "Priority"} value={c.priority} />
-        <Row label={locale === "ar" ? "تاريخ الفتح" : "Opened"} value={c.opened_at ? new Date(c.opened_at).toLocaleDateString() : null} />
-        <Row label={locale === "ar" ? "الوصف" : "Description"} value={c.description ? <p className="whitespace-pre-wrap">{c.description}</p> : null} />
+        <h3 className="font-serif text-lg mb-3">{ar ? "تفاصيل القضية" : "Case details"}</h3>
+        <Row label={ar ? "الرقم" : "Reference"} value={c.case_number} />
+        <Row label={ar ? "الموكل" : "Client"} value={c.clients?.name} />
+        <Row label={ar ? "المحكمة" : "Court"} value={c.court} />
+        <Row label={ar ? "القاعة" : "Court room"} value={c.court_room} />
+        <Row label={ar ? "الاختصاص" : "Jurisdiction"} value={c.jurisdiction} />
+        <Row label={ar ? "القاضي" : "Judge"} value={c.judge} />
+        <Row label={ar ? "الطرف المعارض" : "Opposing party"} value={c.opposing_party} />
+        <Row label={ar ? "محامي الخصم" : "Opposing counsel"} value={c.opposing_counsel} />
+        <Row label={ar ? "الأولوية" : "Priority"} value={c.priority} />
+        <Row label={ar ? "تاريخ الفتح" : "Opened"} value={c.opened_at ? new Date(c.opened_at).toLocaleDateString() : null} />
+        {c.closed_at && <Row label={ar ? "تاريخ الإغلاق" : "Closed"} value={`${new Date(c.closed_at).toLocaleDateString()}${c.close_result ? ` — ${c.close_result}` : ""}`} />}
+        {c.close_note && <Row label={ar ? "ملاحظة الإغلاق" : "Close note"} value={<p className="whitespace-pre-wrap">{c.close_note}</p>} />}
+        <Row label={ar ? "الوصف" : "Description"} value={c.description ? <p className="whitespace-pre-wrap">{c.description}</p> : null} />
       </div>
-      <div className="card-elev rounded-xl border bg-card p-5">
-        <h3 className="font-serif text-lg mb-3">{locale === "ar" ? "ملخص" : "Summary"}</h3>
-        <div className="space-y-3 text-sm">
-          <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "الجلسات" : "Sessions"}</span><span className="font-medium">{data.appointments.length}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "المستندات" : "Documents"}</span><span className="font-medium">{data.documents.length}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "الأحداث" : "Events"}</span><span className="font-medium">{data.events.length}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "ساعات قابلة للفوترة" : "Billable hours"}</span><span className="font-medium">{billableHours.toFixed(1)}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "إجمالي مفوتر" : "Invoiced"}</span><span className="font-medium">{invoicedTotal.toFixed(2)}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "مدفوع" : "Paid"}</span><span className="font-medium text-emerald-600">{paidTotal.toFixed(2)}</span></div>
-          <div className="flex justify-between border-t pt-2"><span className="text-muted-foreground">{locale === "ar" ? "ربحية تقديرية" : "Estimated profit"}</span><span className="font-medium">{(paidTotal - 0).toFixed(2)}</span></div>
+      <div className="space-y-6">
+        <div className="card-elev rounded-xl border bg-card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-serif text-lg">{ar ? "التسعير" : "Pricing"}</h3>
+            <Button size="sm" variant="ghost" onClick={() => setPricingOpen(true)}>{ar ? "تعديل" : "Edit"}</Button>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-muted-foreground">{ar ? "السعر المتفق" : "Agreed fee"}</span><span className="font-medium tabular-nums">{c.agreed_fee != null ? `${Number(c.agreed_fee).toFixed(2)} ${cur}` : "—"}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{ar ? "الدفعة المقدمة" : "Retainer"}</span><span className="font-medium tabular-nums">{c.retainer_amount != null ? `${Number(c.retainer_amount).toFixed(2)} ${cur}` : "—"}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{ar ? "الأجر بالساعة" : "Hourly rate"}</span><span className="font-medium tabular-nums">{c.hourly_rate != null ? `${Number(c.hourly_rate).toFixed(2)} ${cur}` : "—"}</span></div>
+          </div>
+        </div>
+        <div className="card-elev rounded-xl border bg-card p-5">
+          <h3 className="font-serif text-lg mb-3">{ar ? "ملخص" : "Summary"}</h3>
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between"><span className="text-muted-foreground">{ar ? "الجلسات" : "Sessions"}</span><span className="font-medium">{data.appointments.length}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{ar ? "المستندات" : "Documents"}</span><span className="font-medium">{data.documents.length}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{ar ? "الأحداث" : "Events"}</span><span className="font-medium">{data.events.length}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{ar ? "ساعات قابلة للفوترة" : "Billable hours"}</span><span className="font-medium">{billableHours.toFixed(1)}</span></div>
+          </div>
         </div>
       </div>
+
+      <Dialog open={pricingOpen} onOpenChange={setPricingOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{ar ? "تعديل التسعير" : "Edit pricing"}</DialogTitle></DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div><Label>{ar ? "السعر المتفق" : "Agreed fee"}</Label><Input type="number" step="0.01" value={pricing.agreed_fee} onChange={(e) => setPricing({ ...pricing, agreed_fee: e.target.value })} /></div>
+            <div><Label>{ar ? "الدفعة المقدمة" : "Retainer"}</Label><Input type="number" step="0.01" value={pricing.retainer_amount} onChange={(e) => setPricing({ ...pricing, retainer_amount: e.target.value })} /></div>
+            <div><Label>{ar ? "الأجر بالساعة" : "Hourly rate"}</Label><Input type="number" step="0.01" value={pricing.hourly_rate} onChange={(e) => setPricing({ ...pricing, hourly_rate: e.target.value })} /></div>
+            <div><Label>{ar ? "العملة" : "Currency"}</Label><Input value={pricing.fee_currency} onChange={(e) => setPricing({ ...pricing, fee_currency: e.target.value.toUpperCase() })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPricingOpen(false)}>{ar ? "إلغاء" : "Cancel"}</Button>
+            <Button variant="gold" onClick={submitPricing} disabled={savingPricing}>{savingPricing && <Loader2 className="size-4 animate-spin me-1.5" />}{ar ? "حفظ" : "Save"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
