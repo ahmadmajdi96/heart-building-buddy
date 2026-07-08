@@ -114,7 +114,7 @@ function FinancialsPage() {
           <TabsTrigger value="invoices">{locale === "ar" ? "الفواتير الضريبية" : "Tax invoices"}</TabsTrigger>
           <TabsTrigger value="collections">{locale === "ar" ? "التحصيل" : "Collections"}</TabsTrigger>
         </TabsList>
-        <TabsContent value="payments"><PaymentsTab /></TabsContent>
+        <TabsContent value="payments"><CaseFeesStrip /><PaymentsTab /></TabsContent>
         <TabsContent value="schedules"><SchedulesTab /></TabsContent>
         <TabsContent value="quotes"><QuotesTab /></TabsContent>
         <TabsContent value="drafts"><DraftInvoicesTab /></TabsContent>
