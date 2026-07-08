@@ -273,12 +273,24 @@ function DeadlinesPage() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
+                  <Label>{ar ? "العميل" : "Client"}</Label>
+                  <Select value={editing.client_id || "none"} onValueChange={(v) => setEditing({ ...editing, client_id: v === "none" ? "" : v, case_id: "" })}>
+                    <SelectTrigger><SelectValue placeholder={ar ? "كل العملاء" : "All clients"} /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{ar ? "بدون / الكل" : "None / all"}</SelectItem>
+                      {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
                   <Label>{ar ? "القضية" : "Matter"}</Label>
                   <Select value={editing.case_id || "none"} onValueChange={(v) => setEditing({ ...editing, case_id: v === "none" ? "" : v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">{ar ? "بدون" : "None"}</SelectItem>
-                      {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+                      {casesForDialog.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
