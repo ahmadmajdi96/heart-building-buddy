@@ -103,6 +103,11 @@ function CasesPage() {
       || (c.clients?.name ?? "").toLowerCase().includes(s);
   }), [cases, q, status, clientFilter, fromDate, toDate]);
 
+  useEffect(() => { setPage(1); }, [q, status, clientFilter, fromDate, toDate, pageSize]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   const analytics = useMemo(() => {
     const total = filtered.length;
     const open = filtered.filter((c) => c.status === "open").length;
