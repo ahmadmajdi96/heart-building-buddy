@@ -18,8 +18,13 @@ const CaseInput = z.object({
   opposing_party: z.string().optional(),
   opposing_counsel: z.string().optional(),
   responsible_lawyer: z.string().uuid().nullable().optional(),
+  agreed_fee: z.number().nullable().optional(),
+  retainer_amount: z.number().nullable().optional(),
+  hourly_rate: z.number().nullable().optional(),
+  fee_currency: z.string().optional(),
   locale: z.enum(["ar", "en"]).optional(),
 });
+
 
 
 export const listCases = createServerFn({ method: "GET" })
