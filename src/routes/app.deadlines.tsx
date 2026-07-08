@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Checkbox } from "@/components/ui/checkbox";
 import { listDeadlines, saveDeadline, completeDeadline, deleteDeadline, deadlineStats } from "@/lib/deadlines.functions";
 import { listCases } from "@/lib/cases.functions";
+import { listClients } from "@/lib/clients.functions";
 import { AlertTriangle, CalendarClock, Check, Loader2, Plus, Trash2, Pencil, Gavel, FileSignature, Scale, Download } from "lucide-react";
 import { toast } from "sonner";
 import { toCsv, downloadCsv } from "@/lib/csv-export";
