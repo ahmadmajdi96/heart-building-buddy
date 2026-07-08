@@ -121,14 +121,13 @@ export const saveCase = createServerFn({ method: "POST" })
     return row;
   });
 
-/** Sync the case retainer to an actual payments row (idempotent per case).
+/** Sync the case retainer to a payment + retainer-kind allocation (idempotent per case).
  *  Called from saveCase after insert/update. */
 async function syncRetainerPayment(ctx: any, orgId: string | null, caseRow: any) {
   if (!orgId || !caseRow?.id) return;
   const retainer = Number(caseRow.retainer_amount || 0);
   const reference = `retainer:${caseRow.id}`;
   const currency = caseRow.fee_currency || "JOD";
-  // Look up client name for the payment label.
   let client_name = "";
   let client_id: string | null = caseRow.client_id ?? null;
   if (client_id) {
@@ -137,22 +136,39 @@ async function syncRetainerPayment(ctx: any, orgId: string | null, caseRow: any)
   }
   const { data: existing } = await ctx.supabase
     .from("payments").select("id, amount").eq("org_id", orgId).eq("reference", reference).maybeSingle();
+
   if (retainer <= 0) {
+    // Cascade removes the allocation.
     if (existing) await ctx.supabase.from("payments").delete().eq("id", existing.id);
     return;
   }
+
   if (existing) {
     if (Number(existing.amount) !== retainer) {
       await ctx.supabase.from("payments").update({ amount: retainer, currency, client_name, client_id }).eq("id", existing.id);
+      // Keep the allocation in sync with the payment amount.
+      await ctx.supabase.from("payment_allocations")
+        .update({ amount: retainer, currency })
+        .eq("payment_id", existing.id).eq("kind", "retainer");
     }
     return;
   }
-  await ctx.supabase.from("payments").insert({
+
+  const { data: pay } = await ctx.supabase.from("payments").insert({
     org_id: orgId, created_by: ctx.userId, invoice_id: null, client_id, client_name: client_name || "Retainer",
     amount: retainer, currency, method: "bank_transfer",
     reference, paid_at: new Date().toISOString().slice(0, 10),
     notes: `Case retainer (down payment) — ${caseRow.title ?? caseRow.case_number ?? ""}`.trim(),
-  });
+  }).select("id").maybeSingle();
+
+  if (pay?.id) {
+    await ctx.supabase.from("payment_allocations").insert({
+      org_id: orgId, payment_id: pay.id, kind: "retainer",
+      retainer_case_id: caseRow.id, amount: retainer, currency,
+      created_by: ctx.userId,
+      note: "Case retainer",
+    });
+  }
 }
 
 

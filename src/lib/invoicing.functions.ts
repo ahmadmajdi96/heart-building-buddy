@@ -147,8 +147,8 @@ export const listOverdueInvoices = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
-/** Mark an invoice as paid — records a payment for any remaining balance, updates
- *  status, and logs an activity entry with the payment date. */
+/** Mark an invoice as paid — inserts a payment with an allocation for the remaining
+ *  balance. The database trigger recomputes amount_paid + status from allocations. */
 export const markInvoicePaid = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({
@@ -164,22 +164,34 @@ export const markInvoicePaid = createServerFn({ method: "POST" })
     if (!inv) throw new Error("Invoice not found");
     const remaining = Number(inv.total) - Number(inv.amount_paid || 0);
     if (remaining > 0) {
-      const { error: pErr } = await context.supabase.from("payments").insert({
+      const { data: pay, error: pErr } = await context.supabase.from("payments").insert({
         org_id: inv.org_id,
         created_by: context.userId,
-        invoice_id: inv.id,
+        invoice_id: inv.id, // legacy convenience column; source of truth is the allocation below
+        client_id: inv.client_id ?? null,
         client_name: inv.client_name,
         amount: remaining,
         method: data.method,
         reference: data.reference ?? null,
         paid_at: data.paid_at,
         currency: inv.currency,
-      });
+      }).select("id").maybeSingle();
       if (pErr) throw new Error(pErr.message);
+      if (!pay) throw new Error("Failed to record payment");
+      const { error: aErr } = await (context.supabase as any).from("payment_allocations").insert({
+        org_id: inv.org_id,
+        payment_id: pay.id,
+        kind: "invoice",
+        invoice_id: inv.id,
+        amount: remaining,
+        currency: inv.currency,
+        created_by: context.userId,
+      });
+      if (aErr) throw new Error(aErr.message);
+    } else {
+      // No balance owed — just flip status if it isn't already paid.
+      await context.supabase.from("tax_invoices").update({ status: "paid" }).eq("id", inv.id);
     }
-    const { error: uErr } = await context.supabase.from("tax_invoices")
-      .update({ amount_paid: Number(inv.total), status: "paid" }).eq("id", inv.id);
-    if (uErr) throw new Error(uErr.message);
 
     await logActivity(context, inv.org_id, "paid", inv.id,
       `Invoice ${inv.number} marked paid on ${data.paid_at}`, inv.case_id);
@@ -205,17 +217,8 @@ export const deletePayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    // If the payment was tied to an invoice, decrement its amount_paid.
-    const { data: p } = await context.supabase.from("payments").select("id, amount, invoice_id, org_id, reference").eq("id", data.id).maybeSingle();
-    if (!p) throw new Error("Payment not found");
-    if ((p as any).invoice_id) {
-      const { data: inv } = await context.supabase.from("tax_invoices").select("amount_paid, total").eq("id", (p as any).invoice_id).maybeSingle();
-      if (inv) {
-        const nextPaid = Math.max(0, Number((inv as any).amount_paid || 0) - Number((p as any).amount || 0));
-        const nextStatus = nextPaid <= 0 ? "issued" : (nextPaid >= Number((inv as any).total) ? "paid" : "partial");
-        await context.supabase.from("tax_invoices").update({ amount_paid: nextPaid, status: nextStatus }).eq("id", (p as any).invoice_id);
-      }
-    }
+    // Deleting the payment cascades its allocations; the trigger recomputes each
+    // affected invoice's amount_paid + status automatically.
     const { error } = await context.supabase.from("payments").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
