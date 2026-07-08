@@ -51,6 +51,8 @@ function ClientsPage() {
   const [conflictOpen, setConflictOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Client | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [pageSize, setPageSize] = useState(25);
+  const [page, setPage] = useState(1);
 
   async function refresh() {
     setLoading(true);
