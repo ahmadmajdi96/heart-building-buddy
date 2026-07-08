@@ -114,7 +114,7 @@ function FinancialsPage() {
           <TabsTrigger value="invoices">{locale === "ar" ? "الفواتير الضريبية" : "Tax invoices"}</TabsTrigger>
           <TabsTrigger value="collections">{locale === "ar" ? "التحصيل" : "Collections"}</TabsTrigger>
         </TabsList>
-        <TabsContent value="payments"><PaymentsTab /></TabsContent>
+        <TabsContent value="payments"><CaseFeesStrip /><PaymentsTab /></TabsContent>
         <TabsContent value="schedules"><SchedulesTab /></TabsContent>
         <TabsContent value="quotes"><QuotesTab /></TabsContent>
         <TabsContent value="drafts"><DraftInvoicesTab /></TabsContent>
@@ -134,6 +134,60 @@ function calcTotals(items: Item[], taxRate: number) {
 }
 
 // ---------- PAYMENTS ----------
+function CaseFeesStrip() {
+  const { locale } = useI18n();
+  const ar = locale === "ar";
+  const { org } = useOrg();
+  const [totals, setTotals] = useState<{ agreed: number; billed: number; collected: number; retainer: number } | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      if (!org) return;
+      const [{ data: cases }, { data: invs }] = await Promise.all([
+        supabase.from("cases").select("id, agreed_fee, retainer_amount, fee_currency, status").eq("org_id", org.id),
+        supabase.from("tax_invoices").select("case_id, total, amount_paid").eq("org_id", org.id),
+      ]);
+      const byCase: Record<string, { billed: number; paid: number }> = {};
+      for (const inv of (invs ?? [])) {
+        const cid = (inv as any).case_id as string | null;
+        if (!cid) continue;
+        const row = byCase[cid] ?? { billed: 0, paid: 0 };
+        row.billed += Number((inv as any).total || 0);
+        row.paid += Number((inv as any).amount_paid || 0);
+        byCase[cid] = row;
+      }
+      let agreed = 0, billed = 0, collected = 0, retainer = 0;
+      for (const c of (cases ?? []) as any[]) {
+        if (["closed", "won", "lost"].includes(c.status)) continue;
+        agreed += Number(c.agreed_fee || 0);
+        retainer += Number(c.retainer_amount || 0);
+        const b = byCase[c.id];
+        if (b) { billed += b.billed; collected += b.paid; }
+      }
+      setTotals({ agreed, billed, collected, retainer });
+    })();
+  }, [org?.id]);
+
+  if (!totals || totals.agreed <= 0) return null;
+  const outstanding = Math.max(0, totals.agreed - totals.billed);
+  const cur = "JOD";
+  const Tile = ({ label, value, gold }: { label: string; value: number; gold?: boolean }) => (
+    <div className={`card-elev rounded-xl border bg-card p-4 ${gold ? "border-gold/50" : ""}`}>
+      <div className={`text-[11px] uppercase tracking-wider ${gold ? "text-gold" : "text-muted-foreground"}`}>{label}</div>
+      <div className={`mt-1 font-serif text-2xl tabular-nums ${gold ? "text-gold" : ""}`}>{fmt(value, cur)}</div>
+    </div>
+  );
+  return (
+    <div className="mb-4 grid gap-3 sm:grid-cols-5">
+      <Tile label={ar ? "أتعاب متفق عليها" : "Agreed fees"} value={totals.agreed} />
+      <Tile label={ar ? "دفعة مقدمة محتفظ بها" : "Retainers held"} value={totals.retainer} />
+      <Tile label={ar ? "مفوترة" : "Billed"} value={totals.billed} />
+      <Tile label={ar ? "محصلة" : "Collected"} value={totals.collected} />
+      <Tile label={ar ? "غير مفوترة (متبقٍ)" : "Unbilled outstanding"} value={outstanding} gold />
+    </div>
+  );
+}
+
 function PaymentsTab() {
   const { locale } = useI18n();
   const { org, can } = useOrg();

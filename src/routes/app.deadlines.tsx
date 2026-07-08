@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Checkbox } from "@/components/ui/checkbox";
 import { listDeadlines, saveDeadline, completeDeadline, deleteDeadline, deadlineStats } from "@/lib/deadlines.functions";
 import { listCases } from "@/lib/cases.functions";
+import { listClients } from "@/lib/clients.functions";
 import { AlertTriangle, CalendarClock, Check, Loader2, Plus, Trash2, Pencil, Gavel, FileSignature, Scale, Download } from "lucide-react";
 import { toast } from "sonner";
 import { toCsv, downloadCsv } from "@/lib/csv-export";
@@ -36,12 +37,15 @@ function DeadlinesPage() {
   const done = useServerFn(completeDeadline);
   const del = useServerFn(deleteDeadline);
   const lCases = useServerFn(listCases);
+  const lClients = useServerFn(listClients);
 
   const [rows, setRows] = useState<any[]>([]);
   const [statsData, setStatsData] = useState<{ today: any[]; week: any[]; overdue: any[] } | null>(null);
-  const [cases, setCases] = useState<Array<{ id: string; title: string }>>([]);
+  const [cases, setCases] = useState<Array<{ id: string; title: string; client_id: string | null }>>([]);
+  const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>("open");
+  const [filterClient, setFilterClient] = useState<string>("all");
   const [filterCase, setFilterCase] = useState<string>("all");
   const [filterKind, setFilterKind] = useState<string>("all");
   const [fromDate, setFromDate] = useState<string>("");
@@ -53,18 +57,31 @@ function DeadlinesPage() {
   async function refresh() {
     setLoading(true);
     try {
-      const [es, st, cs] = await Promise.all([
+      const [es, st, cs, cls] = await Promise.all([
         list({ data: { status: filterStatus === "all" ? undefined : (filterStatus as any), case_id: filterCase === "all" ? undefined : filterCase } }),
         stats(),
         lCases(),
+        lClients(),
       ]);
       setRows(es as any[]);
       setStatsData(st as any);
-      setCases((cs as any[]).map((c) => ({ id: c.id, title: c.title })));
+      setCases((cs as any[]).map((c) => ({ id: c.id, title: c.title, client_id: c.client_id ?? null })));
+      setClients((cls as any[]).map((c) => ({ id: c.id, name: c.name })));
     } catch (e) { toast.error((e as Error).message); }
     finally { setLoading(false); }
   }
   useEffect(() => { refresh(); }, [filterStatus, filterCase]);
+
+  // Cases available in the toolbar case filter, filtered by selected client.
+  const casesForFilter = useMemo(
+    () => filterClient === "all" ? cases : cases.filter((c) => c.client_id === filterClient),
+    [cases, filterClient],
+  );
+  // Cases available in the edit dialog, filtered by client selected inside the dialog.
+  const casesForDialog = useMemo(() => {
+    const cid = editing?.client_id || (editing?.case_id ? (cases.find((c) => c.id === editing.case_id)?.client_id ?? null) : null);
+    return cid ? cases.filter((c) => c.client_id === cid) : cases;
+  }, [cases, editing?.client_id, editing?.case_id]);
 
   function openNew() {
     setEditing({
@@ -142,7 +159,7 @@ function DeadlinesPage() {
     toast.success(ar ? `تم تصدير ${filteredRows.length} موعد` : `Exported ${filteredRows.length} deadlines`);
   }
 
-  const hasExtraFilters = filterKind !== "all" || fromDate || toDate;
+  const hasExtraFilters = filterKind !== "all" || filterClient !== "all" || fromDate || toDate;
 
 
   return (
@@ -185,12 +202,22 @@ function DeadlinesPage() {
             </Select>
           </div>
           <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{ar ? "العميل" : "Client"}</Label>
+            <Select value={filterClient} onValueChange={(v) => { setFilterClient(v); setFilterCase("all"); }}>
+              <SelectTrigger className="h-9 w-48"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{ar ? "كل العملاء" : "All clients"}</SelectItem>
+                {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
             <Label className="text-[11px] text-muted-foreground">{ar ? "القضية" : "Matter"}</Label>
             <Select value={filterCase} onValueChange={setFilterCase}>
               <SelectTrigger className="h-9 w-56"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{ar ? "الكل" : "All matters"}</SelectItem>
-                {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+                {casesForFilter.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -203,7 +230,7 @@ function DeadlinesPage() {
             <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9 w-[150px]" />
           </div>
           {hasExtraFilters && (
-            <Button size="sm" variant="ghost" onClick={() => { setFilterKind("all"); setFromDate(""); setToDate(""); }}>
+            <Button size="sm" variant="ghost" onClick={() => { setFilterKind("all"); setFilterClient("all"); setFromDate(""); setToDate(""); }}>
               {ar ? "مسح" : "Clear"}
             </Button>
           )}
@@ -246,12 +273,24 @@ function DeadlinesPage() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
+                  <Label>{ar ? "العميل" : "Client"}</Label>
+                  <Select value={editing.client_id || (editing.case_id ? (cases.find((c) => c.id === editing.case_id)?.client_id ?? "none") : "none")} onValueChange={(v) => setEditing({ ...editing, client_id: v === "none" ? "" : v, case_id: "" })}>
+                    <SelectTrigger><SelectValue placeholder={ar ? "كل العملاء" : "All clients"} /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{ar ? "بدون / الكل" : "None / all"}</SelectItem>
+                      {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
                   <Label>{ar ? "القضية" : "Matter"}</Label>
                   <Select value={editing.case_id || "none"} onValueChange={(v) => setEditing({ ...editing, case_id: v === "none" ? "" : v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">{ar ? "بدون" : "None"}</SelectItem>
-                      {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+                      {casesForDialog.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>

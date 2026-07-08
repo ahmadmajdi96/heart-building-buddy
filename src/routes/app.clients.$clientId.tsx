@@ -289,7 +289,27 @@ function OwedTab({ data, clientId, onChange }: { data: any; clientId: string; on
     (data.timeEntries ?? []).filter((t: any) => t.billable && t.status !== "invoiced")
       .reduce((s: number, t: any) => s + (Number(t.duration_seconds || 0) / 3600) * Number(t.hourly_rate || 0), 0),
     [data.timeEntries]);
-  const total = invoicesOwed + unbilledTime;
+
+  // Case-fee accounting: for each case with an agreed_fee, subtract invoiced+paid
+  // and retainer already collected. What's left is receivable directly against
+  // the client's engagement letter.
+  const caseFeesOwed = useMemo(() => {
+    const invByCase: Record<string, number> = {};
+    for (const inv of (data.invoices ?? [])) {
+      const cid = inv.case_id as string | null;
+      if (!cid) continue;
+      invByCase[cid] = (invByCase[cid] ?? 0) + Number(inv.total || 0);
+    }
+    return (data.cases ?? []).reduce((s: number, c: any) => {
+      const fee = Number(c.agreed_fee || 0);
+      if (fee <= 0) return s;
+      const alreadyBilled = invByCase[c.id] ?? 0;
+      const retainer = Number(c.retainer_amount || 0);
+      return s + Math.max(0, fee - alreadyBilled - retainer);
+    }, 0);
+  }, [data.cases, data.invoices]);
+
+  const total = invoicesOwed + unbilledTime + caseFeesOwed;
 
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ count: 6, frequency: "monthly" as "weekly" | "monthly", start_date: new Date().toISOString().slice(0, 10), amount: 0, currency: "JOD" });
@@ -315,9 +335,10 @@ function OwedTab({ data, clientId, onChange }: { data: any; clientId: string; on
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-4">
         <div className="card-elev rounded-xl border bg-card p-4"><div className="text-[11px] uppercase tracking-wider text-muted-foreground">{ar ? "فواتير غير مدفوعة" : "Unpaid invoices"}</div><div className="mt-1 font-serif text-2xl tabular-nums">{invoicesOwed.toFixed(2)}</div></div>
         <div className="card-elev rounded-xl border bg-card p-4"><div className="text-[11px] uppercase tracking-wider text-muted-foreground">{ar ? "وقت غير مفوتر" : "Unbilled time"}</div><div className="mt-1 font-serif text-2xl tabular-nums">{unbilledTime.toFixed(2)}</div></div>
+        <div className="card-elev rounded-xl border bg-card p-4"><div className="text-[11px] uppercase tracking-wider text-muted-foreground">{ar ? "أتعاب القضايا" : "Case fees due"}</div><div className="mt-1 font-serif text-2xl tabular-nums">{caseFeesOwed.toFixed(2)}</div></div>
         <div className="card-elev rounded-xl border bg-card p-4 border-gold/50"><div className="text-[11px] uppercase tracking-wider text-gold">{ar ? "الإجمالي المستحق" : "Total owed"}</div><div className="mt-1 font-serif text-2xl tabular-nums text-gold">{total.toFixed(2)}</div></div>
       </div>
       <div className="flex justify-end">
