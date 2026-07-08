@@ -89,10 +89,12 @@ export const saveCase = createServerFn({ method: "POST" })
       const { id, ...rest } = payload;
       const { data: row, error } = await context.supabase.from("cases").update(rest).eq("id", id!).select().maybeSingle();
       if (error) throw new Error(error.message);
+      await syncRetainerPayment(context, orgId, row);
       return row;
     }
     const { data: row, error } = await context.supabase.from("cases").insert(payload).select().maybeSingle();
     if (error) throw new Error(error.message);
+    await syncRetainerPayment(context, orgId, row);
     // Notify client via SMS when a case is assigned (awaited so the Worker doesn't kill the request).
     if (row?.client_id) {
       const { data: client } = await context.supabase
