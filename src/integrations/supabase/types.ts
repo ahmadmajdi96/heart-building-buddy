@@ -403,6 +403,73 @@ export type Database = {
           },
         ]
       }
+      client_credits: {
+        Row: {
+          amount: number
+          applied_amount: number
+          client_id: string | null
+          client_name: string
+          created_at: string
+          created_by: string
+          currency: string
+          id: string
+          note: string | null
+          org_id: string
+          source_payment_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          applied_amount?: number
+          client_id?: string | null
+          client_name: string
+          created_at?: string
+          created_by: string
+          currency: string
+          id?: string
+          note?: string | null
+          org_id: string
+          source_payment_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          applied_amount?: number
+          client_id?: string | null
+          client_name?: string
+          created_at?: string
+          created_by?: string
+          currency?: string
+          id?: string
+          note?: string | null
+          org_id?: string
+          source_payment_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_credits_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_credits_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_credits_source_payment_id_fkey"
+            columns: ["source_payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_interactions: {
         Row: {
           body: string | null
@@ -894,6 +961,13 @@ export type Database = {
             foreignKeyName: "debt_collection_payments_invoice_id_fkey"
             columns: ["invoice_id"]
             isOneToOne: false
+            referencedRelation: "invoice_balances"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "debt_collection_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
             referencedRelation: "tax_invoices"
             referencedColumns: ["id"]
           },
@@ -1266,6 +1340,13 @@ export type Database = {
             foreignKeyName: "draft_invoices_accepted_invoice_id_fkey"
             columns: ["accepted_invoice_id"]
             isOneToOne: false
+            referencedRelation: "invoice_balances"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "draft_invoices_accepted_invoice_id_fkey"
+            columns: ["accepted_invoice_id"]
+            isOneToOne: false
             referencedRelation: "tax_invoices"
             referencedColumns: ["id"]
           },
@@ -1619,6 +1700,114 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_allocations: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          credit_id: string | null
+          currency: string
+          debt_case_id: string | null
+          id: string
+          invoice_id: string | null
+          kind: Database["public"]["Enums"]["allocation_kind"]
+          note: string | null
+          org_id: string
+          payment_id: string
+          retainer_case_id: string | null
+          schedule_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by: string
+          credit_id?: string | null
+          currency: string
+          debt_case_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          kind: Database["public"]["Enums"]["allocation_kind"]
+          note?: string | null
+          org_id: string
+          payment_id: string
+          retainer_case_id?: string | null
+          schedule_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          credit_id?: string | null
+          currency?: string
+          debt_case_id?: string | null
+          id?: string
+          invoice_id?: string | null
+          kind?: Database["public"]["Enums"]["allocation_kind"]
+          note?: string | null
+          org_id?: string
+          payment_id?: string
+          retainer_case_id?: string | null
+          schedule_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_allocations_credit_id_fkey"
+            columns: ["credit_id"]
+            isOneToOne: false
+            referencedRelation: "client_credits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_debt_case_id_fkey"
+            columns: ["debt_case_id"]
+            isOneToOne: false
+            referencedRelation: "debt_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_balances"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "tax_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_retainer_case_id_fkey"
+            columns: ["retainer_case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "payment_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_schedules: {
         Row: {
           amount: number
@@ -1699,6 +1888,13 @@ export type Database = {
             foreignKeyName: "payment_schedules_invoice_id_fkey"
             columns: ["invoice_id"]
             isOneToOne: false
+            referencedRelation: "invoice_balances"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "payment_schedules_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
             referencedRelation: "tax_invoices"
             referencedColumns: ["id"]
           },
@@ -1770,6 +1966,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_balances"
+            referencedColumns: ["invoice_id"]
           },
           {
             foreignKeyName: "payments_invoice_id_fkey"
@@ -2176,6 +2379,13 @@ export type Database = {
             foreignKeyName: "time_entries_invoice_id_fkey"
             columns: ["invoice_id"]
             isOneToOne: false
+            referencedRelation: "invoice_balances"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "time_entries_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
             referencedRelation: "tax_invoices"
             referencedColumns: ["id"]
           },
@@ -2183,7 +2393,44 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      invoice_balances: {
+        Row: {
+          amount_paid: number | null
+          balance: number | null
+          due_date: string | null
+          invoice_id: string | null
+          org_id: string | null
+          status: Database["public"]["Enums"]["invoice_status"] | null
+          total: number | null
+        }
+        Insert: {
+          amount_paid?: number | null
+          balance?: never
+          due_date?: string | null
+          invoice_id?: string | null
+          org_id?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"] | null
+          total?: number | null
+        }
+        Update: {
+          amount_paid?: number | null
+          balance?: never
+          due_date?: string | null
+          invoice_id?: string | null
+          org_id?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"] | null
+          total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_invoices_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       create_workspace: {
@@ -2251,8 +2498,18 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["org_role"]
       }
+      recompute_invoice_from_allocations: {
+        Args: { _invoice_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
+      allocation_kind:
+        | "invoice"
+        | "schedule"
+        | "retainer"
+        | "credit_apply"
+        | "debt_case"
       debt_case_status: "active" | "paid" | "partial" | "overdue" | "cancelled"
       debt_payer_status:
         | "pending"
@@ -2274,6 +2531,9 @@ export type Database = {
         | "paid"
         | "overdue"
         | "void"
+        | "sent"
+        | "viewed"
+        | "written_off"
       member_status: "active" | "invited" | "disabled"
       org_role:
         | "owner"
@@ -2425,6 +2685,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      allocation_kind: [
+        "invoice",
+        "schedule",
+        "retainer",
+        "credit_apply",
+        "debt_case",
+      ],
       debt_case_status: ["active", "paid", "partial", "overdue", "cancelled"],
       debt_payer_status: ["pending", "partial", "paid", "overdue", "cancelled"],
       debt_sms_kind: [
@@ -2435,7 +2702,17 @@ export const Constants = {
         "manual",
       ],
       debt_type: ["rent", "loan", "service", "installment", "other"],
-      invoice_status: ["draft", "issued", "partial", "paid", "overdue", "void"],
+      invoice_status: [
+        "draft",
+        "issued",
+        "partial",
+        "paid",
+        "overdue",
+        "void",
+        "sent",
+        "viewed",
+        "written_off",
+      ],
       member_status: ["active", "invited", "disabled"],
       org_role: [
         "owner",
