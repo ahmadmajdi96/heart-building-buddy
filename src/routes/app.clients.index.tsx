@@ -79,6 +79,10 @@ function ClientsPage() {
   }), [clients, q, statusFilter, typeFilter, fromDate, toDate]);
 
   const hasFilters = q || statusFilter !== "all" || typeFilter !== "all" || fromDate || toDate;
+  useEffect(() => { setPage(1); }, [q, statusFilter, typeFilter, fromDate, toDate, pageSize]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   function clearFilters() { setQ(""); setStatusFilter("all"); setTypeFilter("all"); setFromDate(""); setToDate(""); }
 
   function openNew() { setEmailError(null); setEditing({ type: "individual", status: "active" }); setEditOpen(true); }
