@@ -105,7 +105,10 @@ function DocsPage() {
       if (error) throw error;
       const extracted = await extractTextFromFile(file);
       const cId = caseId === "none" ? null : caseId;
-      const clId = clientId === "none" ? null : clientId;
+      // If a case is selected but no client, inherit the client from the case
+      // so the "client-related" counter reflects the link.
+      const inheritedClient = cId ? (cases.find((c) => c.id === cId)?.client_id ?? null) : null;
+      const clId = clientId === "none" ? inheritedClient : clientId;
       const isTemplate = !cId && !clId;
       await create({ data: {
         name: file.name, mime_type: file.type, size: file.size, storage_path: path,
