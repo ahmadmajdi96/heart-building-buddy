@@ -23,7 +23,9 @@ import { listParties, saveParty, deleteParty, listNotes, addNote, deleteNote } f
 import { listCaseMembers, addCaseMember, removeCaseMember, updateCaseMemberRole, listAssignableUsers } from "@/lib/case-members.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentPreviewBody } from "@/components/documents/preview-body";
-import { ArrowLeft, Loader2, Trash2, Upload, Download, Eye, Plus, Calendar as CalIcon, FileText, Users, StickyNote, ClipboardList, UserPlus, Receipt } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, Upload, Download, Eye, Plus, Calendar as CalIcon, FileText, Users, StickyNote, ClipboardList, UserPlus, Receipt, Wallet, FileCheck2 } from "lucide-react";
+import { ExpensesTab, PrebillsTab } from "@/components/app/case-billing-tabs";
+
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/cases/$caseId")({ component: CaseProfilePage });
@@ -75,6 +77,8 @@ function CaseProfilePage() {
           <TabsTrigger value="parties" className="gap-1.5"><Users className="size-3.5" />{locale === "ar" ? "الأطراف" : "Parties"}</TabsTrigger>
           <TabsTrigger value="team" className="gap-1.5"><UserPlus className="size-3.5" />{locale === "ar" ? "الفريق" : "Team"}</TabsTrigger>
           <TabsTrigger value="notes" className="gap-1.5"><StickyNote className="size-3.5" />{locale === "ar" ? "الملاحظات" : "Notes"}</TabsTrigger>
+          <TabsTrigger value="expenses" className="gap-1.5"><Wallet className="size-3.5" />{locale === "ar" ? "المصاريف" : "Expenses"}</TabsTrigger>
+          <TabsTrigger value="prebills" className="gap-1.5"><FileCheck2 className="size-3.5" />{locale === "ar" ? "مسودات الفواتير" : "Pre-bills"}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
@@ -95,9 +99,16 @@ function CaseProfilePage() {
         <TabsContent value="notes" className="mt-6">
           <NotesTab caseId={caseId} />
         </TabsContent>
+        <TabsContent value="expenses" className="mt-6">
+          <ExpensesTab caseId={caseId} clientId={(data.case as any).client_id} locale={locale} onChange={refresh} />
+        </TabsContent>
+        <TabsContent value="prebills" className="mt-6">
+          <PrebillsTab caseId={caseId} locale={locale} />
+        </TabsContent>
       </Tabs>
     </div>
   );
+
 }
 
 function CloseCaseButton({ caseId, onDone }: { caseId: string; onDone: () => void }) {

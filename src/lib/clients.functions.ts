@@ -116,6 +116,7 @@ export const createInstallmentPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({
     client_id: z.string().uuid(),
+    case_id: z.string().uuid().optional().nullable(),
     title: z.string().min(1),
     total_amount: z.number().positive(),
     currency: z.string().default("JOD"),
@@ -126,20 +127,46 @@ export const createInstallmentPlan = createServerFn({ method: "POST" })
   }).parse(d))
   .handler(async ({ data, context }) => {
     const sb = context.supabase as any;
-    const { data: mem } = await sb.from("organization_members").select("org_id").eq("user_id", context.userId).eq("status", "active").order("created_at").limit(1).maybeSingle();
+    const { data: mem } = await sb.from("organization_members")
+      .select("org_id, organizations(currency)")
+      .eq("user_id", context.userId).eq("status", "active")
+      .order("created_at").limit(1).maybeSingle();
     const org_id = mem?.org_id;
     if (!org_id) throw new Error("No active organization");
+    const currency = mem?.organizations?.currency ?? data.currency ?? "JOD";
 
-    const per = Math.round((data.total_amount / data.count) * 100) / 100;
-    const { data: debtCase, error } = await sb.from("debt_cases").insert({
-      org_id, client_id: data.client_id, title: data.title, debt_type: "installment",
-      total_amount: data.total_amount, currency: data.currency, status: "active",
-      service_fee_type: "percent", service_fee_value: 0,
-      reference: data.reference ?? null,
+    // Fetch client name for invoice
+    const { data: client } = await sb.from("clients").select("full_name").eq("id", data.client_id).maybeSingle();
+    const client_name = client?.full_name ?? "Client";
+
+    // Generate invoice number
+    const { data: numRes, error: nErr } = await sb.rpc("next_doc_number", { _org_id: org_id, _kind: "invoice" });
+    if (nErr) throw new Error(nErr.message);
+
+    // Create the invoice (fee installment plan header)
+    const { data: inv, error: iErr } = await sb.from("tax_invoices").insert({
+      org_id,
+      number: numRes as string,
+      client_id: data.client_id,
+      client_name,
+      case_id: data.case_id ?? null,
+      issue_date: new Date().toISOString().slice(0, 10),
+      due_date: data.start_date,
+      status: "issued",
+      currency,
+      tax_rate: 0,
+      subtotal: data.total_amount,
+      tax_amount: 0,
+      total: data.total_amount,
+      notes: data.reference ? `Ref: ${data.reference}` : null,
+      items: [{ description: data.title, quantity: 1, unit_price: data.total_amount }],
       created_by: context.userId,
     }).select().maybeSingle();
-    if (error) throw new Error(error.message);
+    if (iErr) throw new Error(iErr.message);
+    if (!inv) throw new Error("Failed to create installment invoice");
 
+    // Build schedule rows tied to the invoice (no debt_case)
+    const per = Math.round((data.total_amount / data.count) * 100) / 100;
     const rows: any[] = [];
     const start = new Date(data.start_date);
     for (let i = 0; i < data.count; i++) {
@@ -147,16 +174,28 @@ export const createInstallmentPlan = createServerFn({ method: "POST" })
       if (data.frequency === "weekly") due.setDate(start.getDate() + i * 7);
       else due.setMonth(start.getMonth() + i);
       rows.push({
-        org_id, client_id: data.client_id, debt_case_id: debtCase.id,
-        installment_no: i + 1, total_installments: data.count,
-        amount: i === data.count - 1 ? Math.round((data.total_amount - per * (data.count - 1)) * 100) / 100 : per,
-        currency: data.currency, due_date: due.toISOString().slice(0, 10), status: "pending",
+        org_id,
+        invoice_id: inv.id,
+        client_id: data.client_id,
+        client_name,
+        description: `${data.title} · Installment ${i + 1}/${data.count}`,
+        installment_no: i + 1,
+        installment_count: data.count,
+        amount: i === data.count - 1
+          ? Math.round((data.total_amount - per * (data.count - 1)) * 100) / 100
+          : per,
+        currency,
+        due_date: due.toISOString().slice(0, 10),
+        status: "upcoming",
+        created_by: context.userId,
       });
     }
-    const { error: e2 } = await sb.from("payment_schedules").insert(rows);
-    if (e2) console.warn("[installments] scheduling failed:", e2.message);
-    return { debt_case_id: debtCase.id };
+    const { error: sErr } = await sb.from("payment_schedules").insert(rows);
+    if (sErr) throw new Error(sErr.message);
+
+    return { invoice_id: inv.id, invoice_number: inv.number, count: data.count };
   });
+
 
 export const saveClient = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

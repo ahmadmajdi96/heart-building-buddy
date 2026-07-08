@@ -451,9 +451,10 @@ function OwedTab({ data, clientId, onChange }: { data: any; clientId: string; on
         client_id: clientId, title: ar ? `خطة أقساط - ${data.client.name}` : `Installments – ${data.client.name}`,
         total_amount: form.amount, currency: form.currency, count: form.count, frequency: form.frequency, start_date: form.start_date,
       }});
-      toast.success(ar ? "تم إنشاء قضية التحصيل" : "Debt case created");
+      toast.success(ar ? `تم إنشاء الفاتورة ${(r as any).invoice_number}` : `Invoice ${(r as any).invoice_number} created`);
       setOpen(false); onChange();
-      navigate({ to: "/app/debt-collection/$id", params: { id: (r as any).debt_case_id } });
+      navigate({ to: "/app/financials" });
+
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   }
 
