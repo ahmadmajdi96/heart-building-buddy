@@ -79,9 +79,9 @@ function DeadlinesPage() {
   );
   // Cases available in the edit dialog, filtered by client selected inside the dialog.
   const casesForDialog = useMemo(() => {
-    const cid = editing?.client_id;
+    const cid = editing?.client_id || (editing?.case_id ? (cases.find((c) => c.id === editing.case_id)?.client_id ?? null) : null);
     return cid ? cases.filter((c) => c.client_id === cid) : cases;
-  }, [cases, editing?.client_id]);
+  }, [cases, editing?.client_id, editing?.case_id]);
 
   function openNew() {
     setEditing({
