@@ -127,6 +127,26 @@ export const deleteCase = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const closeCase = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    id: z.string().uuid(),
+    result: z.enum(["won", "lost", "settled", "withdrawn", "other"]),
+    note: z.string().optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    // Map to existing status enum where possible; store the granular result in close_result.
+    const statusMap: Record<string, string> = { won: "won", lost: "lost", settled: "closed", withdrawn: "closed", other: "closed" };
+    const { data: row, error } = await (context.supabase as any).from("cases").update({
+      status: statusMap[data.result],
+      close_result: data.result,
+      close_note: data.note ?? null,
+      closed_at: new Date().toISOString(),
+    }).eq("id", data.id).select().maybeSingle();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
 const EventInput = z.object({
   case_id: z.string().uuid(),
   kind: z.enum(["update", "feedback", "court_session", "appointment", "milestone"]).default("update"),
