@@ -122,6 +122,7 @@ export const createInstallmentPlan = createServerFn({ method: "POST" })
       total_amount: data.total_amount, currency: data.currency, status: "active",
       service_fee_type: "percent", service_fee_value: 0,
       reference: data.reference ?? null,
+      created_by: context.userId,
     }).select().maybeSingle();
     if (error) throw new Error(error.message);
 
