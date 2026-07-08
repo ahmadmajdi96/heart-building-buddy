@@ -230,6 +230,21 @@ export const deleteInteraction = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const updateInteraction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    id: z.string().uuid(),
+    kind: z.enum(["call", "session", "note", "email"]).optional(),
+    title: z.string().optional(),
+    body: z.string().optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { id, ...rest } = data;
+    const { data: row, error } = await context.supabase.from("client_interactions").update(rest).eq("id", id).select().maybeSingle();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
 /** Conflict check: fuzzy-match a name + optional national_id / tax_id / email / phone
  *  against existing clients and case parties. Returns categorized matches. */
 export const conflictCheck = createServerFn({ method: "POST" })
