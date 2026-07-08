@@ -59,13 +59,18 @@ export const getClient = createServerFn({ method: "POST" })
       caseIds.length ? sb.from("time_entries").select("id, description, duration_seconds, hourly_rate, billable, status, started_at, case_id, cases(id,title)").in("case_id", caseIds).order("started_at", { ascending: false }) : Promise.resolve({ data: [] }),
     ]);
 
-    // Payments: fetch per invoice
+    // Payments: (a) all payments directly linked to this client, and
+    // (b) any invoice-linked payments for this client's cases (in case client_id
+    // wasn't back-filled onto historic rows).
     let payments: any[] = [];
     const invIds = (invoices.data ?? []).map((i: any) => i.id);
-    if (invIds.length) {
-      const { data: pdata } = await sb.from("payments").select("*, tax_invoices(id, number, case_id)").in("invoice_id", invIds).order("received_at", { ascending: false });
-      payments = pdata ?? [];
-    }
+    const filters: string[] = [`client_id.eq.${data.id}`];
+    if (invIds.length) filters.push(`invoice_id.in.(${invIds.join(",")})`);
+    const { data: pdata } = await sb.from("payments")
+      .select("*, tax_invoices(id, number, case_id)")
+      .or(filters.join(","))
+      .order("paid_at", { ascending: false });
+    payments = pdata ?? [];
 
     return {
       client: clientRes.data,
