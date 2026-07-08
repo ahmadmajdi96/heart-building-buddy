@@ -561,7 +561,7 @@ function ClientDetailSheet({ id, onClose }: { id: string | null; onClose: () => 
               <Button size="sm" variant="gold" onClick={logIt}>{locale === "ar" ? "تسجيل" : "Log"}</Button>
             </div>
             <ul className="space-y-2">
-              {data.interactions.map((i) => (
+              {data.interactions.map((i: any) => (
                 <li key={i.id} className="rounded-md border p-3 text-sm group">
                   <div className="flex justify-between items-start">
                     <div>
