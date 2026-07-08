@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { z } from "zod";
-import { createAiGatewayProvider, getAiGatewayApiKey, strictLanguageDirective } from "./ai-gateway.server";
+import { createAiGatewayProvider, getAiGatewayApiKey, sanitizeLanguageText, strictLanguageDirective } from "./ai-gateway.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const MODEL = process.env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct";
@@ -82,5 +82,5 @@ export const generateAnalyticsInsights = createServerFn({ method: "POST" })
 You are a senior legal-practice analyst. Given a JSON snapshot of a law firm's data, produce concise, actionable insights in ${lang}. Use Markdown with short headings and bullet lists. Cover: practice performance, risk areas, productivity, client pipeline, recommended next actions. Be specific to the numbers given. No fluff.`,
       prompt: `DATA SNAPSHOT:\n${JSON.stringify(data.summary, null, 2)}`,
     });
-    return { insights: text };
+    return { insights: sanitizeLanguageText(text, data.locale) };
   });

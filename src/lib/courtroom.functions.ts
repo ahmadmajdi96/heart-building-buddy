@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { z } from "zod";
-import { createAiGatewayProvider, getAiGatewayApiKey, strictLanguageDirective } from "./ai-gateway.server";
+import { createAiGatewayProvider, getAiGatewayApiKey, sanitizeLanguageText, strictLanguageDirective } from "./ai-gateway.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const MODEL = process.env.AI_MODEL || "meta-llama/llama-3.3-70b-instruct";
@@ -108,7 +108,18 @@ Return ONLY a JSON object with this exact shape (no markdown, no commentary):
 }`,
     });
     const parsed = CaseSchema.parse(extractJson(text));
-    return parsed;
+    return {
+      ...parsed,
+      title: sanitizeLanguageText(parsed.title, data.locale),
+      jurisdiction: sanitizeLanguageText(parsed.jurisdiction, data.locale),
+      court: sanitizeLanguageText(parsed.court, data.locale),
+      summary: sanitizeLanguageText(parsed.summary, data.locale),
+      facts: sanitizeLanguageText(parsed.facts, data.locale),
+      charges: parsed.charges.map((charge) => sanitizeLanguageText(charge, data.locale)),
+      claimantName: sanitizeLanguageText(parsed.claimantName, data.locale),
+      defendantName: sanitizeLanguageText(parsed.defendantName, data.locale),
+      evidence: parsed.evidence.map((item) => sanitizeLanguageText(item, data.locale)),
+    };
   });
 
 // ---------- Courtroom turn ----------
@@ -190,7 +201,14 @@ Continue the hearing with 1-3 turns (judge and/or opposing counsel reacting), ci
       system,
       prompt: userPrompt,
     });
-    return TurnOutput.parse(extractJson(text));
+    const parsed = TurnOutput.parse(extractJson(text));
+    return {
+      ...parsed,
+      turns: parsed.turns.map((turn) => ({
+        ...turn,
+        text: sanitizeLanguageText(turn.text, data.locale),
+      })),
+    };
   });
 
 // ---------- Persistence ----------

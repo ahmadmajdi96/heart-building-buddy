@@ -135,7 +135,7 @@ function DraftingPage() {
           varsLine ? `${locale === "ar" ? "المتغيرات" : "Variables"}: ${varsLine}` : "",
         ].filter(Boolean).join("\n\n");
 
-        const res = await askRag({ data: { question, top_k: 18, rerank_top_n: 6, temperature: 0.1, max_tokens: 1500 } });
+        const res = await askRag({ data: { question, locale, top_k: 18, rerank_top_n: 6, temperature: 0.1, max_tokens: 1500 } });
         editor?.commands.setContent(mdToHtml(res.answer || ""));
         setRagSources((res.sources ?? []).map((s) => ({ filename: s.filename, page: s.page, excerpt: s.excerpt })));
         if (!title) setTitle((prompt || readyRagDocs[0].filename || (locale === "ar" ? "مسودة" : "Draft")).slice(0, 80));
