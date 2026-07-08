@@ -145,10 +145,13 @@ function CasesTab({ data, clientId, onChange }: { data: any; clientId: string; o
   const cases = data.cases ?? [];
   const listUnassigned = useServerFn(listUnassignedCases);
   const attach = useServerFn(attachCaseToClient);
+  const detach = useServerFn(detachCaseFromClient);
   const [open, setOpen] = useState(false);
   const [available, setAvailable] = useState<any[]>([]);
   const [picking, setPicking] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [detachTarget, setDetachTarget] = useState<any | null>(null);
+  const [detachBusy, setDetachBusy] = useState(false);
 
   async function openPicker() {
     try { setAvailable(await listUnassigned() as any[]); setOpen(true); }
