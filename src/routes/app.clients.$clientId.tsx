@@ -182,6 +182,7 @@ function CasesTab({ data, clientId, onChange }: { data: any; clientId: string; o
               <th className="px-5 py-3 text-start font-medium">{ar ? "الحالة" : "Status"}</th>
               <th className="px-5 py-3 text-start font-medium">{ar ? "السعر المتفق" : "Agreed fee"}</th>
               <th className="px-5 py-3 text-start font-medium">{ar ? "افتُتحت" : "Opened"}</th>
+              <th className="px-5 py-3 text-end font-medium w-16"></th>
             </tr></thead>
             <tbody className="divide-y">
               {cases.map((cs: any) => (
@@ -191,11 +192,28 @@ function CasesTab({ data, clientId, onChange }: { data: any; clientId: string; o
                   <td className="px-5 py-3"><StatusBadge status={cs.status} /></td>
                   <td className="px-5 py-3 tabular-nums">{cs.agreed_fee ? `${Number(cs.agreed_fee).toFixed(2)} ${cs.fee_currency ?? ""}` : "—"}</td>
                   <td className="px-5 py-3 text-muted-foreground text-xs">{cs.opened_at ? new Date(cs.opened_at).toLocaleDateString() : "—"}</td>
+                  <td className="px-5 py-3 text-end">
+                    <Button variant="ghost" size="icon" title={ar ? "فصل من الموكل" : "Detach from client"} onClick={() => setDetachTarget(cs)}>
+                      <Unlink className="size-4 text-destructive" />
+                    </Button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>}
+
+      <ConfirmDelete open={!!detachTarget} onOpenChange={(o) => { if (!o) setDetachTarget(null); }}
+        busy={detachBusy}
+        onConfirm={async () => {
+          if (!detachTarget) return;
+          setDetachBusy(true);
+          try { await detach({ data: { case_id: detachTarget.id } }); toast.success(ar ? "تم الفصل" : "Detached"); setDetachTarget(null); onChange(); }
+          catch (e) { toast.error((e as Error).message); }
+          finally { setDetachBusy(false); }
+        }}
+        title={ar ? "فصل القضية عن الموكل؟" : "Detach case from client?"}
+        description={ar ? "لن يتم حذف القضية." : "The case itself is not deleted."} />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
