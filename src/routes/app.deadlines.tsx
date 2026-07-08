@@ -202,12 +202,22 @@ function DeadlinesPage() {
             </Select>
           </div>
           <div className="space-y-1">
+            <Label className="text-[11px] text-muted-foreground">{ar ? "العميل" : "Client"}</Label>
+            <Select value={filterClient} onValueChange={(v) => { setFilterClient(v); setFilterCase("all"); }}>
+              <SelectTrigger className="h-9 w-48"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{ar ? "كل العملاء" : "All clients"}</SelectItem>
+                {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
             <Label className="text-[11px] text-muted-foreground">{ar ? "القضية" : "Matter"}</Label>
             <Select value={filterCase} onValueChange={setFilterCase}>
               <SelectTrigger className="h-9 w-56"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{ar ? "الكل" : "All matters"}</SelectItem>
-                {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+                {casesForFilter.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
