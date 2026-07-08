@@ -14,8 +14,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getClient, addInteraction, deleteInteraction, attachCaseToClient, listUnassignedCases, createInstallmentPlan } from "@/lib/clients.functions";
-import { ArrowLeft, Loader2, Trash2, Plus, ClipboardList, MessageSquare, Briefcase, Building, User, FileText, CalendarClock, Video, Receipt, Wallet, Coins, Link as LinkIcon } from "lucide-react";
+import { getClient, addInteraction, deleteInteraction, updateInteraction, attachCaseToClient, detachCaseFromClient, listUnassignedCases, createInstallmentPlan } from "@/lib/clients.functions";
+import { deleteDocument } from "@/lib/documents.functions";
+import { deleteMeeting } from "@/lib/meetings.functions";
+import { deleteAppointment } from "@/lib/appointments.functions";
+import { deleteInvoice, deletePayment } from "@/lib/invoicing.functions";
+import { ArrowLeft, Loader2, Trash2, Plus, Pencil, ClipboardList, MessageSquare, Briefcase, Building, User, FileText, CalendarClock, Video, Receipt, Wallet, Coins, Link as LinkIcon, Unlink } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/clients/$clientId")({ component: ClientProfilePage });
@@ -72,11 +76,23 @@ function ClientProfilePage() {
 
         <TabsContent value="overview" className="mt-6"><OverviewTab data={data} /></TabsContent>
         <TabsContent value="cases" className="mt-6"><CasesTab data={data} clientId={clientId} onChange={refresh} /></TabsContent>
-        <TabsContent value="documents" className="mt-6"><SimpleList items={data.documents} kind="documents" empty={ar ? "لا مستندات" : "No documents"} render={(d: any) => ({ title: d.name, sub: `${d.cases?.title ?? "—"} · ${formatBytes(d.size)}`, date: d.created_at })} /></TabsContent>
-        <TabsContent value="meetings" className="mt-6"><SimpleList items={data.meetings} kind="meetings" empty={ar ? "لا اجتماعات" : "No meetings"} render={(m: any) => ({ title: m.title || "—", sub: m.cases?.title ?? "", date: m.starts_at })} /></TabsContent>
-        <TabsContent value="appointments" className="mt-6"><SimpleList items={data.appointments} kind="appointments" empty={ar ? "لا مواعيد" : "No appointments"} render={(a: any) => ({ title: a.title || "—", sub: `${a.cases?.title ?? ""} · ${a.location ?? ""}`, date: a.starts_at })} /></TabsContent>
-        <TabsContent value="invoices" className="mt-6"><InvoicesTab items={data.invoices} /></TabsContent>
-        <TabsContent value="payments" className="mt-6"><PaymentsTab items={data.payments} /></TabsContent>
+        <TabsContent value="documents" className="mt-6">
+          <SimpleList items={data.documents} kind="documents" empty={ar ? "لا مستندات" : "No documents"}
+            render={(d: any) => ({ title: d.name, sub: `${d.cases?.title ?? "—"} · ${formatBytes(d.size)}`, date: d.created_at })}
+            deleteFn={deleteDocument} onChanged={refresh} />
+        </TabsContent>
+        <TabsContent value="meetings" className="mt-6">
+          <SimpleList items={data.meetings} kind="meetings" empty={ar ? "لا اجتماعات" : "No meetings"}
+            render={(m: any) => ({ title: m.title || "—", sub: m.cases?.title ?? "", date: m.starts_at })}
+            deleteFn={deleteMeeting} onChanged={refresh} />
+        </TabsContent>
+        <TabsContent value="appointments" className="mt-6">
+          <SimpleList items={data.appointments} kind="appointments" empty={ar ? "لا مواعيد" : "No appointments"}
+            render={(a: any) => ({ title: a.title || "—", sub: `${a.cases?.title ?? ""} · ${a.location ?? ""}`, date: a.starts_at })}
+            deleteFn={deleteAppointment} onChanged={refresh} />
+        </TabsContent>
+        <TabsContent value="invoices" className="mt-6"><InvoicesTab items={data.invoices} onChange={refresh} /></TabsContent>
+        <TabsContent value="payments" className="mt-6"><PaymentsTab items={data.payments} onChange={refresh} /></TabsContent>
         <TabsContent value="owed" className="mt-6"><OwedTab data={data} clientId={clientId} onChange={refresh} /></TabsContent>
         <TabsContent value="interactions" className="mt-6"><InteractionsTab clientId={clientId} data={data} onChange={refresh} /></TabsContent>
       </Tabs>
@@ -129,10 +145,13 @@ function CasesTab({ data, clientId, onChange }: { data: any; clientId: string; o
   const cases = data.cases ?? [];
   const listUnassigned = useServerFn(listUnassignedCases);
   const attach = useServerFn(attachCaseToClient);
+  const detach = useServerFn(detachCaseFromClient);
   const [open, setOpen] = useState(false);
   const [available, setAvailable] = useState<any[]>([]);
   const [picking, setPicking] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [detachTarget, setDetachTarget] = useState<any | null>(null);
+  const [detachBusy, setDetachBusy] = useState(false);
 
   async function openPicker() {
     try { setAvailable(await listUnassigned() as any[]); setOpen(true); }
@@ -163,6 +182,7 @@ function CasesTab({ data, clientId, onChange }: { data: any; clientId: string; o
               <th className="px-5 py-3 text-start font-medium">{ar ? "الحالة" : "Status"}</th>
               <th className="px-5 py-3 text-start font-medium">{ar ? "السعر المتفق" : "Agreed fee"}</th>
               <th className="px-5 py-3 text-start font-medium">{ar ? "افتُتحت" : "Opened"}</th>
+              <th className="px-5 py-3 text-end font-medium w-16"></th>
             </tr></thead>
             <tbody className="divide-y">
               {cases.map((cs: any) => (
@@ -172,11 +192,28 @@ function CasesTab({ data, clientId, onChange }: { data: any; clientId: string; o
                   <td className="px-5 py-3"><StatusBadge status={cs.status} /></td>
                   <td className="px-5 py-3 tabular-nums">{cs.agreed_fee ? `${Number(cs.agreed_fee).toFixed(2)} ${cs.fee_currency ?? ""}` : "—"}</td>
                   <td className="px-5 py-3 text-muted-foreground text-xs">{cs.opened_at ? new Date(cs.opened_at).toLocaleDateString() : "—"}</td>
+                  <td className="px-5 py-3 text-end">
+                    <Button variant="ghost" size="icon" title={ar ? "فصل من الموكل" : "Detach from client"} onClick={() => setDetachTarget(cs)}>
+                      <Unlink className="size-4 text-destructive" />
+                    </Button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>}
+
+      <ConfirmDelete open={!!detachTarget} onOpenChange={(o) => { if (!o) setDetachTarget(null); }}
+        busy={detachBusy}
+        onConfirm={async () => {
+          if (!detachTarget) return;
+          setDetachBusy(true);
+          try { await detach({ data: { case_id: detachTarget.id } }); toast.success(ar ? "تم الفصل" : "Detached"); setDetachTarget(null); onChange(); }
+          catch (e) { toast.error((e as Error).message); }
+          finally { setDetachBusy(false); }
+        }}
+        title={ar ? "فصل القضية عن الموكل؟" : "Detach case from client?"}
+        description={ar ? "لن يتم حذف القضية." : "The case itself is not deleted."} />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
@@ -197,28 +234,87 @@ function CasesTab({ data, clientId, onChange }: { data: any; clientId: string; o
   );
 }
 
-function SimpleList({ items, empty, render, kind }: { items: any[]; empty: string; kind: string; render: (x: any) => { title: string; sub?: string; date?: string } }) {
-  if (!items || items.length === 0) return <div className="card-elev rounded-xl border bg-card p-12 text-center text-sm text-muted-foreground">{empty}</div>;
+function ConfirmDelete({ open, onOpenChange, onConfirm, busy, title, description }: {
+  open: boolean; onOpenChange: (o: boolean) => void; onConfirm: () => void; busy: boolean;
+  title: string; description: string;
+}) {
+  const { locale } = useI18n(); const ar = locale === "ar";
   return (
-    <div className="card-elev rounded-xl border bg-card divide-y" data-kind={kind}>
-      {items.map((x: any) => {
-        const r = render(x);
-        return (
-          <div key={x.id} className="flex items-center justify-between p-4">
-            <div className="min-w-0">
-              <div className="font-medium truncate">{r.title}</div>
-              {r.sub && <div className="text-xs text-muted-foreground truncate">{r.sub}</div>}
-            </div>
-            {r.date && <div className="text-[11px] text-muted-foreground whitespace-nowrap ms-4">{new Date(r.date).toLocaleString()}</div>}
-          </div>
-        );
-      })}
-    </div>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={busy}>{ar ? "إلغاء" : "Cancel"}</AlertDialogCancel>
+          <AlertDialogAction onClick={(e) => { e.preventDefault(); onConfirm(); }} disabled={busy}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            {busy && <Loader2 className="size-4 animate-spin me-1.5" />}{ar ? "حذف" : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
-function InvoicesTab({ items }: { items: any[] }) {
+function useDeleter(fn: any, onChanged: () => void) {
+  const call = useServerFn(fn);
+  const [target, setTarget] = useState<any | null>(null);
+  const [busy, setBusy] = useState(false);
   const { locale } = useI18n(); const ar = locale === "ar";
+  async function confirm() {
+    if (!target) return;
+    setBusy(true);
+    try { await call({ data: { id: target.id } }); toast.success(ar ? "تم الحذف" : "Deleted"); setTarget(null); onChanged(); }
+    catch (e) { toast.error((e as Error).message); }
+    finally { setBusy(false); }
+  }
+  return { target, setTarget, busy, confirm };
+}
+
+function SimpleList({
+  items, empty, render, kind, deleteFn, onChanged,
+}: {
+  items: any[]; empty: string; kind: string;
+  render: (x: any) => { title: string; sub?: string; date?: string };
+  deleteFn?: any; onChanged?: () => void;
+}) {
+  const { locale } = useI18n(); const ar = locale === "ar";
+  const del = useDeleter(deleteFn, onChanged ?? (() => {}));
+  if (!items || items.length === 0) return <div className="card-elev rounded-xl border bg-card p-12 text-center text-sm text-muted-foreground">{empty}</div>;
+  return (
+    <>
+      <div className="card-elev rounded-xl border bg-card divide-y" data-kind={kind}>
+        {items.map((x: any) => {
+          const r = render(x);
+          return (
+            <div key={x.id} className="flex items-center justify-between p-4">
+              <div className="min-w-0">
+                <div className="font-medium truncate">{r.title}</div>
+                {r.sub && <div className="text-xs text-muted-foreground truncate">{r.sub}</div>}
+              </div>
+              <div className="flex items-center gap-2 ms-4">
+                {r.date && <div className="text-[11px] text-muted-foreground whitespace-nowrap">{new Date(r.date).toLocaleString()}</div>}
+                {deleteFn && <Button variant="ghost" size="icon" onClick={() => del.setTarget(x)}><Trash2 className="size-4 text-destructive" /></Button>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {deleteFn && (
+        <ConfirmDelete open={!!del.target} onOpenChange={(o) => { if (!o) del.setTarget(null); }}
+          onConfirm={del.confirm} busy={del.busy}
+          title={ar ? "تأكيد الحذف" : "Confirm delete"}
+          description={ar ? "لا يمكن التراجع." : "This cannot be undone."} />
+      )}
+    </>
+  );
+}
+
+function InvoicesTab({ items, onChange }: { items: any[]; onChange: () => void }) {
+  const { locale } = useI18n(); const ar = locale === "ar";
+  const del = useDeleter(deleteInvoice, onChange);
   if (items.length === 0) return <div className="card-elev rounded-xl border bg-card p-12 text-center text-sm text-muted-foreground">{ar ? "لا توجد فواتير." : "No invoices."}</div>;
   return (
     <div className="card-elev rounded-xl border bg-card overflow-hidden">
@@ -231,6 +327,7 @@ function InvoicesTab({ items }: { items: any[] }) {
           <th className="px-5 py-3 text-end font-medium">{ar ? "الإجمالي" : "Total"}</th>
           <th className="px-5 py-3 text-end font-medium">{ar ? "المدفوع" : "Paid"}</th>
           <th className="px-5 py-3 text-start font-medium">{ar ? "الحالة" : "Status"}</th>
+          <th className="px-5 py-3 text-end font-medium w-16"></th>
         </tr></thead>
         <tbody className="divide-y">
           {items.map((i: any) => (
@@ -242,37 +339,64 @@ function InvoicesTab({ items }: { items: any[] }) {
               <td className="px-5 py-3 text-end tabular-nums">{Number(i.total).toFixed(2)} {i.currency}</td>
               <td className="px-5 py-3 text-end tabular-nums">{Number(i.amount_paid ?? 0).toFixed(2)}</td>
               <td className="px-5 py-3"><StatusBadge status={i.status} /></td>
+              <td className="px-5 py-3 text-end">
+                <Button variant="ghost" size="icon" onClick={() => del.setTarget(i)}><Trash2 className="size-4 text-destructive" /></Button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+      <ConfirmDelete open={!!del.target} onOpenChange={(o) => { if (!o) del.setTarget(null); }}
+        onConfirm={del.confirm} busy={del.busy}
+        title={ar ? "حذف الفاتورة؟" : "Delete invoice?"}
+        description={ar ? "سيتم فصل المدفوعات المرتبطة ولن يتم حذفها." : "Linked payments will be detached, not deleted."} />
     </div>
   );
 }
 
-function PaymentsTab({ items }: { items: any[] }) {
+function PaymentsTab({ items, onChange }: { items: any[]; onChange: () => void }) {
   const { locale } = useI18n(); const ar = locale === "ar";
+  const del = useDeleter(deletePayment, onChange);
   if (items.length === 0) return <div className="card-elev rounded-xl border bg-card p-12 text-center text-sm text-muted-foreground">{ar ? "لا توجد مدفوعات." : "No payments."}</div>;
   return (
     <div className="card-elev rounded-xl border bg-card overflow-hidden">
       <table className="w-full text-sm">
         <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground"><tr>
           <th className="px-5 py-3 text-start font-medium">{ar ? "التاريخ" : "Date"}</th>
+          <th className="px-5 py-3 text-start font-medium">{ar ? "المرجع" : "Reference"}</th>
           <th className="px-5 py-3 text-start font-medium">{ar ? "الفاتورة" : "Invoice"}</th>
           <th className="px-5 py-3 text-start font-medium">{ar ? "الطريقة" : "Method"}</th>
           <th className="px-5 py-3 text-end font-medium">{ar ? "المبلغ" : "Amount"}</th>
+          <th className="px-5 py-3 text-end font-medium w-16"></th>
         </tr></thead>
         <tbody className="divide-y">
-          {items.map((p: any) => (
-            <tr key={p.id}>
-              <td className="px-5 py-3 text-xs">{p.received_at ? new Date(p.received_at).toLocaleDateString() : "—"}</td>
-              <td className="px-5 py-3 font-mono text-xs">{p.tax_invoices?.number ?? "—"}</td>
-              <td className="px-5 py-3 text-xs capitalize">{p.method ?? "—"}</td>
-              <td className="px-5 py-3 text-end tabular-nums">{Number(p.amount ?? 0).toFixed(2)} {p.currency ?? ""}</td>
-            </tr>
-          ))}
+          {items.map((p: any) => {
+            const isRetainer = typeof p.reference === "string" && p.reference.startsWith("retainer:");
+            return (
+              <tr key={p.id}>
+                <td className="px-5 py-3 text-xs">{p.paid_at ? new Date(p.paid_at).toLocaleDateString() : "—"}</td>
+                <td className="px-5 py-3 text-xs">
+                  {isRetainer
+                    ? <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-gold/10 text-gold">{ar ? "دفعة مقدمة" : "Retainer"}</span>
+                    : (p.reference || "—")}
+                </td>
+                <td className="px-5 py-3 font-mono text-xs">{p.tax_invoices?.number ?? "—"}</td>
+                <td className="px-5 py-3 text-xs capitalize">{(p.method ?? "").replace(/_/g, " ") || "—"}</td>
+                <td className="px-5 py-3 text-end tabular-nums">{Number(p.amount ?? 0).toFixed(2)} {p.currency ?? ""}</td>
+                <td className="px-5 py-3 text-end">
+                  <Button variant="ghost" size="icon" onClick={() => del.setTarget(p)} title={isRetainer ? (ar ? "لحذفها، امسح مبلغ الدفعة المقدمة من ملف القضية" : "To remove, clear the retainer on the case profile") : ""}>
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
+      <ConfirmDelete open={!!del.target} onOpenChange={(o) => { if (!o) del.setTarget(null); }}
+        onConfirm={del.confirm} busy={del.busy}
+        title={ar ? "حذف الدفعة؟" : "Delete payment?"}
+        description={ar ? "سيتم تحديث حالة الفاتورة المرتبطة." : "The linked invoice status will be recomputed."} />
     </div>
   );
 }
@@ -380,10 +504,14 @@ function InteractionsTab({ clientId, data, onChange }: { clientId: string; data:
   const { locale } = useI18n(); const ar = locale === "ar";
   const add = useServerFn(addInteraction);
   const del = useServerFn(deleteInteraction);
+  const upd = useServerFn(updateInteraction);
   const [form, setForm] = useState<{ kind: "call" | "session" | "note" | "email"; title: string; body: string }>({ kind: "note", title: "", body: "" });
   const [pendingDelete, setPendingDelete] = useState<any | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState<{ kind: "call" | "session" | "note" | "email"; title: string; body: string }>({ kind: "note", title: "", body: "" });
+  const [editBusy, setEditBusy] = useState(false);
 
   async function submit() {
     if (!form.title.trim()) { toast.error(ar ? "العنوان مطلوب" : "Title is required"); return; }
@@ -396,6 +524,16 @@ function InteractionsTab({ clientId, data, onChange }: { clientId: string; data:
     setDeleting(true);
     try { await del({ data: { id: pendingDelete.id } }); toast.success(ar ? "تم الحذف" : "Deleted"); setPendingDelete(null); onChange(); }
     catch (e) { toast.error((e as Error).message); } finally { setDeleting(false); }
+  }
+  function openEdit(i: any) {
+    setEditing(i);
+    setEditForm({ kind: i.kind, title: i.title ?? "", body: i.body ?? "" });
+  }
+  async function saveEdit() {
+    if (!editing) return;
+    setEditBusy(true);
+    try { await upd({ data: { id: editing.id, ...editForm } }); toast.success(ar ? "تم الحفظ" : "Saved"); setEditing(null); onChange(); }
+    catch (e) { toast.error((e as Error).message); } finally { setEditBusy(false); }
   }
 
   return (
@@ -438,11 +576,41 @@ function InteractionsTab({ clientId, data, onChange }: { clientId: string; data:
                     {i.body && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{i.body}</p>}
                     <div className="text-[11px] text-muted-foreground mt-1">{new Date(i.occurred_at).toLocaleString()}</div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => setPendingDelete(i)}><Trash2 className="size-4 text-destructive" /></Button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(i)}><Pencil className="size-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setPendingDelete(i)}><Trash2 className="size-4 text-destructive" /></Button>
+                  </div>
                 </li>
               ))}
             </ul>}
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) setEditing(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{ar ? "تعديل التفاعل" : "Edit interaction"}</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div><Label>{ar ? "النوع" : "Kind"}</Label>
+              <Select value={editForm.kind} onValueChange={(v) => setEditForm({ ...editForm, kind: v as any })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="call">{ar ? "مكالمة" : "Call"}</SelectItem>
+                  <SelectItem value="session">{ar ? "جلسة" : "Session"}</SelectItem>
+                  <SelectItem value="email">{ar ? "بريد" : "Email"}</SelectItem>
+                  <SelectItem value="note">{ar ? "ملاحظة" : "Note"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>{ar ? "العنوان" : "Title"}</Label>
+              <Input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} /></div>
+            <div><Label>{ar ? "تفاصيل" : "Details"}</Label>
+              <Textarea rows={3} value={editForm.body} onChange={(e) => setEditForm({ ...editForm, body: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditing(null)}>{ar ? "إلغاء" : "Cancel"}</Button>
+            <Button variant="gold" onClick={saveEdit} disabled={editBusy}>{editBusy && <Loader2 className="size-4 animate-spin me-1.5" />}{ar ? "حفظ" : "Save"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!pendingDelete} onOpenChange={(o) => { if (!o) setPendingDelete(null); }}>
         <AlertDialogContent>

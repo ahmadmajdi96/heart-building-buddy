@@ -185,3 +185,38 @@ export const markInvoicePaid = createServerFn({ method: "POST" })
       `Invoice ${inv.number} marked paid on ${data.paid_at}`, inv.case_id);
     return { ok: true };
   });
+
+export const deleteInvoice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: inv } = await context.supabase.from("tax_invoices").select("id, number, org_id, case_id").eq("id", data.id).maybeSingle();
+    if (!inv) throw new Error("Invoice not found");
+    // Detach payments then delete the invoice.
+    await context.supabase.from("payments").update({ invoice_id: null }).eq("invoice_id", data.id);
+    const { error } = await context.supabase.from("tax_invoices").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await logActivity(context, (inv as any).org_id, "deleted", (inv as any).id,
+      `Invoice ${(inv as any).number} deleted`, (inv as any).case_id);
+    return { ok: true };
+  });
+
+export const deletePayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    // If the payment was tied to an invoice, decrement its amount_paid.
+    const { data: p } = await context.supabase.from("payments").select("id, amount, invoice_id, org_id, reference").eq("id", data.id).maybeSingle();
+    if (!p) throw new Error("Payment not found");
+    if ((p as any).invoice_id) {
+      const { data: inv } = await context.supabase.from("tax_invoices").select("amount_paid, total").eq("id", (p as any).invoice_id).maybeSingle();
+      if (inv) {
+        const nextPaid = Math.max(0, Number((inv as any).amount_paid || 0) - Number((p as any).amount || 0));
+        const nextStatus = nextPaid <= 0 ? "issued" : (nextPaid >= Number((inv as any).total) ? "paid" : "partial");
+        await context.supabase.from("tax_invoices").update({ amount_paid: nextPaid, status: nextStatus }).eq("id", (p as any).invoice_id);
+      }
+    }
+    const { error } = await context.supabase.from("payments").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

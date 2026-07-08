@@ -59,13 +59,18 @@ export const getClient = createServerFn({ method: "POST" })
       caseIds.length ? sb.from("time_entries").select("id, description, duration_seconds, hourly_rate, billable, status, started_at, case_id, cases(id,title)").in("case_id", caseIds).order("started_at", { ascending: false }) : Promise.resolve({ data: [] }),
     ]);
 
-    // Payments: fetch per invoice
+    // Payments: (a) all payments directly linked to this client, and
+    // (b) any invoice-linked payments for this client's cases (in case client_id
+    // wasn't back-filled onto historic rows).
     let payments: any[] = [];
     const invIds = (invoices.data ?? []).map((i: any) => i.id);
-    if (invIds.length) {
-      const { data: pdata } = await sb.from("payments").select("*, tax_invoices(id, number, case_id)").in("invoice_id", invIds).order("received_at", { ascending: false });
-      payments = pdata ?? [];
-    }
+    const filters: string[] = [`client_id.eq.${data.id}`];
+    if (invIds.length) filters.push(`invoice_id.in.(${invIds.join(",")})`);
+    const { data: pdata } = await sb.from("payments")
+      .select("*, tax_invoices(id, number, case_id)")
+      .or(filters.join(","))
+      .order("paid_at", { ascending: false });
+    payments = pdata ?? [];
 
     return {
       client: clientRes.data,
@@ -85,6 +90,15 @@ export const attachCaseToClient = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ client_id: z.string().uuid(), case_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await (context.supabase as any).from("cases").update({ client_id: data.client_id }).eq("id", data.case_id).is("client_id", null);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const detachCaseFromClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ case_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await (context.supabase as any).from("cases").update({ client_id: null }).eq("id", data.case_id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -214,6 +228,21 @@ export const deleteInteraction = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("client_interactions").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const updateInteraction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    id: z.string().uuid(),
+    kind: z.enum(["call", "session", "note", "email"]).optional(),
+    title: z.string().optional(),
+    body: z.string().optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { id, ...rest } = data;
+    const { data: row, error } = await context.supabase.from("client_interactions").update(rest).eq("id", id).select().maybeSingle();
+    if (error) throw new Error(error.message);
+    return row;
   });
 
 /** Conflict check: fuzzy-match a name + optional national_id / tax_id / email / phone
