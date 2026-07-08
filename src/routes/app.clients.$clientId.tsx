@@ -14,8 +14,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getClient, addInteraction, deleteInteraction, attachCaseToClient, listUnassignedCases, createInstallmentPlan } from "@/lib/clients.functions";
-import { ArrowLeft, Loader2, Trash2, Plus, ClipboardList, MessageSquare, Briefcase, Building, User, FileText, CalendarClock, Video, Receipt, Wallet, Coins, Link as LinkIcon } from "lucide-react";
+import { getClient, addInteraction, deleteInteraction, updateInteraction, attachCaseToClient, detachCaseFromClient, listUnassignedCases, createInstallmentPlan } from "@/lib/clients.functions";
+import { deleteDocument } from "@/lib/documents.functions";
+import { deleteMeeting } from "@/lib/meetings.functions";
+import { deleteAppointment } from "@/lib/appointments.functions";
+import { deleteInvoice, deletePayment } from "@/lib/invoicing.functions";
+import { ArrowLeft, Loader2, Trash2, Plus, Pencil, ClipboardList, MessageSquare, Briefcase, Building, User, FileText, CalendarClock, Video, Receipt, Wallet, Coins, Link as LinkIcon, Unlink } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/clients/$clientId")({ component: ClientProfilePage });
