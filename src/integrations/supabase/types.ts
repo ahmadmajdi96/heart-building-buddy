@@ -1464,6 +1464,99 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          amount: number
+          billable: boolean
+          case_id: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string
+          currency: string
+          description: string | null
+          id: string
+          incurred_on: string
+          invoice_id: string | null
+          kind: Database["public"]["Enums"]["expense_kind"]
+          org_id: string
+          receipt_url: string | null
+          status: Database["public"]["Enums"]["expense_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          billable?: boolean
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          currency?: string
+          description?: string | null
+          id?: string
+          incurred_on?: string
+          invoice_id?: string | null
+          kind?: Database["public"]["Enums"]["expense_kind"]
+          org_id: string
+          receipt_url?: string | null
+          status?: Database["public"]["Enums"]["expense_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          billable?: boolean
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          incurred_on?: string
+          invoice_id?: string | null
+          kind?: Database["public"]["Enums"]["expense_kind"]
+          org_id?: string
+          receipt_url?: string | null
+          status?: Database["public"]["Enums"]["expense_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_balances"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "expenses_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "tax_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_sessions: {
         Row: {
           case_id: string | null
@@ -2058,6 +2151,185 @@ export type Database = {
             columns: ["schedule_id"]
             isOneToOne: false
             referencedRelation: "payment_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prebill_lines: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          expense_id: string | null
+          id: string
+          included: boolean
+          kind: string
+          org_id: string
+          prebill_id: string
+          quantity: number
+          time_entry_id: string | null
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          expense_id?: string | null
+          id?: string
+          included?: boolean
+          kind: string
+          org_id: string
+          prebill_id: string
+          quantity?: number
+          time_entry_id?: string | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          expense_id?: string | null
+          id?: string
+          included?: boolean
+          kind?: string
+          org_id?: string
+          prebill_id?: string
+          quantity?: number
+          time_entry_id?: string | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prebill_lines_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prebill_lines_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prebill_lines_prebill_id_fkey"
+            columns: ["prebill_id"]
+            isOneToOne: false
+            referencedRelation: "prebills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prebill_lines_time_entry_id_fkey"
+            columns: ["time_entry_id"]
+            isOneToOne: false
+            referencedRelation: "time_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prebills: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          case_id: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string
+          currency: string
+          discount: number
+          id: string
+          invoice_id: string | null
+          narrative: string | null
+          org_id: string
+          period_end: string
+          period_start: string
+          status: Database["public"]["Enums"]["prebill_status"]
+          subtotal_expenses: number
+          subtotal_time: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          currency?: string
+          discount?: number
+          id?: string
+          invoice_id?: string | null
+          narrative?: string | null
+          org_id: string
+          period_end: string
+          period_start: string
+          status?: Database["public"]["Enums"]["prebill_status"]
+          subtotal_expenses?: number
+          subtotal_time?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          currency?: string
+          discount?: number
+          id?: string
+          invoice_id?: string | null
+          narrative?: string | null
+          org_id?: string
+          period_end?: string
+          period_start?: string
+          status?: Database["public"]["Enums"]["prebill_status"]
+          subtotal_expenses?: number
+          subtotal_time?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prebills_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prebills_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prebills_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_balances"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "prebills_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "tax_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prebills_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2732,6 +3004,14 @@ export type Database = {
         | "assignment"
         | "manual"
       debt_type: "rent" | "loan" | "service" | "installment" | "other"
+      expense_kind:
+        | "court_fee"
+        | "expert"
+        | "translation"
+        | "filing"
+        | "travel"
+        | "other"
+      expense_status: "wip" | "billed" | "written_off" | "non_billable"
       invoice_status:
         | "draft"
         | "issued"
@@ -2752,6 +3032,7 @@ export type Database = {
         | "assistant"
       org_type: "solo" | "firm"
       payment_method: "cash" | "bank_transfer" | "card" | "cheque" | "other"
+      prebill_status: "draft" | "approved" | "billed" | "void"
       quote_status:
         | "draft"
         | "sent"
@@ -2910,6 +3191,15 @@ export const Constants = {
         "manual",
       ],
       debt_type: ["rent", "loan", "service", "installment", "other"],
+      expense_kind: [
+        "court_fee",
+        "expert",
+        "translation",
+        "filing",
+        "travel",
+        "other",
+      ],
+      expense_status: ["wip", "billed", "written_off", "non_billable"],
       invoice_status: [
         "draft",
         "issued",
@@ -2932,6 +3222,7 @@ export const Constants = {
       ],
       org_type: ["solo", "firm"],
       payment_method: ["cash", "bank_transfer", "card", "cheque", "other"],
+      prebill_status: ["draft", "approved", "billed", "void"],
       quote_status: [
         "draft",
         "sent",
