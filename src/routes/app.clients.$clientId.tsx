@@ -214,28 +214,87 @@ function CasesTab({ data, clientId, onChange }: { data: any; clientId: string; o
   );
 }
 
-function SimpleList({ items, empty, render, kind }: { items: any[]; empty: string; kind: string; render: (x: any) => { title: string; sub?: string; date?: string } }) {
-  if (!items || items.length === 0) return <div className="card-elev rounded-xl border bg-card p-12 text-center text-sm text-muted-foreground">{empty}</div>;
+function ConfirmDelete({ open, onOpenChange, onConfirm, busy, title, description }: {
+  open: boolean; onOpenChange: (o: boolean) => void; onConfirm: () => void; busy: boolean;
+  title: string; description: string;
+}) {
+  const { locale } = useI18n(); const ar = locale === "ar";
   return (
-    <div className="card-elev rounded-xl border bg-card divide-y" data-kind={kind}>
-      {items.map((x: any) => {
-        const r = render(x);
-        return (
-          <div key={x.id} className="flex items-center justify-between p-4">
-            <div className="min-w-0">
-              <div className="font-medium truncate">{r.title}</div>
-              {r.sub && <div className="text-xs text-muted-foreground truncate">{r.sub}</div>}
-            </div>
-            {r.date && <div className="text-[11px] text-muted-foreground whitespace-nowrap ms-4">{new Date(r.date).toLocaleString()}</div>}
-          </div>
-        );
-      })}
-    </div>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={busy}>{ar ? "إلغاء" : "Cancel"}</AlertDialogCancel>
+          <AlertDialogAction onClick={(e) => { e.preventDefault(); onConfirm(); }} disabled={busy}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            {busy && <Loader2 className="size-4 animate-spin me-1.5" />}{ar ? "حذف" : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
-function InvoicesTab({ items }: { items: any[] }) {
+function useDeleter(fn: any, onChanged: () => void) {
+  const call = useServerFn(fn);
+  const [target, setTarget] = useState<any | null>(null);
+  const [busy, setBusy] = useState(false);
   const { locale } = useI18n(); const ar = locale === "ar";
+  async function confirm() {
+    if (!target) return;
+    setBusy(true);
+    try { await call({ data: { id: target.id } }); toast.success(ar ? "تم الحذف" : "Deleted"); setTarget(null); onChanged(); }
+    catch (e) { toast.error((e as Error).message); }
+    finally { setBusy(false); }
+  }
+  return { target, setTarget, busy, confirm };
+}
+
+function SimpleList({
+  items, empty, render, kind, deleteFn, onChanged,
+}: {
+  items: any[]; empty: string; kind: string;
+  render: (x: any) => { title: string; sub?: string; date?: string };
+  deleteFn?: any; onChanged?: () => void;
+}) {
+  const { locale } = useI18n(); const ar = locale === "ar";
+  const del = useDeleter(deleteFn, onChanged ?? (() => {}));
+  if (!items || items.length === 0) return <div className="card-elev rounded-xl border bg-card p-12 text-center text-sm text-muted-foreground">{empty}</div>;
+  return (
+    <>
+      <div className="card-elev rounded-xl border bg-card divide-y" data-kind={kind}>
+        {items.map((x: any) => {
+          const r = render(x);
+          return (
+            <div key={x.id} className="flex items-center justify-between p-4">
+              <div className="min-w-0">
+                <div className="font-medium truncate">{r.title}</div>
+                {r.sub && <div className="text-xs text-muted-foreground truncate">{r.sub}</div>}
+              </div>
+              <div className="flex items-center gap-2 ms-4">
+                {r.date && <div className="text-[11px] text-muted-foreground whitespace-nowrap">{new Date(r.date).toLocaleString()}</div>}
+                {deleteFn && <Button variant="ghost" size="icon" onClick={() => del.setTarget(x)}><Trash2 className="size-4 text-destructive" /></Button>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {deleteFn && (
+        <ConfirmDelete open={!!del.target} onOpenChange={(o) => { if (!o) del.setTarget(null); }}
+          onConfirm={del.confirm} busy={del.busy}
+          title={ar ? "تأكيد الحذف" : "Confirm delete"}
+          description={ar ? "لا يمكن التراجع." : "This cannot be undone."} />
+      )}
+    </>
+  );
+}
+
+function InvoicesTab({ items, onChange }: { items: any[]; onChange: () => void }) {
+  const { locale } = useI18n(); const ar = locale === "ar";
+  const del = useDeleter(deleteInvoice, onChange);
   if (items.length === 0) return <div className="card-elev rounded-xl border bg-card p-12 text-center text-sm text-muted-foreground">{ar ? "لا توجد فواتير." : "No invoices."}</div>;
   return (
     <div className="card-elev rounded-xl border bg-card overflow-hidden">
@@ -248,6 +307,7 @@ function InvoicesTab({ items }: { items: any[] }) {
           <th className="px-5 py-3 text-end font-medium">{ar ? "الإجمالي" : "Total"}</th>
           <th className="px-5 py-3 text-end font-medium">{ar ? "المدفوع" : "Paid"}</th>
           <th className="px-5 py-3 text-start font-medium">{ar ? "الحالة" : "Status"}</th>
+          <th className="px-5 py-3 text-end font-medium w-16"></th>
         </tr></thead>
         <tbody className="divide-y">
           {items.map((i: any) => (
@@ -259,37 +319,64 @@ function InvoicesTab({ items }: { items: any[] }) {
               <td className="px-5 py-3 text-end tabular-nums">{Number(i.total).toFixed(2)} {i.currency}</td>
               <td className="px-5 py-3 text-end tabular-nums">{Number(i.amount_paid ?? 0).toFixed(2)}</td>
               <td className="px-5 py-3"><StatusBadge status={i.status} /></td>
+              <td className="px-5 py-3 text-end">
+                <Button variant="ghost" size="icon" onClick={() => del.setTarget(i)}><Trash2 className="size-4 text-destructive" /></Button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+      <ConfirmDelete open={!!del.target} onOpenChange={(o) => { if (!o) del.setTarget(null); }}
+        onConfirm={del.confirm} busy={del.busy}
+        title={ar ? "حذف الفاتورة؟" : "Delete invoice?"}
+        description={ar ? "سيتم فصل المدفوعات المرتبطة ولن يتم حذفها." : "Linked payments will be detached, not deleted."} />
     </div>
   );
 }
 
-function PaymentsTab({ items }: { items: any[] }) {
+function PaymentsTab({ items, onChange }: { items: any[]; onChange: () => void }) {
   const { locale } = useI18n(); const ar = locale === "ar";
+  const del = useDeleter(deletePayment, onChange);
   if (items.length === 0) return <div className="card-elev rounded-xl border bg-card p-12 text-center text-sm text-muted-foreground">{ar ? "لا توجد مدفوعات." : "No payments."}</div>;
   return (
     <div className="card-elev rounded-xl border bg-card overflow-hidden">
       <table className="w-full text-sm">
         <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground"><tr>
           <th className="px-5 py-3 text-start font-medium">{ar ? "التاريخ" : "Date"}</th>
+          <th className="px-5 py-3 text-start font-medium">{ar ? "المرجع" : "Reference"}</th>
           <th className="px-5 py-3 text-start font-medium">{ar ? "الفاتورة" : "Invoice"}</th>
           <th className="px-5 py-3 text-start font-medium">{ar ? "الطريقة" : "Method"}</th>
           <th className="px-5 py-3 text-end font-medium">{ar ? "المبلغ" : "Amount"}</th>
+          <th className="px-5 py-3 text-end font-medium w-16"></th>
         </tr></thead>
         <tbody className="divide-y">
-          {items.map((p: any) => (
-            <tr key={p.id}>
-              <td className="px-5 py-3 text-xs">{p.received_at ? new Date(p.received_at).toLocaleDateString() : "—"}</td>
-              <td className="px-5 py-3 font-mono text-xs">{p.tax_invoices?.number ?? "—"}</td>
-              <td className="px-5 py-3 text-xs capitalize">{p.method ?? "—"}</td>
-              <td className="px-5 py-3 text-end tabular-nums">{Number(p.amount ?? 0).toFixed(2)} {p.currency ?? ""}</td>
-            </tr>
-          ))}
+          {items.map((p: any) => {
+            const isRetainer = typeof p.reference === "string" && p.reference.startsWith("retainer:");
+            return (
+              <tr key={p.id}>
+                <td className="px-5 py-3 text-xs">{p.paid_at ? new Date(p.paid_at).toLocaleDateString() : "—"}</td>
+                <td className="px-5 py-3 text-xs">
+                  {isRetainer
+                    ? <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-gold/10 text-gold">{ar ? "دفعة مقدمة" : "Retainer"}</span>
+                    : (p.reference || "—")}
+                </td>
+                <td className="px-5 py-3 font-mono text-xs">{p.tax_invoices?.number ?? "—"}</td>
+                <td className="px-5 py-3 text-xs capitalize">{(p.method ?? "").replace(/_/g, " ") || "—"}</td>
+                <td className="px-5 py-3 text-end tabular-nums">{Number(p.amount ?? 0).toFixed(2)} {p.currency ?? ""}</td>
+                <td className="px-5 py-3 text-end">
+                  <Button variant="ghost" size="icon" onClick={() => del.setTarget(p)} title={isRetainer ? (ar ? "لحذفها، امسح مبلغ الدفعة المقدمة من ملف القضية" : "To remove, clear the retainer on the case profile") : ""}>
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
+      <ConfirmDelete open={!!del.target} onOpenChange={(o) => { if (!o) del.setTarget(null); }}
+        onConfirm={del.confirm} busy={del.busy}
+        title={ar ? "حذف الدفعة؟" : "Delete payment?"}
+        description={ar ? "سيتم تحديث حالة الفاتورة المرتبطة." : "The linked invoice status will be recomputed."} />
     </div>
   );
 }
