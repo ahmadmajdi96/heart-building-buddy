@@ -102,6 +102,7 @@ export const saveDebtCase = createServerFn({ method: "POST" })
       ...data,
       client_id: data.client_id || null,
       due_date: data.due_date || null,
+      next_recur_at: data.next_recur_at || null,
       org_id: mem.org_id,
       created_by: context.userId,
     };
