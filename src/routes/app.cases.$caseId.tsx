@@ -14,7 +14,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getCase, addCaseEvent, deleteCaseEvent } from "@/lib/cases.functions";
+import { getCase, addCaseEvent, deleteCaseEvent, closeCase, saveCase } from "@/lib/cases.functions";
 import { saveDraftInvoice } from "@/lib/draft-invoices.functions";
 import { createDocument, getSignedDownloadUrl, deleteDocument } from "@/lib/documents.functions";
 import { saveAppointment } from "@/lib/appointments.functions";
