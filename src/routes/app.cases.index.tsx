@@ -300,7 +300,7 @@ function CasesPage() {
               <th className="px-5 py-3 text-start font-medium whitespace-nowrap">{ar ? "تاريخ الإنشاء" : "Created"}</th>
               <th className="px-5 py-3 text-end"></th>
             </tr></thead>
-            <tbody className="divide-y">{filtered.map((c) => (
+            <tbody className="divide-y">{paged.map((c) => (
               <tr key={c.id} className="hover:bg-secondary/40 cursor-pointer" onClick={() => navigate({ to: "/app/cases/$caseId", params: { caseId: c.id } })}>
                 <td className="px-5 py-4 font-mono text-xs text-muted-foreground">{c.case_number || "—"}</td>
                 <td className="px-5 py-4 text-muted-foreground">{c.clients?.name ?? "—"}</td>
@@ -317,7 +317,9 @@ function CasesPage() {
                 </td>
               </tr>
             ))}</tbody>
-          </table></div>}
+          </table>
+          <TablePager page={currentPage} pageSize={pageSize} total={filtered.length} onPage={setPage} />
+          </div>}
       </div>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
