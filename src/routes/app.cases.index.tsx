@@ -19,6 +19,7 @@ import { Plus, Loader2, Pencil, Trash2, Search, UserPlus, Download, X } from "lu
 import { toast } from "sonner";
 import { toCsv, downloadCsv, inRange } from "@/lib/csv-export";
 import { useOrg } from "@/lib/org-context";
+import { PageSizeSelect, TablePager } from "@/components/data-table-pager";
 
 export const Route = createFileRoute("/app/cases/")({ component: CasesPage });
 
@@ -74,6 +75,8 @@ function CasesPage() {
   const [quickClientOpen, setQuickClientOpen] = useState(false);
   const [quickClient, setQuickClient] = useState<{ name: string; email: string; phone: string; company: string; type: "individual" | "company" }>({ name: "", email: "", phone: "", company: "", type: "individual" });
   const [quickBusy, setQuickBusy] = useState(false);
+  const [pageSize, setPageSize] = useState(25);
+  const [page, setPage] = useState(1);
 
   async function refresh() {
     setLoading(true);
@@ -99,6 +102,11 @@ function CasesPage() {
       || (c.case_number ?? "").toLowerCase().includes(s)
       || (c.clients?.name ?? "").toLowerCase().includes(s);
   }), [cases, q, status, clientFilter, fromDate, toDate]);
+
+  useEffect(() => { setPage(1); }, [q, status, clientFilter, fromDate, toDate, pageSize]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const analytics = useMemo(() => {
     const total = filtered.length;
@@ -266,8 +274,9 @@ function CasesPage() {
                 <X className="size-3.5" />{ar ? "مسح" : "Clear"}
               </Button>
             )}
-            <div className="ms-auto">
-              <Button size="sm" variant="outline" className="gap-1.5" onClick={exportCsv} disabled={filtered.length === 0}>
+            <div className="ms-auto flex items-end gap-2">
+              <PageSizeSelect value={pageSize} onChange={setPageSize} />
+              <Button size="sm" variant="outline" className="gap-1.5 h-9" onClick={exportCsv} disabled={filtered.length === 0}>
                 <Download className="size-4" />{ar ? "تصدير CSV" : "Export CSV"}
               </Button>
             </div>
@@ -291,7 +300,7 @@ function CasesPage() {
               <th className="px-5 py-3 text-start font-medium whitespace-nowrap">{ar ? "تاريخ الإنشاء" : "Created"}</th>
               <th className="px-5 py-3 text-end"></th>
             </tr></thead>
-            <tbody className="divide-y">{filtered.map((c) => (
+            <tbody className="divide-y">{paged.map((c) => (
               <tr key={c.id} className="hover:bg-secondary/40 cursor-pointer" onClick={() => navigate({ to: "/app/cases/$caseId", params: { caseId: c.id } })}>
                 <td className="px-5 py-4 font-mono text-xs text-muted-foreground">{c.case_number || "—"}</td>
                 <td className="px-5 py-4 text-muted-foreground">{c.clients?.name ?? "—"}</td>
@@ -308,7 +317,9 @@ function CasesPage() {
                 </td>
               </tr>
             ))}</tbody>
-          </table></div>}
+          </table>
+          <TablePager page={currentPage} pageSize={pageSize} total={filtered.length} onPage={setPage} />
+          </div>}
       </div>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>

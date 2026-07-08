@@ -105,7 +105,10 @@ function DocsPage() {
       if (error) throw error;
       const extracted = await extractTextFromFile(file);
       const cId = caseId === "none" ? null : caseId;
-      const clId = clientId === "none" ? null : clientId;
+      // If a case is selected but no client, inherit the client from the case
+      // so the "client-related" counter reflects the link.
+      const inheritedClient = cId ? (cases.find((c) => c.id === cId)?.client_id ?? null) : null;
+      const clId = clientId === "none" ? inheritedClient : clientId;
       const isTemplate = !cId && !clId;
       await create({ data: {
         name: file.name, mime_type: file.type, size: file.size, storage_path: path,
@@ -185,10 +188,12 @@ function DocsPage() {
     const total = docs.length;
     const templates = docs.filter((d) => d.is_template).length;
     const caseDocs = docs.filter((d) => d.case_id).length;
-    const clientDocs = docs.filter((d) => d.client_id && !d.case_id).length;
+    // Client-related = anything linked to a client directly, OR to a case that belongs to a client.
+    const caseIdToClient = new Map(cases.map((c) => [c.id, c.client_id]));
+    const clientDocs = docs.filter((d) => d.client_id || (d.case_id && caseIdToClient.get(d.case_id))).length;
     const totalSize = docs.reduce((a, d) => a + (d.size ?? 0), 0);
     return { total, templates, caseDocs, clientDocs, totalSize };
-  }, [docs]);
+  }, [docs, cases]);
 
   const hasFilters = q || typeFilter !== "all" || filterCase !== "all" || filterClient !== "all" || fromDate || toDate;
   function clearFilters() {

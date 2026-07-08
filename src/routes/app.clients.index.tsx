@@ -19,6 +19,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toCsv, downloadCsv } from "@/lib/csv-export";
 import { StatTile } from "@/components/app/primitives";
+import { PageSizeSelect, TablePager } from "@/components/data-table-pager";
 
 export const Route = createFileRoute("/app/clients/")({ component: ClientsPage });
 
@@ -50,6 +51,8 @@ function ClientsPage() {
   const [conflictOpen, setConflictOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Client | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [pageSize, setPageSize] = useState(25);
+  const [page, setPage] = useState(1);
 
   async function refresh() {
     setLoading(true);
@@ -76,6 +79,10 @@ function ClientsPage() {
   }), [clients, q, statusFilter, typeFilter, fromDate, toDate]);
 
   const hasFilters = q || statusFilter !== "all" || typeFilter !== "all" || fromDate || toDate;
+  useEffect(() => { setPage(1); }, [q, statusFilter, typeFilter, fromDate, toDate, pageSize]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   function clearFilters() { setQ(""); setStatusFilter("all"); setTypeFilter("all"); setFromDate(""); setToDate(""); }
 
   function openNew() { setEmailError(null); setEditing({ type: "individual", status: "active" }); setEditOpen(true); }
@@ -228,8 +235,11 @@ function ClientsPage() {
               {locale === "ar" ? "مسح" : "Clear"}
             </Button>
           )}
-          <div className="ms-auto text-xs text-muted-foreground">
-            {filtered.length} / {clients.length}
+          <div className="ms-auto flex items-end gap-2">
+            <PageSizeSelect value={pageSize} onChange={setPageSize} />
+            <div className="text-xs text-muted-foreground self-center pb-1">
+              {filtered.length} / {clients.length}
+            </div>
           </div>
         </div>
 
@@ -250,7 +260,7 @@ function ClientsPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {filtered.map((c) => (
+              {paged.map((c) => (
                 <tr key={c.id} className="hover:bg-secondary/40 transition-colors">
                   <td className="px-5 py-4">
                     <Link to="/app/clients/$clientId" params={{ clientId: c.id }} className="block">
@@ -276,6 +286,7 @@ function ClientsPage() {
               ))}
             </tbody>
           </table>
+          <TablePager page={currentPage} pageSize={pageSize} total={filtered.length} onPage={setPage} />
         </div>}
       </div>
 
@@ -534,7 +545,7 @@ function ClientDetailSheet({ id, onClose }: { id: string | null; onClose: () => 
             <h3 className="text-sm font-semibold mb-2">{locale === "ar" ? "قضايا مرتبطة" : "Related cases"}</h3>
             {data.cases.length === 0 ? <p className="text-xs text-muted-foreground">{locale === "ar" ? "لا توجد" : "None yet"}</p> :
               <ul className="space-y-2">
-                {data.cases.map((c) => (
+                {data.cases.map((c: any) => (
                   <li key={c.id} className="rounded-md border p-3 text-sm">
                     <div className="font-medium">{c.title}</div>
                     <div className="text-xs text-muted-foreground">{c.case_number ?? ""} · {c.status}</div>
@@ -561,7 +572,7 @@ function ClientDetailSheet({ id, onClose }: { id: string | null; onClose: () => 
               <Button size="sm" variant="gold" onClick={logIt}>{locale === "ar" ? "تسجيل" : "Log"}</Button>
             </div>
             <ul className="space-y-2">
-              {data.interactions.map((i) => (
+              {data.interactions.map((i: any) => (
                 <li key={i.id} className="rounded-md border p-3 text-sm group">
                   <div className="flex justify-between items-start">
                     <div>

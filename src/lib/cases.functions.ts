@@ -18,8 +18,13 @@ const CaseInput = z.object({
   opposing_party: z.string().optional(),
   opposing_counsel: z.string().optional(),
   responsible_lawyer: z.string().uuid().nullable().optional(),
+  agreed_fee: z.number().nullable().optional(),
+  retainer_amount: z.number().nullable().optional(),
+  hourly_rate: z.number().nullable().optional(),
+  fee_currency: z.string().optional(),
   locale: z.enum(["ar", "en"]).optional(),
 });
+
 
 
 export const listCases = createServerFn({ method: "GET" })
@@ -120,6 +125,26 @@ export const deleteCase = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("cases").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const closeCase = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    id: z.string().uuid(),
+    result: z.enum(["won", "lost", "settled", "withdrawn", "other"]),
+    note: z.string().optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    // Map to existing status enum where possible; store the granular result in close_result.
+    const statusMap: Record<string, string> = { won: "won", lost: "lost", settled: "closed", withdrawn: "closed", other: "closed" };
+    const { data: row, error } = await (context.supabase as any).from("cases").update({
+      status: statusMap[data.result],
+      close_result: data.result,
+      close_note: data.note ?? null,
+      closed_at: new Date().toISOString(),
+    }).eq("id", data.id).select().maybeSingle();
+    if (error) throw new Error(error.message);
+    return row;
   });
 
 const EventInput = z.object({
