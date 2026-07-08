@@ -274,7 +274,7 @@ function DeadlinesPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>{ar ? "العميل" : "Client"}</Label>
-                  <Select value={editing.client_id || "none"} onValueChange={(v) => setEditing({ ...editing, client_id: v === "none" ? "" : v, case_id: "" })}>
+                  <Select value={editing.client_id || (editing.case_id ? (cases.find((c) => c.id === editing.case_id)?.client_id ?? "none") : "none")} onValueChange={(v) => setEditing({ ...editing, client_id: v === "none" ? "" : v, case_id: "" })}>
                     <SelectTrigger><SelectValue placeholder={ar ? "كل العملاء" : "All clients"} /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">{ar ? "بدون / الكل" : "None / all"}</SelectItem>
