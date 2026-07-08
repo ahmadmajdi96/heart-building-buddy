@@ -6,8 +6,11 @@ Scope is large, so I'll ship in the doc's migration order. Each phase is a self-
 Status:
 - ✅ Phase 1 — Single ledger + derived statuses (shipped)
 - ✅ Phase 2 — Currency lockdown (shipped)
-- ✅ Phase 5 — Jordan SMS compliance rail (shipped: sender ID, quiet hours, daily cap, opt-outs, consent, bilingual footer, encoding/segments, inbound STOP handler, settings UI)
-- ⏳ Phase 3, 4, 6, 7, 8, 9, 10, 11 — pending
+- ✅ Phase 3 — Fee installments off Debt Collection (shipped: installment plans now create invoice + payment_schedules linked by invoice_id, no debt_case)
+- ✅ Phase 4 — Expenses + pre-bill queue (shipped: expenses/prebills/prebill_lines tables, CRUD server fns, Expenses & Pre-bills tabs on case profile with approve → invoice flow)
+- ✅ Phase 5 — Jordan SMS compliance rail (shipped)
+- ⏳ Phase 6, 7, 8, 9, 10, 11 — pending
+
 
 ## Phase 1 — Single ledger + derived statuses (kills the over-count bug class)
 
