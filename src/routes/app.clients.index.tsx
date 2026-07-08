@@ -260,7 +260,7 @@ function ClientsPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {filtered.map((c) => (
+              {paged.map((c) => (
                 <tr key={c.id} className="hover:bg-secondary/40 transition-colors">
                   <td className="px-5 py-4">
                     <Link to="/app/clients/$clientId" params={{ clientId: c.id }} className="block">
@@ -286,6 +286,7 @@ function ClientsPage() {
               ))}
             </tbody>
           </table>
+          <TablePager page={currentPage} pageSize={pageSize} total={filtered.length} onPage={setPage} />
         </div>}
       </div>
 
