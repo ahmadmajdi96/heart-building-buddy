@@ -303,12 +303,18 @@ export type Database = {
       }
       cases: {
         Row: {
+          agreed_fee: number | null
           case_number: string | null
           client_id: string | null
+          close_note: string | null
+          close_result: string | null
+          closed_at: string | null
           court: string | null
           court_room: string | null
           created_at: string
           description: string | null
+          fee_currency: string | null
+          hourly_rate: number | null
           id: string
           judge: string | null
           jurisdiction: string | null
@@ -319,17 +325,24 @@ export type Database = {
           owner_id: string
           priority: string | null
           responsible_lawyer: string | null
+          retainer_amount: number | null
           status: string
           title: string
           updated_at: string
         }
         Insert: {
+          agreed_fee?: number | null
           case_number?: string | null
           client_id?: string | null
+          close_note?: string | null
+          close_result?: string | null
+          closed_at?: string | null
           court?: string | null
           court_room?: string | null
           created_at?: string
           description?: string | null
+          fee_currency?: string | null
+          hourly_rate?: number | null
           id?: string
           judge?: string | null
           jurisdiction?: string | null
@@ -340,17 +353,24 @@ export type Database = {
           owner_id: string
           priority?: string | null
           responsible_lawyer?: string | null
+          retainer_amount?: number | null
           status?: string
           title: string
           updated_at?: string
         }
         Update: {
+          agreed_fee?: number | null
           case_number?: string | null
           client_id?: string | null
+          close_note?: string | null
+          close_result?: string | null
+          closed_at?: string | null
           court?: string | null
           court_room?: string | null
           created_at?: string
           description?: string | null
+          fee_currency?: string | null
+          hourly_rate?: number | null
           id?: string
           judge?: string | null
           jurisdiction?: string | null
@@ -361,6 +381,7 @@ export type Database = {
           owner_id?: string
           priority?: string | null
           responsible_lawyer?: string | null
+          retainer_amount?: number | null
           status?: string
           title?: string
           updated_at?: string
@@ -718,7 +739,11 @@ export type Database = {
           forwarder_contact: string | null
           forwarder_name: string | null
           id: string
+          next_recur_at: string | null
           org_id: string
+          parent_debt_case_id: string | null
+          recurrence: string | null
+          recurrence_interval: number | null
           reference: string | null
           service_fee_type: string
           service_fee_value: number
@@ -738,7 +763,11 @@ export type Database = {
           forwarder_contact?: string | null
           forwarder_name?: string | null
           id?: string
+          next_recur_at?: string | null
           org_id: string
+          parent_debt_case_id?: string | null
+          recurrence?: string | null
+          recurrence_interval?: number | null
           reference?: string | null
           service_fee_type?: string
           service_fee_value?: number
@@ -758,7 +787,11 @@ export type Database = {
           forwarder_contact?: string | null
           forwarder_name?: string | null
           id?: string
+          next_recur_at?: string | null
           org_id?: string
+          parent_debt_case_id?: string | null
+          recurrence?: string | null
+          recurrence_interval?: number | null
           reference?: string | null
           service_fee_type?: string
           service_fee_value?: number
@@ -780,6 +813,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debt_cases_parent_debt_case_id_fkey"
+            columns: ["parent_debt_case_id"]
+            isOneToOne: false
+            referencedRelation: "debt_cases"
             referencedColumns: ["id"]
           },
         ]
