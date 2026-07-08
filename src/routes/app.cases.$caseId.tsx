@@ -400,66 +400,109 @@ function InvoicesTab({ data, onChange }: { data: NonNullable<Awaited<ReturnType<
 
 function SessionsTab({ caseId, data, onChange }: { caseId: string; data: NonNullable<Awaited<ReturnType<typeof getCase>>>; onChange: () => void }) {
   const { locale } = useI18n();
-  const addEv = useServerFn(addCaseEvent);
-  const delEv = useServerFn(deleteCaseEvent);
+  const ar = locale === "ar";
   const saveAppt = useServerFn(saveAppointment);
-  const [form, setForm] = useState({ title: "", scheduled_at: "", body: "" });
+  const saveDl = useServerFn(saveDeadline);
+  const doneDl = useServerFn(completeDeadline);
+  const delDl = useServerFn(deleteDeadline);
+
+  const TYPES = [
+    { v: "hearing", ar: "جلسة محكمة", en: "Court hearing" },
+    { v: "mediation", ar: "وساطة", en: "Mediation" },
+    { v: "deposition", ar: "استجواب", en: "Deposition" },
+    { v: "consultation", ar: "استشارة", en: "Consultation" },
+    { v: "other", ar: "أخرى", en: "Other" },
+  ];
+
+  const [form, setForm] = useState({
+    session_type: "hearing",
+    title: "",
+    starts_at: "",
+    ends_at: "",
+    location: "",
+    body: "",
+  });
+  const [busy, setBusy] = useState(false);
 
   async function add() {
-    if (!form.title || !form.scheduled_at) {
-      toast.error(locale === "ar" ? "العنوان والتاريخ مطلوبان" : "Title and date are required");
+    if (!form.title || !form.starts_at || !form.ends_at) {
+      toast.error(ar ? "العنوان والبداية والنهاية مطلوبة" : "Title, start and end are required");
       return;
     }
+    if (new Date(form.ends_at) <= new Date(form.starts_at)) {
+      toast.error(ar ? "وقت الانتهاء يجب أن يكون بعد وقت البداية" : "End time must be after start time");
+      return;
+    }
+    setBusy(true);
     try {
-      await addEv({ data: { case_id: caseId, kind: "court_session", title: form.title, body: form.body || undefined, scheduled_at: form.scheduled_at } });
-      const starts = new Date(form.scheduled_at).toISOString();
-      const ends = new Date(new Date(form.scheduled_at).getTime() + 3600_000).toISOString();
-      await saveAppt({ data: { title: form.title, starts_at: starts, ends_at: ends, all_day: false, kind: "court", case_id: caseId, description: form.body || undefined } });
-      toast.success(locale === "ar" ? "أضيفت الجلسة إلى التقويم" : "Session added to calendar");
-      setForm({ title: "", scheduled_at: "", body: "" });
+      const starts = new Date(form.starts_at).toISOString();
+      const ends = new Date(form.ends_at).toISOString();
+      const typeLabel = TYPES.find((t) => t.v === form.session_type);
+      const notesWithType = `[${ar ? typeLabel?.ar : typeLabel?.en}]${form.body ? `\n${form.body}` : ""}`;
+      await Promise.all([
+        saveAppt({ data: { title: form.title, starts_at: starts, ends_at: ends, all_day: false, kind: "court", case_id: caseId, description: notesWithType, location: form.location || undefined } }),
+        saveDl({ data: { case_id: caseId, kind: "hearing", title: form.title, due_at: starts, location: form.location || null, description: notesWithType } }),
+      ]);
+      toast.success(ar ? "أضيفت الجلسة إلى التقويم والمواعيد" : "Session added to calendar & deadlines");
+      setForm({ session_type: "hearing", title: "", starts_at: "", ends_at: "", location: "", body: "" });
       onChange();
     } catch (e) { toast.error((e as Error).message); }
+    finally { setBusy(false); }
   }
 
-  const sessions = data.events.filter((e: any) => e.kind === "court_session");
+  const sessions = ((data as any).deadlines ?? []).filter((d: any) => d.kind === "hearing");
+
   return (
     <div className="space-y-6">
       <div className="card-elev rounded-xl border bg-card p-5">
-        <h3 className="font-serif text-lg mb-4">{locale === "ar" ? "إضافة جلسة" : "Add court session"}</h3>
+        <h3 className="font-serif text-lg mb-4">{ar ? "إضافة جلسة" : "Add session"}</h3>
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5"><Label>{locale === "ar" ? "العنوان *" : "Title *"}</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>{locale === "ar" ? "التاريخ والوقت *" : "Date & time *"}</Label><Input type="datetime-local" value={form.scheduled_at} onChange={(e) => setForm({ ...form, scheduled_at: e.target.value })} /></div>
-          <div className="space-y-1.5 sm:col-span-2"><Label>{locale === "ar" ? "تفاصيل" : "Details"}</Label><Textarea rows={2} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} /></div>
+          <div className="space-y-1.5">
+            <Label>{ar ? "النوع" : "Type"}</Label>
+            <Select value={form.session_type} onValueChange={(v) => setForm({ ...form, session_type: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{TYPES.map((t) => <SelectItem key={t.v} value={t.v}>{ar ? t.ar : t.en}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5"><Label>{ar ? "العنوان *" : "Title *"}</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>{ar ? "البداية *" : "Starts *"}</Label><Input type="datetime-local" value={form.starts_at} onChange={(e) => setForm({ ...form, starts_at: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>{ar ? "النهاية *" : "Ends *"}</Label><Input type="datetime-local" value={form.ends_at} onChange={(e) => setForm({ ...form, ends_at: e.target.value })} /></div>
+          <div className="space-y-1.5 sm:col-span-2"><Label>{ar ? "المكان / المحكمة" : "Location / court"}</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></div>
+          <div className="space-y-1.5 sm:col-span-2"><Label>{ar ? "ملاحظات" : "Notes"}</Label><Textarea rows={2} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} /></div>
         </div>
-        <Button variant="gold" size="sm" className="mt-4 gap-1.5" onClick={add}><Plus className="size-4" />{locale === "ar" ? "إضافة" : "Add session"}</Button>
+        <Button variant="gold" size="sm" className="mt-4 gap-1.5" disabled={busy} onClick={add}>
+          {busy ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+          {ar ? "إضافة" : "Add session"}
+        </Button>
       </div>
 
       <div className="card-elev rounded-xl border bg-card">
-        <div className="border-b p-4"><h3 className="font-serif text-lg">{locale === "ar" ? "الجلسات والمواعيد" : "Sessions & appointments"}</h3></div>
-        {data.appointments.length === 0 && sessions.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">{locale === "ar" ? "لا توجد جلسات بعد" : "No sessions yet"}</div>
+        <div className="border-b p-4"><h3 className="font-serif text-lg">{ar ? "الجلسات" : "Sessions"}</h3></div>
+        {sessions.length === 0 ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">{ar ? "لا توجد جلسات بعد" : "No sessions yet"}</div>
         ) : (
           <ul className="divide-y">
-            {data.appointments.map((a: any) => (
-              <li key={a.id} className="flex items-start justify-between p-4">
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-gold">{locale === "ar" ? "موعد" : "Appointment"}</div>
-                  <div className="font-medium">{a.title}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{new Date(a.starts_at).toLocaleString()}{a.location ? ` · ${a.location}` : ""}</div>
-                </div>
-              </li>
-            ))}
-            {sessions.map((e: any) => (
-              <li key={e.id} className="flex items-start justify-between p-4">
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-gold">{locale === "ar" ? "جلسة" : "Session"}</div>
-                  <div className="font-medium">{e.title}</div>
-                  {e.scheduled_at && <div className="text-xs text-muted-foreground mt-1">{new Date(e.scheduled_at).toLocaleString()}</div>}
-                  {e.body && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{e.body}</p>}
-                </div>
-                <Button variant="ghost" size="icon" onClick={async () => { if (!confirm(locale === "ar" ? "حذف الجلسة؟" : "Delete session?")) return; try { await delEv({ data: { id: e.id } }); toast.success(locale === "ar" ? "تم الحذف" : "Deleted"); onChange(); } catch (err) { toast.error((err as Error).message); } }}><Trash2 className="size-4 text-destructive" /></Button>
-              </li>
-            ))}
+            {sessions.map((s: any) => {
+              const completed = s.status === "completed";
+              return (
+                <li key={s.id} className="flex items-start justify-between p-4 gap-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] uppercase tracking-wider text-gold">{ar ? "جلسة" : "Session"}</div>
+                    <div className={`font-medium ${completed ? "line-through text-muted-foreground" : ""}`}>{s.title}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{new Date(s.due_at).toLocaleString()}{s.location ? ` · ${s.location}` : ""}</div>
+                    {s.description && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{s.description}</p>}
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button variant="ghost" size="sm" onClick={async () => { try { await doneDl({ data: { id: s.id, completed: !completed } }); toast.success(completed ? (ar ? "أُعيد فتحه" : "Reopened") : (ar ? "تم الإكمال" : "Marked complete")); onChange(); } catch (err) { toast.error((err as Error).message); } }}>
+                      {completed ? (ar ? "إعادة فتح" : "Reopen") : (ar ? "إكمال" : "Complete")}
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={async () => { if (!confirm(ar ? "حذف الجلسة؟" : "Delete session?")) return; try { await delDl({ data: { id: s.id } }); toast.success(ar ? "تم الحذف" : "Deleted"); onChange(); } catch (err) { toast.error((err as Error).message); } }}>
+                      <Trash2 className="size-4 text-destructive" />
+                    </Button>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
