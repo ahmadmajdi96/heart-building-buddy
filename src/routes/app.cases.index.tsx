@@ -274,8 +274,9 @@ function CasesPage() {
                 <X className="size-3.5" />{ar ? "مسح" : "Clear"}
               </Button>
             )}
-            <div className="ms-auto">
-              <Button size="sm" variant="outline" className="gap-1.5" onClick={exportCsv} disabled={filtered.length === 0}>
+            <div className="ms-auto flex items-end gap-2">
+              <PageSizeSelect value={pageSize} onChange={setPageSize} />
+              <Button size="sm" variant="outline" className="gap-1.5 h-9" onClick={exportCsv} disabled={filtered.length === 0}>
                 <Download className="size-4" />{ar ? "تصدير CSV" : "Export CSV"}
               </Button>
             </div>
