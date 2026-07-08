@@ -19,6 +19,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toCsv, downloadCsv } from "@/lib/csv-export";
 import { StatTile } from "@/components/app/primitives";
+import { PageSizeSelect, TablePager } from "@/components/data-table-pager";
 
 export const Route = createFileRoute("/app/clients/")({ component: ClientsPage });
 
