@@ -35,6 +35,9 @@ const CaseInput = z.object({
   forwarder_contact: z.string().optional(),
   reference: z.string().optional(),
   status: z.enum(["active", "paid", "partial", "overdue", "cancelled"]).default("active"),
+  recurrence: z.enum(["none", "weekly", "monthly", "yearly"]).default("none").optional(),
+  recurrence_interval: z.number().int().min(1).optional(),
+  next_recur_at: z.string().nullable().optional(),
 });
 
 export const listDebtCases = createServerFn({ method: "GET" })
