@@ -159,7 +159,7 @@ function DeadlinesPage() {
     toast.success(ar ? `تم تصدير ${filteredRows.length} موعد` : `Exported ${filteredRows.length} deadlines`);
   }
 
-  const hasExtraFilters = filterKind !== "all" || fromDate || toDate;
+  const hasExtraFilters = filterKind !== "all" || filterClient !== "all" || fromDate || toDate;
 
 
   return (
