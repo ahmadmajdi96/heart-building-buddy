@@ -37,12 +37,15 @@ function DeadlinesPage() {
   const done = useServerFn(completeDeadline);
   const del = useServerFn(deleteDeadline);
   const lCases = useServerFn(listCases);
+  const lClients = useServerFn(listClients);
 
   const [rows, setRows] = useState<any[]>([]);
   const [statsData, setStatsData] = useState<{ today: any[]; week: any[]; overdue: any[] } | null>(null);
-  const [cases, setCases] = useState<Array<{ id: string; title: string }>>([]);
+  const [cases, setCases] = useState<Array<{ id: string; title: string; client_id: string | null }>>([]);
+  const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>("open");
+  const [filterClient, setFilterClient] = useState<string>("all");
   const [filterCase, setFilterCase] = useState<string>("all");
   const [filterKind, setFilterKind] = useState<string>("all");
   const [fromDate, setFromDate] = useState<string>("");
@@ -54,18 +57,31 @@ function DeadlinesPage() {
   async function refresh() {
     setLoading(true);
     try {
-      const [es, st, cs] = await Promise.all([
+      const [es, st, cs, cls] = await Promise.all([
         list({ data: { status: filterStatus === "all" ? undefined : (filterStatus as any), case_id: filterCase === "all" ? undefined : filterCase } }),
         stats(),
         lCases(),
+        lClients(),
       ]);
       setRows(es as any[]);
       setStatsData(st as any);
-      setCases((cs as any[]).map((c) => ({ id: c.id, title: c.title })));
+      setCases((cs as any[]).map((c) => ({ id: c.id, title: c.title, client_id: c.client_id ?? null })));
+      setClients((cls as any[]).map((c) => ({ id: c.id, name: c.name })));
     } catch (e) { toast.error((e as Error).message); }
     finally { setLoading(false); }
   }
   useEffect(() => { refresh(); }, [filterStatus, filterCase]);
+
+  // Cases available in the toolbar case filter, filtered by selected client.
+  const casesForFilter = useMemo(
+    () => filterClient === "all" ? cases : cases.filter((c) => c.client_id === filterClient),
+    [cases, filterClient],
+  );
+  // Cases available in the edit dialog, filtered by client selected inside the dialog.
+  const casesForDialog = useMemo(() => {
+    const cid = editing?.client_id;
+    return cid ? cases.filter((c) => c.client_id === cid) : cases;
+  }, [cases, editing?.client_id]);
 
   function openNew() {
     setEditing({
