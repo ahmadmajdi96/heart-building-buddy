@@ -35,9 +35,10 @@ export const createPrebill = createServerFn({ method: "POST" })
 
     // Time entries: unbilled, in period
     const { data: entries } = await sb.from("time_entries")
-      .select("id, description, duration_seconds, hourly_rate, billable, status, entry_date")
+      .select("id, description, duration_seconds, hourly_rate, billable, status, started_at")
       .eq("case_id", data.case_id).eq("billable", true).neq("status", "billed")
-      .gte("entry_date", data.period_start).lte("entry_date", data.period_end);
+      .gte("started_at", `${data.period_start}T00:00:00Z`).lte("started_at", `${data.period_end}T23:59:59Z`);
+
 
     // Expenses: wip, billable, in period
     const { data: expenses } = await sb.from("expenses")
