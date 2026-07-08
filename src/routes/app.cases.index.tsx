@@ -19,6 +19,7 @@ import { Plus, Loader2, Pencil, Trash2, Search, UserPlus, Download, X } from "lu
 import { toast } from "sonner";
 import { toCsv, downloadCsv, inRange } from "@/lib/csv-export";
 import { useOrg } from "@/lib/org-context";
+import { PageSizeSelect, TablePager } from "@/components/data-table-pager";
 
 export const Route = createFileRoute("/app/cases/")({ component: CasesPage });
 
