@@ -235,8 +235,11 @@ function ClientsPage() {
               {locale === "ar" ? "مسح" : "Clear"}
             </Button>
           )}
-          <div className="ms-auto text-xs text-muted-foreground">
-            {filtered.length} / {clients.length}
+          <div className="ms-auto flex items-end gap-2">
+            <PageSizeSelect value={pageSize} onChange={setPageSize} />
+            <div className="text-xs text-muted-foreground self-center pb-1">
+              {filtered.length} / {clients.length}
+            </div>
           </div>
         </div>
 
