@@ -75,6 +75,8 @@ function CasesPage() {
   const [quickClientOpen, setQuickClientOpen] = useState(false);
   const [quickClient, setQuickClient] = useState<{ name: string; email: string; phone: string; company: string; type: "individual" | "company" }>({ name: "", email: "", phone: "", company: "", type: "individual" });
   const [quickBusy, setQuickBusy] = useState(false);
+  const [pageSize, setPageSize] = useState(25);
+  const [page, setPage] = useState(1);
 
   async function refresh() {
     setLoading(true);
