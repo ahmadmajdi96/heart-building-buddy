@@ -23,7 +23,9 @@ import { listParties, saveParty, deleteParty, listNotes, addNote, deleteNote } f
 import { listCaseMembers, addCaseMember, removeCaseMember, updateCaseMemberRole, listAssignableUsers } from "@/lib/case-members.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentPreviewBody } from "@/components/documents/preview-body";
-import { ArrowLeft, Loader2, Trash2, Upload, Download, Eye, Plus, Calendar as CalIcon, FileText, Users, StickyNote, ClipboardList, UserPlus, Receipt } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2, Upload, Download, Eye, Plus, Calendar as CalIcon, FileText, Users, StickyNote, ClipboardList, UserPlus, Receipt, Wallet, FileCheck2 } from "lucide-react";
+import { ExpensesTab, PrebillsTab } from "@/components/app/case-billing-tabs";
+
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/cases/$caseId")({ component: CaseProfilePage });
