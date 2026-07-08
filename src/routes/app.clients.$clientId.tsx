@@ -504,10 +504,14 @@ function InteractionsTab({ clientId, data, onChange }: { clientId: string; data:
   const { locale } = useI18n(); const ar = locale === "ar";
   const add = useServerFn(addInteraction);
   const del = useServerFn(deleteInteraction);
+  const upd = useServerFn(updateInteraction);
   const [form, setForm] = useState<{ kind: "call" | "session" | "note" | "email"; title: string; body: string }>({ kind: "note", title: "", body: "" });
   const [pendingDelete, setPendingDelete] = useState<any | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState<{ kind: "call" | "session" | "note" | "email"; title: string; body: string }>({ kind: "note", title: "", body: "" });
+  const [editBusy, setEditBusy] = useState(false);
 
   async function submit() {
     if (!form.title.trim()) { toast.error(ar ? "العنوان مطلوب" : "Title is required"); return; }
@@ -520,6 +524,16 @@ function InteractionsTab({ clientId, data, onChange }: { clientId: string; data:
     setDeleting(true);
     try { await del({ data: { id: pendingDelete.id } }); toast.success(ar ? "تم الحذف" : "Deleted"); setPendingDelete(null); onChange(); }
     catch (e) { toast.error((e as Error).message); } finally { setDeleting(false); }
+  }
+  function openEdit(i: any) {
+    setEditing(i);
+    setEditForm({ kind: i.kind, title: i.title ?? "", body: i.body ?? "" });
+  }
+  async function saveEdit() {
+    if (!editing) return;
+    setEditBusy(true);
+    try { await upd({ data: { id: editing.id, ...editForm } }); toast.success(ar ? "تم الحفظ" : "Saved"); setEditing(null); onChange(); }
+    catch (e) { toast.error((e as Error).message); } finally { setEditBusy(false); }
   }
 
   return (
@@ -562,11 +576,41 @@ function InteractionsTab({ clientId, data, onChange }: { clientId: string; data:
                     {i.body && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{i.body}</p>}
                     <div className="text-[11px] text-muted-foreground mt-1">{new Date(i.occurred_at).toLocaleString()}</div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => setPendingDelete(i)}><Trash2 className="size-4 text-destructive" /></Button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(i)}><Pencil className="size-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setPendingDelete(i)}><Trash2 className="size-4 text-destructive" /></Button>
+                  </div>
                 </li>
               ))}
             </ul>}
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) setEditing(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{ar ? "تعديل التفاعل" : "Edit interaction"}</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div><Label>{ar ? "النوع" : "Kind"}</Label>
+              <Select value={editForm.kind} onValueChange={(v) => setEditForm({ ...editForm, kind: v as any })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="call">{ar ? "مكالمة" : "Call"}</SelectItem>
+                  <SelectItem value="session">{ar ? "جلسة" : "Session"}</SelectItem>
+                  <SelectItem value="email">{ar ? "بريد" : "Email"}</SelectItem>
+                  <SelectItem value="note">{ar ? "ملاحظة" : "Note"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>{ar ? "العنوان" : "Title"}</Label>
+              <Input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} /></div>
+            <div><Label>{ar ? "تفاصيل" : "Details"}</Label>
+              <Textarea rows={3} value={editForm.body} onChange={(e) => setEditForm({ ...editForm, body: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditing(null)}>{ar ? "إلغاء" : "Cancel"}</Button>
+            <Button variant="gold" onClick={saveEdit} disabled={editBusy}>{editBusy && <Loader2 className="size-4 animate-spin me-1.5" />}{ar ? "حفظ" : "Save"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!pendingDelete} onOpenChange={(o) => { if (!o) setPendingDelete(null); }}>
         <AlertDialogContent>
