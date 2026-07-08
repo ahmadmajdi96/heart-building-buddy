@@ -524,6 +524,9 @@ export type Database = {
           notes: string | null
           owner_id: string
           phone: string | null
+          preferred_sms_language: string | null
+          sms_consent_at: string | null
+          sms_consent_source: string | null
           status: string
           tax_id: string | null
           type: string
@@ -541,6 +544,9 @@ export type Database = {
           notes?: string | null
           owner_id: string
           phone?: string | null
+          preferred_sms_language?: string | null
+          sms_consent_at?: string | null
+          sms_consent_source?: string | null
           status?: string
           tax_id?: string | null
           type?: string
@@ -558,6 +564,9 @@ export type Database = {
           notes?: string | null
           owner_id?: string
           phone?: string | null
+          preferred_sms_language?: string | null
+          sms_consent_at?: string | null
+          sms_consent_source?: string | null
           status?: string
           tax_id?: string | null
           type?: string
@@ -726,6 +735,8 @@ export type Database = {
           case_id: string
           client_id: string | null
           created_at: string
+          dispute_reason: string | null
+          disputed_at: string | null
           due_date: string | null
           email: string | null
           id: string
@@ -735,7 +746,13 @@ export type Database = {
           last_reminder_sent_at: string | null
           name: string
           notes: string | null
+          opted_out_at: string | null
           phone: string | null
+          promise_amount: number | null
+          promise_to_pay_date: string | null
+          promised_at: string | null
+          sms_consent_at: string | null
+          sms_consent_source: string | null
           status: Database["public"]["Enums"]["debt_payer_status"]
           updated_at: string
         }
@@ -745,6 +762,8 @@ export type Database = {
           case_id: string
           client_id?: string | null
           created_at?: string
+          dispute_reason?: string | null
+          disputed_at?: string | null
           due_date?: string | null
           email?: string | null
           id?: string
@@ -754,7 +773,13 @@ export type Database = {
           last_reminder_sent_at?: string | null
           name: string
           notes?: string | null
+          opted_out_at?: string | null
           phone?: string | null
+          promise_amount?: number | null
+          promise_to_pay_date?: string | null
+          promised_at?: string | null
+          sms_consent_at?: string | null
+          sms_consent_source?: string | null
           status?: Database["public"]["Enums"]["debt_payer_status"]
           updated_at?: string
         }
@@ -764,6 +789,8 @@ export type Database = {
           case_id?: string
           client_id?: string | null
           created_at?: string
+          dispute_reason?: string | null
+          disputed_at?: string | null
           due_date?: string | null
           email?: string | null
           id?: string
@@ -773,7 +800,13 @@ export type Database = {
           last_reminder_sent_at?: string | null
           name?: string
           notes?: string | null
+          opted_out_at?: string | null
           phone?: string | null
+          promise_amount?: number | null
+          promise_to_pay_date?: string | null
+          promised_at?: string | null
+          sms_consent_at?: string | null
+          sms_consent_source?: string | null
           status?: Database["public"]["Enums"]["debt_payer_status"]
           updated_at?: string
         }
@@ -985,6 +1018,13 @@ export type Database = {
             referencedRelation: "debt_case_payers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "debt_collection_payments_payer_id_fkey"
+            columns: ["payer_id"]
+            isOneToOne: false
+            referencedRelation: "debtor_aging"
+            referencedColumns: ["payer_id"]
+          },
         ]
       }
       debt_reminder_rules: {
@@ -1108,6 +1148,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "debt_case_payers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debt_sms_log_payer_id_fkey"
+            columns: ["payer_id"]
+            isOneToOne: false
+            referencedRelation: "debtor_aging"
+            referencedColumns: ["payer_id"]
           },
         ]
       }
@@ -1654,6 +1701,12 @@ export type Database = {
           phone: string | null
           preferred_language: string
           quote_prefix: string
+          sms_bilingual_footer: boolean
+          sms_daily_cap_per_recipient: number
+          sms_quiet_hours_end: string
+          sms_quiet_hours_start: string
+          sms_sender_id: string | null
+          sms_timezone: string
           tax_id: string | null
           type: Database["public"]["Enums"]["org_type"]
           updated_at: string
@@ -1674,6 +1727,12 @@ export type Database = {
           phone?: string | null
           preferred_language?: string
           quote_prefix?: string
+          sms_bilingual_footer?: boolean
+          sms_daily_cap_per_recipient?: number
+          sms_quiet_hours_end?: string
+          sms_quiet_hours_start?: string
+          sms_sender_id?: string | null
+          sms_timezone?: string
           tax_id?: string | null
           type: Database["public"]["Enums"]["org_type"]
           updated_at?: string
@@ -1694,6 +1753,12 @@ export type Database = {
           phone?: string | null
           preferred_language?: string
           quote_prefix?: string
+          sms_bilingual_footer?: boolean
+          sms_daily_cap_per_recipient?: number
+          sms_quiet_hours_end?: string
+          sms_quiet_hours_start?: string
+          sms_sender_id?: string | null
+          sms_timezone?: string
           tax_id?: string | null
           type?: Database["public"]["Enums"]["org_type"]
           updated_at?: string
@@ -2114,58 +2179,76 @@ export type Database = {
       }
       sms_messages: {
         Row: {
+          blocked_reason: string | null
           body: string
           case_id: string | null
           client_id: string | null
           context: string
           debt_case_id: string | null
           delivered_at: string | null
+          encoding: string | null
           error_code: string | null
           error_message: string | null
           from_number: string
           id: string
+          language: string | null
           org_id: string | null
           owner_id: string | null
+          segment_count: number | null
+          sender_id: string | null
           sent_at: string
           status: string
+          template_id: string | null
           to_number: string
           twilio_sid: string | null
           updated_at: string
         }
         Insert: {
+          blocked_reason?: string | null
           body: string
           case_id?: string | null
           client_id?: string | null
           context?: string
           debt_case_id?: string | null
           delivered_at?: string | null
+          encoding?: string | null
           error_code?: string | null
           error_message?: string | null
           from_number: string
           id?: string
+          language?: string | null
           org_id?: string | null
           owner_id?: string | null
+          segment_count?: number | null
+          sender_id?: string | null
           sent_at?: string
           status?: string
+          template_id?: string | null
           to_number: string
           twilio_sid?: string | null
           updated_at?: string
         }
         Update: {
+          blocked_reason?: string | null
           body?: string
           case_id?: string | null
           client_id?: string | null
           context?: string
           debt_case_id?: string | null
           delivered_at?: string | null
+          encoding?: string | null
           error_code?: string | null
           error_message?: string | null
           from_number?: string
           id?: string
+          language?: string | null
           org_id?: string | null
           owner_id?: string | null
+          segment_count?: number | null
+          sender_id?: string | null
           sent_at?: string
           status?: string
+          template_id?: string | null
           to_number?: string
           twilio_sid?: string | null
           updated_at?: string
@@ -2194,6 +2277,95 @@ export type Database = {
           },
           {
             foreignKeyName: "sms_messages_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_messages_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "sms_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_opt_outs: {
+        Row: {
+          created_by: string | null
+          id: string
+          opted_out_at: string
+          org_id: string
+          phone: string
+          reason: string | null
+        }
+        Insert: {
+          created_by?: string | null
+          id?: string
+          opted_out_at?: string
+          org_id: string
+          phone: string
+          reason?: string | null
+        }
+        Update: {
+          created_by?: string | null
+          id?: string
+          opted_out_at?: string
+          org_id?: string
+          phone?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_opt_outs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_templates: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          kind: string
+          language: string
+          org_id: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          kind: string
+          language: string
+          org_id: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: string
+          language?: string
+          org_id?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_templates_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -2393,6 +2565,36 @@ export type Database = {
       }
     }
     Views: {
+      debtor_aging: {
+        Row: {
+          balance: number | null
+          bucket: string | null
+          case_id: string | null
+          days_overdue: number | null
+          due_date: string | null
+          name: string | null
+          org_id: string | null
+          payer_id: string | null
+          phone: string | null
+          status: Database["public"]["Enums"]["debt_payer_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_case_payers_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "debt_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debt_cases_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_balances: {
         Row: {
           amount_paid: number | null
@@ -2457,6 +2659,12 @@ export type Database = {
           phone: string | null
           preferred_language: string
           quote_prefix: string
+          sms_bilingual_footer: boolean
+          sms_daily_cap_per_recipient: number
+          sms_quiet_hours_end: string
+          sms_quiet_hours_start: string
+          sms_sender_id: string | null
+          sms_timezone: string
           tax_id: string | null
           type: Database["public"]["Enums"]["org_type"]
           updated_at: string
