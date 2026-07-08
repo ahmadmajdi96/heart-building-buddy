@@ -60,7 +60,10 @@ function CaseProfilePage() {
       <PageHeader
         title={c.title}
         subtitle={[c.case_number && `#${c.case_number}`, c.court, c.jurisdiction].filter(Boolean).join(" · ") || undefined}
-        actions={<StatusBadge status={c.status} />}
+        actions={<div className="flex items-center gap-2">
+          <StatusBadge status={c.status} />
+          {!["closed","won","lost"].includes(c.status) && <CloseCaseButton caseId={caseId} onDone={refresh} />}
+        </div>}
       />
 
       <Tabs defaultValue="overview" className="w-full">
@@ -68,23 +71,19 @@ function CaseProfilePage() {
           <TabsTrigger value="overview" className="gap-1.5"><ClipboardList className="size-3.5" />{locale === "ar" ? "نظرة عامة" : "Overview"}</TabsTrigger>
           <TabsTrigger value="sessions" className="gap-1.5"><CalIcon className="size-3.5" />{locale === "ar" ? "الجلسات" : "Sessions"}</TabsTrigger>
           <TabsTrigger value="documents" className="gap-1.5"><FileText className="size-3.5" />{locale === "ar" ? "المستندات" : "Documents"}</TabsTrigger>
-          <TabsTrigger value="invoices" className="gap-1.5"><Receipt className="size-3.5" />{locale === "ar" ? "الفواتير" : "Invoices"}</TabsTrigger>
           <TabsTrigger value="parties" className="gap-1.5"><Users className="size-3.5" />{locale === "ar" ? "الأطراف" : "Parties"}</TabsTrigger>
           <TabsTrigger value="team" className="gap-1.5"><UserPlus className="size-3.5" />{locale === "ar" ? "الفريق" : "Team"}</TabsTrigger>
           <TabsTrigger value="notes" className="gap-1.5"><StickyNote className="size-3.5" />{locale === "ar" ? "الملاحظات" : "Notes"}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <OverviewTab data={data} />
+          <OverviewTab data={data} onChange={refresh} />
         </TabsContent>
         <TabsContent value="sessions" className="mt-6">
           <SessionsTab caseId={caseId} data={data} onChange={refresh} />
         </TabsContent>
         <TabsContent value="documents" className="mt-6">
           <DocumentsTab caseId={caseId} docs={data.documents} onChange={refresh} />
-        </TabsContent>
-        <TabsContent value="invoices" className="mt-6">
-          <InvoicesTab data={data} onChange={refresh} />
         </TabsContent>
         <TabsContent value="parties" className="mt-6">
           <PartiesTab caseId={caseId} />
@@ -99,6 +98,55 @@ function CaseProfilePage() {
     </div>
   );
 }
+
+function CloseCaseButton({ caseId, onDone }: { caseId: string; onDone: () => void }) {
+  const { locale } = useI18n(); const ar = locale === "ar";
+  const close = useServerFn(closeCase);
+  const [open, setOpen] = useState(false);
+  const [result, setResult] = useState<"won" | "lost" | "settled" | "withdrawn" | "other">("settled");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  async function submit() {
+    setBusy(true);
+    try {
+      await close({ data: { id: caseId, result, note: note || undefined } });
+      toast.success(ar ? "تم إغلاق القضية" : "Case closed");
+      setOpen(false); onDone();
+    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+  }
+  return (
+    <>
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>{ar ? "إغلاق القضية" : "Close case"}</Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{ar ? "إغلاق القضية" : "Close case"}</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div><Label>{ar ? "النتيجة" : "Result"}</Label>
+              <Select value={result} onValueChange={(v: any) => setResult(v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="won">{ar ? "ربح" : "Won"}</SelectItem>
+                  <SelectItem value="lost">{ar ? "خسارة" : "Lost"}</SelectItem>
+                  <SelectItem value="settled">{ar ? "تسوية" : "Settled"}</SelectItem>
+                  <SelectItem value="withdrawn">{ar ? "سحب" : "Withdrawn"}</SelectItem>
+                  <SelectItem value="other">{ar ? "أخرى" : "Other"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>{ar ? "ملاحظة (اختياري)" : "Note (optional)"}</Label>
+              <Textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpen(false)}>{ar ? "إلغاء" : "Cancel"}</Button>
+            <Button variant="gold" onClick={submit} disabled={busy}>{busy && <Loader2 className="size-4 animate-spin me-1.5" />}{ar ? "إغلاق" : "Close"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 
 
 function OverviewTab({ data }: { data: NonNullable<Awaited<ReturnType<typeof getCase>>> }) {
