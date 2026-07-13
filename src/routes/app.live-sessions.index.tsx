@@ -108,9 +108,8 @@ function LiveSessionsPage() {
       startedAtRef.current = Date.now();
 
       const tokenRes = await fetch("/api/public/elevenlabs/scribe-token", { method: "POST" });
-      if (!tokenRes.ok) throw new Error("Failed to mint token");
       const { token, error } = await tokenRes.json();
-      if (!token) throw new Error(error || "No token");
+      if (!tokenRes.ok || !token) throw new Error(error || `Failed to mint token (${tokenRes.status})`);
 
       await scribe.connect({
         token,
