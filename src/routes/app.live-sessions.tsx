@@ -107,7 +107,7 @@ function LiveSessionsPage() {
       setPartial("");
       startedAtRef.current = Date.now();
 
-      const tokenRes = await fetch("/api/elevenlabs/scribe-token", { method: "POST" });
+      const tokenRes = await fetch("/api/public/elevenlabs/scribe-token", { method: "POST" });
       if (!tokenRes.ok) throw new Error("Failed to mint token");
       const { token, error } = await tokenRes.json();
       if (!token) throw new Error(error || "No token");

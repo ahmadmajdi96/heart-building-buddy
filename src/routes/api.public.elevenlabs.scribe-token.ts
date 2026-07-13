@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/api/elevenlabs/scribe-token")({
+export const Route = createFileRoute("/api/public/elevenlabs/scribe-token")({
   server: {
     handlers: {
       POST: async () => {

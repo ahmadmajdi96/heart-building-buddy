@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 // Batch transcription with speaker diarization via ElevenLabs Scribe v2.
 // Client uploads the full recorded meeting audio (multipart/form-data, field "file").
 // Optional field "language" is an ISO-639-3 code ("eng", "ara"...). Omit to auto-detect.
-export const Route = createFileRoute("/api/elevenlabs/transcribe")({
+export const Route = createFileRoute("/api/public/elevenlabs/transcribe")({
   server: {
     handlers: {
       POST: async ({ request }) => {

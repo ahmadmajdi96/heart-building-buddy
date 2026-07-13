@@ -318,7 +318,7 @@ function MeetingRoom() {
       return;
     }
     try {
-      const res = await fetch("/api/elevenlabs/scribe-token", { method: "POST" });
+      const res = await fetch("/api/public/elevenlabs/scribe-token", { method: "POST" });
       if (!res.ok) throw new Error("Token request failed");
       const { token } = await res.json();
       await scribe.connect({
@@ -342,7 +342,7 @@ function MeetingRoom() {
       fd.append("file", blob, `meeting.${ext}`);
       if (locale === "ar") fd.append("language", "ara");
       else if (locale === "en") fd.append("language", "eng");
-      const res = await fetch("/api/elevenlabs/transcribe", { method: "POST", body: fd });
+      const res = await fetch("/api/public/elevenlabs/transcribe", { method: "POST", body: fd });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || `Batch STT failed (${res.status})`);

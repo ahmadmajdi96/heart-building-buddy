@@ -43,14 +43,14 @@ import { Route as AppDebtCollectionIdRouteImport } from './routes/app.debt-colle
 import { Route as AppClientsClientIdRouteImport } from './routes/app.clients.$clientId'
 import { Route as AppCasesCaseIdRouteImport } from './routes/app.cases.$caseId'
 import { Route as ApiRagUploadRouteImport } from './routes/api.rag.upload'
-import { Route as ApiElevenlabsTranscribeRouteImport } from './routes/api.elevenlabs.transcribe'
-import { Route as ApiElevenlabsScribeTokenRouteImport } from './routes/api.elevenlabs.scribe-token'
 import { Route as AppMeetingsTranscriptIdRouteImport } from './routes/app.meetings.transcript.$id'
 import { Route as AppMeetingsJoinRoomRouteImport } from './routes/app.meetings.join.$room'
 import { Route as AppLiveSessionsTranscriptIdRouteImport } from './routes/app.live-sessions.transcript.$id'
 import { Route as ApiPublicHooksTwilioStatusRouteImport } from './routes/api.public.hooks.twilio-status'
 import { Route as ApiPublicHooksTwilioInboundRouteImport } from './routes/api.public.hooks.twilio-inbound'
 import { Route as ApiPublicHooksDebtRemindersRouteImport } from './routes/api.public.hooks.debt-reminders'
+import { Route as ApiPublicElevenlabsTranscribeRouteImport } from './routes/api.public.elevenlabs.transcribe'
+import { Route as ApiPublicElevenlabsScribeTokenRouteImport } from './routes/api.public.elevenlabs.scribe-token'
 
 const SetPasswordRoute = SetPasswordRouteImport.update({
   id: '/set-password',
@@ -222,17 +222,6 @@ const ApiRagUploadRoute = ApiRagUploadRouteImport.update({
   path: '/api/rag/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiElevenlabsTranscribeRoute = ApiElevenlabsTranscribeRouteImport.update({
-  id: '/api/elevenlabs/transcribe',
-  path: '/api/elevenlabs/transcribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiElevenlabsScribeTokenRoute =
-  ApiElevenlabsScribeTokenRouteImport.update({
-    id: '/api/elevenlabs/scribe-token',
-    path: '/api/elevenlabs/scribe-token',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const AppMeetingsTranscriptIdRoute = AppMeetingsTranscriptIdRouteImport.update({
   id: '/meetings/transcript/$id',
   path: '/meetings/transcript/$id',
@@ -267,6 +256,18 @@ const ApiPublicHooksDebtRemindersRoute =
     path: '/api/public/hooks/debt-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicElevenlabsTranscribeRoute =
+  ApiPublicElevenlabsTranscribeRouteImport.update({
+    id: '/api/public/elevenlabs/transcribe',
+    path: '/api/public/elevenlabs/transcribe',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicElevenlabsScribeTokenRoute =
+  ApiPublicElevenlabsScribeTokenRouteImport.update({
+    id: '/api/public/elevenlabs/scribe-token',
+    path: '/api/public/elevenlabs/scribe-token',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -292,8 +293,6 @@ export interface FileRoutesByFullPath {
   '/app/time': typeof AppTimeRoute
   '/share/$token': typeof ShareTokenRoute
   '/app/': typeof AppIndexRoute
-  '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
-  '/api/elevenlabs/transcribe': typeof ApiElevenlabsTranscribeRoute
   '/api/rag/upload': typeof ApiRagUploadRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
@@ -305,6 +304,8 @@ export interface FileRoutesByFullPath {
   '/app/debt-collection/': typeof AppDebtCollectionIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
+  '/api/public/elevenlabs/scribe-token': typeof ApiPublicElevenlabsScribeTokenRoute
+  '/api/public/elevenlabs/transcribe': typeof ApiPublicElevenlabsTranscribeRoute
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
   '/api/public/hooks/twilio-inbound': typeof ApiPublicHooksTwilioInboundRoute
   '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
@@ -335,8 +336,6 @@ export interface FileRoutesByTo {
   '/app/time': typeof AppTimeRoute
   '/share/$token': typeof ShareTokenRoute
   '/app': typeof AppIndexRoute
-  '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
-  '/api/elevenlabs/transcribe': typeof ApiElevenlabsTranscribeRoute
   '/api/rag/upload': typeof ApiRagUploadRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
@@ -348,6 +347,8 @@ export interface FileRoutesByTo {
   '/app/debt-collection': typeof AppDebtCollectionIndexRoute
   '/app/meetings': typeof AppMeetingsIndexRoute
   '/app/workspace': typeof AppWorkspaceIndexRoute
+  '/api/public/elevenlabs/scribe-token': typeof ApiPublicElevenlabsScribeTokenRoute
+  '/api/public/elevenlabs/transcribe': typeof ApiPublicElevenlabsTranscribeRoute
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
   '/api/public/hooks/twilio-inbound': typeof ApiPublicHooksTwilioInboundRoute
   '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
@@ -380,8 +381,6 @@ export interface FileRoutesById {
   '/app/time': typeof AppTimeRoute
   '/share/$token': typeof ShareTokenRoute
   '/app/': typeof AppIndexRoute
-  '/api/elevenlabs/scribe-token': typeof ApiElevenlabsScribeTokenRoute
-  '/api/elevenlabs/transcribe': typeof ApiElevenlabsTranscribeRoute
   '/api/rag/upload': typeof ApiRagUploadRoute
   '/app/cases/$caseId': typeof AppCasesCaseIdRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
@@ -393,6 +392,8 @@ export interface FileRoutesById {
   '/app/debt-collection/': typeof AppDebtCollectionIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
+  '/api/public/elevenlabs/scribe-token': typeof ApiPublicElevenlabsScribeTokenRoute
+  '/api/public/elevenlabs/transcribe': typeof ApiPublicElevenlabsTranscribeRoute
   '/api/public/hooks/debt-reminders': typeof ApiPublicHooksDebtRemindersRoute
   '/api/public/hooks/twilio-inbound': typeof ApiPublicHooksTwilioInboundRoute
   '/api/public/hooks/twilio-status': typeof ApiPublicHooksTwilioStatusRoute
@@ -426,8 +427,6 @@ export interface FileRouteTypes {
     | '/app/time'
     | '/share/$token'
     | '/app/'
-    | '/api/elevenlabs/scribe-token'
-    | '/api/elevenlabs/transcribe'
     | '/api/rag/upload'
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
@@ -439,6 +438,8 @@ export interface FileRouteTypes {
     | '/app/debt-collection/'
     | '/app/meetings/'
     | '/app/workspace/'
+    | '/api/public/elevenlabs/scribe-token'
+    | '/api/public/elevenlabs/transcribe'
     | '/api/public/hooks/debt-reminders'
     | '/api/public/hooks/twilio-inbound'
     | '/api/public/hooks/twilio-status'
@@ -469,8 +470,6 @@ export interface FileRouteTypes {
     | '/app/time'
     | '/share/$token'
     | '/app'
-    | '/api/elevenlabs/scribe-token'
-    | '/api/elevenlabs/transcribe'
     | '/api/rag/upload'
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
@@ -482,6 +481,8 @@ export interface FileRouteTypes {
     | '/app/debt-collection'
     | '/app/meetings'
     | '/app/workspace'
+    | '/api/public/elevenlabs/scribe-token'
+    | '/api/public/elevenlabs/transcribe'
     | '/api/public/hooks/debt-reminders'
     | '/api/public/hooks/twilio-inbound'
     | '/api/public/hooks/twilio-status'
@@ -513,8 +514,6 @@ export interface FileRouteTypes {
     | '/app/time'
     | '/share/$token'
     | '/app/'
-    | '/api/elevenlabs/scribe-token'
-    | '/api/elevenlabs/transcribe'
     | '/api/rag/upload'
     | '/app/cases/$caseId'
     | '/app/clients/$clientId'
@@ -526,6 +525,8 @@ export interface FileRouteTypes {
     | '/app/debt-collection/'
     | '/app/meetings/'
     | '/app/workspace/'
+    | '/api/public/elevenlabs/scribe-token'
+    | '/api/public/elevenlabs/transcribe'
     | '/api/public/hooks/debt-reminders'
     | '/api/public/hooks/twilio-inbound'
     | '/api/public/hooks/twilio-status'
@@ -540,9 +541,9 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   SetPasswordRoute: typeof SetPasswordRoute
   ShareTokenRoute: typeof ShareTokenRoute
-  ApiElevenlabsScribeTokenRoute: typeof ApiElevenlabsScribeTokenRoute
-  ApiElevenlabsTranscribeRoute: typeof ApiElevenlabsTranscribeRoute
   ApiRagUploadRoute: typeof ApiRagUploadRoute
+  ApiPublicElevenlabsScribeTokenRoute: typeof ApiPublicElevenlabsScribeTokenRoute
+  ApiPublicElevenlabsTranscribeRoute: typeof ApiPublicElevenlabsTranscribeRoute
   ApiPublicHooksDebtRemindersRoute: typeof ApiPublicHooksDebtRemindersRoute
   ApiPublicHooksTwilioInboundRoute: typeof ApiPublicHooksTwilioInboundRoute
   ApiPublicHooksTwilioStatusRoute: typeof ApiPublicHooksTwilioStatusRoute
@@ -788,20 +789,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRagUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/elevenlabs/transcribe': {
-      id: '/api/elevenlabs/transcribe'
-      path: '/api/elevenlabs/transcribe'
-      fullPath: '/api/elevenlabs/transcribe'
-      preLoaderRoute: typeof ApiElevenlabsTranscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/elevenlabs/scribe-token': {
-      id: '/api/elevenlabs/scribe-token'
-      path: '/api/elevenlabs/scribe-token'
-      fullPath: '/api/elevenlabs/scribe-token'
-      preLoaderRoute: typeof ApiElevenlabsScribeTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/app/meetings/transcript/$id': {
       id: '/app/meetings/transcript/$id'
       path: '/meetings/transcript/$id'
@@ -842,6 +829,20 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/debt-reminders'
       fullPath: '/api/public/hooks/debt-reminders'
       preLoaderRoute: typeof ApiPublicHooksDebtRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/elevenlabs/transcribe': {
+      id: '/api/public/elevenlabs/transcribe'
+      path: '/api/public/elevenlabs/transcribe'
+      fullPath: '/api/public/elevenlabs/transcribe'
+      preLoaderRoute: typeof ApiPublicElevenlabsTranscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/elevenlabs/scribe-token': {
+      id: '/api/public/elevenlabs/scribe-token'
+      path: '/api/public/elevenlabs/scribe-token'
+      fullPath: '/api/public/elevenlabs/scribe-token'
+      preLoaderRoute: typeof ApiPublicElevenlabsScribeTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -933,9 +934,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   SetPasswordRoute: SetPasswordRoute,
   ShareTokenRoute: ShareTokenRoute,
-  ApiElevenlabsScribeTokenRoute: ApiElevenlabsScribeTokenRoute,
-  ApiElevenlabsTranscribeRoute: ApiElevenlabsTranscribeRoute,
   ApiRagUploadRoute: ApiRagUploadRoute,
+  ApiPublicElevenlabsScribeTokenRoute: ApiPublicElevenlabsScribeTokenRoute,
+  ApiPublicElevenlabsTranscribeRoute: ApiPublicElevenlabsTranscribeRoute,
   ApiPublicHooksDebtRemindersRoute: ApiPublicHooksDebtRemindersRoute,
   ApiPublicHooksTwilioInboundRoute: ApiPublicHooksTwilioInboundRoute,
   ApiPublicHooksTwilioStatusRoute: ApiPublicHooksTwilioStatusRoute,
