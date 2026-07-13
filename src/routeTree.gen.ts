@@ -21,7 +21,6 @@ import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppResearchRouteImport } from './routes/app.research'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
 import { Route as AppMessagesRouteImport } from './routes/app.messages'
-import { Route as AppLiveSessionsRouteImport } from './routes/app.live-sessions'
 import { Route as AppFinancialsRouteImport } from './routes/app.financials'
 import { Route as AppEducationRouteImport } from './routes/app.education'
 import { Route as AppDraftingRouteImport } from './routes/app.drafting'
@@ -34,6 +33,7 @@ import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppActivityRouteImport } from './routes/app.activity'
 import { Route as AppWorkspaceIndexRouteImport } from './routes/app.workspace.index'
 import { Route as AppMeetingsIndexRouteImport } from './routes/app.meetings.index'
+import { Route as AppLiveSessionsIndexRouteImport } from './routes/app.live-sessions.index'
 import { Route as AppDebtCollectionIndexRouteImport } from './routes/app.debt-collection.index'
 import { Route as AppClientsIndexRouteImport } from './routes/app.clients.index'
 import { Route as AppCasesIndexRouteImport } from './routes/app.cases.index'
@@ -112,11 +112,6 @@ const AppMessagesRoute = AppMessagesRouteImport.update({
   path: '/messages',
   getParentRoute: () => AppRoute,
 } as any)
-const AppLiveSessionsRoute = AppLiveSessionsRouteImport.update({
-  id: '/live-sessions',
-  path: '/live-sessions',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppFinancialsRoute = AppFinancialsRouteImport.update({
   id: '/financials',
   path: '/financials',
@@ -177,6 +172,11 @@ const AppMeetingsIndexRoute = AppMeetingsIndexRouteImport.update({
   path: '/meetings/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppLiveSessionsIndexRoute = AppLiveSessionsIndexRouteImport.update({
+  id: '/live-sessions/',
+  path: '/live-sessions/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDebtCollectionIndexRoute = AppDebtCollectionIndexRouteImport.update({
   id: '/debt-collection/',
   path: '/debt-collection/',
@@ -234,9 +234,9 @@ const AppMeetingsJoinRoomRoute = AppMeetingsJoinRoomRouteImport.update({
 } as any)
 const AppLiveSessionsTranscriptIdRoute =
   AppLiveSessionsTranscriptIdRouteImport.update({
-    id: '/transcript/$id',
-    path: '/transcript/$id',
-    getParentRoute: () => AppLiveSessionsRoute,
+    id: '/live-sessions/transcript/$id',
+    path: '/live-sessions/transcript/$id',
+    getParentRoute: () => AppRoute,
   } as any)
 const ApiPublicHooksTwilioStatusRoute =
   ApiPublicHooksTwilioStatusRouteImport.update({
@@ -284,7 +284,6 @@ export interface FileRoutesByFullPath {
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
-  '/app/live-sessions': typeof AppLiveSessionsRouteWithChildren
   '/app/messages': typeof AppMessagesRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
@@ -302,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/app/cases/': typeof AppCasesIndexRoute
   '/app/clients/': typeof AppClientsIndexRoute
   '/app/debt-collection/': typeof AppDebtCollectionIndexRoute
+  '/app/live-sessions/': typeof AppLiveSessionsIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
   '/api/public/elevenlabs/scribe-token': typeof ApiPublicElevenlabsScribeTokenRoute
@@ -327,7 +327,6 @@ export interface FileRoutesByTo {
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
-  '/app/live-sessions': typeof AppLiveSessionsRouteWithChildren
   '/app/messages': typeof AppMessagesRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
@@ -345,6 +344,7 @@ export interface FileRoutesByTo {
   '/app/cases': typeof AppCasesIndexRoute
   '/app/clients': typeof AppClientsIndexRoute
   '/app/debt-collection': typeof AppDebtCollectionIndexRoute
+  '/app/live-sessions': typeof AppLiveSessionsIndexRoute
   '/app/meetings': typeof AppMeetingsIndexRoute
   '/app/workspace': typeof AppWorkspaceIndexRoute
   '/api/public/elevenlabs/scribe-token': typeof ApiPublicElevenlabsScribeTokenRoute
@@ -372,7 +372,6 @@ export interface FileRoutesById {
   '/app/drafting': typeof AppDraftingRoute
   '/app/education': typeof AppEducationRoute
   '/app/financials': typeof AppFinancialsRoute
-  '/app/live-sessions': typeof AppLiveSessionsRouteWithChildren
   '/app/messages': typeof AppMessagesRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/research': typeof AppResearchRoute
@@ -390,6 +389,7 @@ export interface FileRoutesById {
   '/app/cases/': typeof AppCasesIndexRoute
   '/app/clients/': typeof AppClientsIndexRoute
   '/app/debt-collection/': typeof AppDebtCollectionIndexRoute
+  '/app/live-sessions/': typeof AppLiveSessionsIndexRoute
   '/app/meetings/': typeof AppMeetingsIndexRoute
   '/app/workspace/': typeof AppWorkspaceIndexRoute
   '/api/public/elevenlabs/scribe-token': typeof ApiPublicElevenlabsScribeTokenRoute
@@ -418,7 +418,6 @@ export interface FileRouteTypes {
     | '/app/drafting'
     | '/app/education'
     | '/app/financials'
-    | '/app/live-sessions'
     | '/app/messages'
     | '/app/onboarding'
     | '/app/research'
@@ -436,6 +435,7 @@ export interface FileRouteTypes {
     | '/app/cases/'
     | '/app/clients/'
     | '/app/debt-collection/'
+    | '/app/live-sessions/'
     | '/app/meetings/'
     | '/app/workspace/'
     | '/api/public/elevenlabs/scribe-token'
@@ -461,7 +461,6 @@ export interface FileRouteTypes {
     | '/app/drafting'
     | '/app/education'
     | '/app/financials'
-    | '/app/live-sessions'
     | '/app/messages'
     | '/app/onboarding'
     | '/app/research'
@@ -479,6 +478,7 @@ export interface FileRouteTypes {
     | '/app/cases'
     | '/app/clients'
     | '/app/debt-collection'
+    | '/app/live-sessions'
     | '/app/meetings'
     | '/app/workspace'
     | '/api/public/elevenlabs/scribe-token'
@@ -505,7 +505,6 @@ export interface FileRouteTypes {
     | '/app/drafting'
     | '/app/education'
     | '/app/financials'
-    | '/app/live-sessions'
     | '/app/messages'
     | '/app/onboarding'
     | '/app/research'
@@ -523,6 +522,7 @@ export interface FileRouteTypes {
     | '/app/cases/'
     | '/app/clients/'
     | '/app/debt-collection/'
+    | '/app/live-sessions/'
     | '/app/meetings/'
     | '/app/workspace/'
     | '/api/public/elevenlabs/scribe-token'
@@ -635,13 +635,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMessagesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/live-sessions': {
-      id: '/app/live-sessions'
-      path: '/live-sessions'
-      fullPath: '/app/live-sessions'
-      preLoaderRoute: typeof AppLiveSessionsRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/app/financials': {
       id: '/app/financials'
       path: '/financials'
@@ -726,6 +719,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMeetingsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/live-sessions/': {
+      id: '/app/live-sessions/'
+      path: '/live-sessions'
+      fullPath: '/app/live-sessions/'
+      preLoaderRoute: typeof AppLiveSessionsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/debt-collection/': {
       id: '/app/debt-collection/'
       path: '/debt-collection'
@@ -805,10 +805,10 @@ declare module '@tanstack/react-router' {
     }
     '/app/live-sessions/transcript/$id': {
       id: '/app/live-sessions/transcript/$id'
-      path: '/transcript/$id'
+      path: '/live-sessions/transcript/$id'
       fullPath: '/app/live-sessions/transcript/$id'
       preLoaderRoute: typeof AppLiveSessionsTranscriptIdRouteImport
-      parentRoute: typeof AppLiveSessionsRoute
+      parentRoute: typeof AppRoute
     }
     '/api/public/hooks/twilio-status': {
       id: '/api/public/hooks/twilio-status'
@@ -848,18 +848,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AppLiveSessionsRouteChildren {
-  AppLiveSessionsTranscriptIdRoute: typeof AppLiveSessionsTranscriptIdRoute
-}
-
-const AppLiveSessionsRouteChildren: AppLiveSessionsRouteChildren = {
-  AppLiveSessionsTranscriptIdRoute: AppLiveSessionsTranscriptIdRoute,
-}
-
-const AppLiveSessionsRouteWithChildren = AppLiveSessionsRoute._addFileChildren(
-  AppLiveSessionsRouteChildren,
-)
-
 interface AppRouteChildren {
   AppActivityRoute: typeof AppActivityRoute
   AppAnalyticsRoute: typeof AppAnalyticsRoute
@@ -871,7 +859,6 @@ interface AppRouteChildren {
   AppDraftingRoute: typeof AppDraftingRoute
   AppEducationRoute: typeof AppEducationRoute
   AppFinancialsRoute: typeof AppFinancialsRoute
-  AppLiveSessionsRoute: typeof AppLiveSessionsRouteWithChildren
   AppMessagesRoute: typeof AppMessagesRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppResearchRoute: typeof AppResearchRoute
@@ -887,8 +874,10 @@ interface AppRouteChildren {
   AppCasesIndexRoute: typeof AppCasesIndexRoute
   AppClientsIndexRoute: typeof AppClientsIndexRoute
   AppDebtCollectionIndexRoute: typeof AppDebtCollectionIndexRoute
+  AppLiveSessionsIndexRoute: typeof AppLiveSessionsIndexRoute
   AppMeetingsIndexRoute: typeof AppMeetingsIndexRoute
   AppWorkspaceIndexRoute: typeof AppWorkspaceIndexRoute
+  AppLiveSessionsTranscriptIdRoute: typeof AppLiveSessionsTranscriptIdRoute
   AppMeetingsJoinRoomRoute: typeof AppMeetingsJoinRoomRoute
   AppMeetingsTranscriptIdRoute: typeof AppMeetingsTranscriptIdRoute
 }
@@ -904,7 +893,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppDraftingRoute: AppDraftingRoute,
   AppEducationRoute: AppEducationRoute,
   AppFinancialsRoute: AppFinancialsRoute,
-  AppLiveSessionsRoute: AppLiveSessionsRouteWithChildren,
   AppMessagesRoute: AppMessagesRoute,
   AppOnboardingRoute: AppOnboardingRoute,
   AppResearchRoute: AppResearchRoute,
@@ -920,8 +908,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppCasesIndexRoute: AppCasesIndexRoute,
   AppClientsIndexRoute: AppClientsIndexRoute,
   AppDebtCollectionIndexRoute: AppDebtCollectionIndexRoute,
+  AppLiveSessionsIndexRoute: AppLiveSessionsIndexRoute,
   AppMeetingsIndexRoute: AppMeetingsIndexRoute,
   AppWorkspaceIndexRoute: AppWorkspaceIndexRoute,
+  AppLiveSessionsTranscriptIdRoute: AppLiveSessionsTranscriptIdRoute,
   AppMeetingsJoinRoomRoute: AppMeetingsJoinRoomRoute,
   AppMeetingsTranscriptIdRoute: AppMeetingsTranscriptIdRoute,
 }

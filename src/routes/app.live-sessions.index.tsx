@@ -22,7 +22,7 @@ import { useI18n } from "@/lib/i18n";
 
 type Turn = { speaker: string; text: string; start?: number; end?: number };
 
-export const Route = createFileRoute("/app/live-sessions")({
+export const Route = createFileRoute("/app/live-sessions/")({
   component: LiveSessionsPage,
 });
 
