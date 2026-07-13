@@ -319,8 +319,8 @@ function MeetingRoom() {
     }
     try {
       const res = await fetch("/api/public/elevenlabs/scribe-token", { method: "POST" });
-      if (!res.ok) throw new Error("Token request failed");
-      const { token } = await res.json();
+      const { token, error } = await res.json().catch(() => ({ token: null, error: "Token request failed" }));
+      if (!res.ok || !token) throw new Error(error || `Token request failed (${res.status})`);
       await scribe.connect({
         token,
         microphone: {
