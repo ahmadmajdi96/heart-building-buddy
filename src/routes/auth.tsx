@@ -70,8 +70,14 @@ function friendlyAuthError(raw: string, mode: Mode, locale: "ar" | "en"): string
     return ar ? "لا يوجد حساب بهذا البريد الإلكتروني." : "No account exists for this email.";
   if (m.includes("already registered") || m.includes("user already"))
     return ar ? "هذا البريد الإلكتروني مسجّل مسبقاً." : "This email is already registered. Try signing in.";
+  if (m.includes("weak") || m.includes("pwned") || m.includes("known to be"))
+    return ar
+      ? "كلمة المرور شائعة أو مسرّبة سابقاً. اختر كلمة مرور أقوى (٨ أحرف أو أكثر، مع أرقام ورموز)."
+      : "This password is too common or has appeared in a breach. Choose a stronger one (8+ chars with numbers & symbols).";
   if (m.includes("password should be") || (m.includes("password") && m.includes("6")))
     return ar ? "يجب أن تكون كلمة المرور 6 أحرف على الأقل." : "Password must be at least 6 characters.";
+  if (m.includes("signups not allowed") || m.includes("signup is disabled"))
+    return ar ? "التسجيل مغلق حالياً. تواصل مع مسؤول المكتب." : "Signups are currently disabled. Contact your firm admin.";
   if (m.includes("rate limit") || m.includes("too many"))
     return ar ? "محاولات كثيرة. حاول مرة أخرى بعد قليل." : "Too many attempts. Please try again shortly.";
   if (m.includes("network") || m.includes("failed to fetch"))
