@@ -40,10 +40,11 @@ function OnboardingPage() {
   const navigate = useNavigate();
   const { org, loading, refresh, userId } = useOrg();
   const [type, setType] = useState<"solo" | "firm" | null>(null);
+  // Jordan-first pilot: currency, country, tax rate, phone prefix and timezone are locked.
   const [form, setForm] = useState({
-    legal_name: "", display_name: "", email: "", phone: "", address: "", tax_id: "",
+    legal_name: "", display_name: "", email: "", phone: "+962", address: "", tax_id: "",
     logo_path: "", currency: "JOD", default_tax_rate: "16",
-    country: "JO", preferred_language: locale as string,
+    country: "JO", preferred_language: locale as string, timezone: "Asia/Amman",
   });
   const [saving, setSaving] = useState(false);
 
@@ -181,30 +182,29 @@ function OnboardingPage() {
               <Input value={form.tax_id} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} />
             </Field>
             <Field label={locale === "ar" ? "العملة" : "Currency"}>
-              <Input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} />
+              <div className="flex h-10 items-center gap-2 rounded-md border border-input bg-muted/40 px-3 text-sm">
+                <span className="font-mono font-semibold">JOD</span>
+                <span className="text-xs text-muted-foreground">{locale === "ar" ? "الدينار الأردني (ثابت للنسخة التجريبية)" : "Jordanian dinar (locked for pilot)"}</span>
+              </div>
             </Field>
-            <Field label={locale === "ar" ? "ضريبة افتراضية %" : "Default tax %"}>
-              <Input type="number" step="0.01" value={form.default_tax_rate} onChange={(e) => setForm({ ...form, default_tax_rate: e.target.value })} />
+            <Field label={locale === "ar" ? "ضريبة المبيعات" : "Sales tax"}>
+              <div className="flex h-10 items-center gap-2 rounded-md border border-input bg-muted/40 px-3 text-sm">
+                <span className="font-mono font-semibold">16%</span>
+                <span className="text-xs text-muted-foreground">{locale === "ar" ? "المعدل الأردني القياسي" : "Jordan standard rate"}</span>
+              </div>
             </Field>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
             <Field label={locale === "ar" ? "الدولة" : "Country"}>
-              <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })}>
-                <option value="SA">Saudi Arabia</option>
-                <option value="AE">United Arab Emirates</option>
-                <option value="JO">Jordan</option>
-                <option value="EG">Egypt</option>
-                <option value="KW">Kuwait</option>
-                <option value="QA">Qatar</option>
-                <option value="BH">Bahrain</option>
-                <option value="OM">Oman</option>
-                <option value="LB">Lebanon</option>
-                <option value="IQ">Iraq</option>
-                <option value="MA">Morocco</option>
-                <option value="TN">Tunisia</option>
-                <option value="DZ">Algeria</option>
-                <option value="other">Other</option>
-              </select>
+              <div className="flex h-10 items-center gap-2 rounded-md border border-input bg-muted/40 px-3 text-sm">
+                <span>🇯🇴</span>
+                <span className="font-semibold">{locale === "ar" ? "الأردن" : "Jordan"}</span>
+              </div>
+            </Field>
+            <Field label={locale === "ar" ? "المنطقة الزمنية" : "Timezone"}>
+              <div className="flex h-10 items-center rounded-md border border-input bg-muted/40 px-3 text-sm font-mono">
+                Asia/Amman
+              </div>
             </Field>
             <Field label={locale === "ar" ? "اللغة المفضّلة" : "Preferred language"}>
               <select className="h-10 w-full rounded-md border bg-background px-3 text-sm" value={form.preferred_language} onChange={(e) => setForm({ ...form, preferred_language: e.target.value })}>
@@ -213,6 +213,7 @@ function OnboardingPage() {
               </select>
             </Field>
           </div>
+
           <Field label={locale === "ar" ? "الشعار" : "Logo"}>
             <LogoPicker
               value={form.logo_path}
