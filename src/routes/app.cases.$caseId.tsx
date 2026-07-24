@@ -535,7 +535,7 @@ function DocumentsTab({ caseId, docs, onChange }: { caseId: string; docs: any[];
   const [previewLoading, setPreviewLoading] = useState(false);
 
   const ALLOWED_EXT = ["pdf", "doc", "docx", "csv", "jpg", "jpeg"];
-  const MAX_BYTES = 4 * 1024 * 1024;
+  const MAX_BYTES = 200 * 1024 * 1024;
 
   const categories = [
     { v: "pleading", ar: "مذكرات", en: "Pleadings" },
@@ -555,7 +555,7 @@ function DocumentsTab({ caseId, docs, onChange }: { caseId: string; docs: any[];
       return;
     }
     if (file.size > MAX_BYTES) {
-      toast.error(locale === "ar" ? "الحد الأقصى 4 ميغابايت" : "Max size 4 MB");
+      toast.error(locale === "ar" ? "الحد الأقصى 200 ميغابايت" : "Max size 200 MB");
       return;
     }
     setUploading(true);

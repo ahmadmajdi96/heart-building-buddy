@@ -44,7 +44,7 @@ export async function extractTextFromFile(file: File): Promise<string> {
 
 // Documents module rules
 export const ALLOWED_DOC_EXT = ["pdf", "doc", "docx", "csv", "jpg", "jpeg"] as const;
-export const MAX_DOC_BYTES = 4 * 1024 * 1024; // 4 MB
+export const MAX_DOC_BYTES = 200 * 1024 * 1024; // 4 MB
 
 export function validateDocFile(file: File): { ok: true } | { ok: false; reason: string } {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
@@ -52,7 +52,7 @@ export function validateDocFile(file: File): { ok: true } | { ok: false; reason:
     return { ok: false, reason: `Unsupported file type ".${ext}". Allowed: PDF, DOC, DOCX, CSV, JPG.` };
   }
   if (file.size > MAX_DOC_BYTES) {
-    return { ok: false, reason: `File is too large (${(file.size / 1024 / 1024).toFixed(2)} MB). Max 4 MB.` };
+    return { ok: false, reason: `File is too large (${(file.size / 1024 / 1024).toFixed(2)} MB). Max 200 MB.` };
   }
   return { ok: true };
 }

@@ -206,7 +206,7 @@ function DocsPage() {
     <div className="space-y-6">
       <PageHeader
         title={locale === "ar" ? "المستندات" : "Documents"}
-        subtitle={locale === "ar" ? "PDF · DOC · DOCX · CSV · JPG — الحد الأقصى 4 ميغابايت لكل ملف." : "PDF · DOC · DOCX · CSV · JPG — 4 MB max per file."}
+        subtitle={locale === "ar" ? "PDF · DOC · DOCX · CSV · JPG — الحد الأقصى 200 ميغابايت لكل ملف." : "PDF · DOC · DOCX · CSV · JPG — 200 MB max per file."}
       />
 
       {/* Analytics — surfaced first so the picture of the library is above the fold */}
