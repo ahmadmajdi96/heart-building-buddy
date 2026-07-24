@@ -244,13 +244,9 @@ function AppLayout() {
 
   return (
     <div className="relative min-h-screen bg-background text-foreground">
-      {/* Global ivory canvas with a very faint mashrabiya watermark */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 arabesque-lg opacity-[0.05]"
-      />
 
       <div className="relative flex min-h-screen">
+
         {/* ───── Desktop sidebar (fixed, teal, gold typography) ───── */}
         <aside
           onMouseEnter={startHoverExpand}
