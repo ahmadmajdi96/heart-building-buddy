@@ -69,14 +69,17 @@ export async function downloadInvoicePdf(kind: "quote" | "invoice", doc: Doc, or
 
   // Doc heading
   pdf.setFont("helvetica", "bold").setFontSize(20);
-  pdf.text(kind === "quote" ? "QUOTE" : "TAX INVOICE", M, y);
+  pdf.text(kind === "quote" ? "QUOTE" : "BILLING RECORD", M, y);
   pdf.setFont("helvetica", "normal").setFontSize(11);
   pdf.text(String(doc.number ?? ""), M, y + 18);
 
   pdf.setFontSize(10);
-  pdf.text(`Issued: ${doc.issue_date ?? ""}`, W - M, y, { align: "right" });
-  const dueLabel = kind === "quote" ? (doc.valid_until ? `Valid until: ${doc.valid_until}` : "") : (doc.due_date ? `Due: ${doc.due_date}` : "");
+  pdf.text(`Issued: ${withHijri(doc.issue_date)}`, W - M, y, { align: "right" });
+  const dueLabel = kind === "quote"
+    ? (doc.valid_until ? `Valid until: ${withHijri(doc.valid_until)}` : "")
+    : (doc.due_date ? `Due: ${withHijri(doc.due_date)}` : "");
   if (dueLabel) pdf.text(dueLabel, W - M, y + 14, { align: "right" });
+
   y += 46;
 
   pdf.setFont("helvetica", "bold").setFontSize(9).setTextColor(120);
