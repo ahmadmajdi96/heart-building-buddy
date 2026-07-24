@@ -155,7 +155,7 @@ function SiteHeader() {
       <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-[0.07]" />
       <div className="container relative mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-[72px] sm:gap-6 sm:px-6">
         <Link to="/" className="flex min-w-0 items-center">
-          <BrandMark tone="light" />
+          <BrandMark tone="dark" />
         </Link>
         <nav className="hidden items-center gap-1 lg:flex">
           {nav.map((item) => (
