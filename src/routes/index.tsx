@@ -396,7 +396,7 @@ function TrustStrip() {
     ar(locale, "التزام بقانون حماية البيانات ٢٤ / ٢٠٢٣", "Committed to PDPL No. 24/2023"),
   ];
   return (
-    <section className="border-b border-border bg-pearl/40 py-8">
+    <section className="border-b border-border bg-background py-8">
       <div className="container mx-auto grid max-w-7xl grid-cols-2 gap-4 px-4 text-center sm:px-6 md:grid-cols-4">
         {items.map((t) => (
           <div key={t} className="flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.22em] text-foreground/60 sm:text-[12px]">
@@ -492,7 +492,7 @@ function Workflow() {
     { t: ar(locale, "عقد", "Contract"), d: ar(locale, "من نماذج المكتب وبنوده", "From your firm's templates and clauses") },
   ];
   return (
-    <Section id="workflow" className="bg-pearl/40">
+    <Section id="workflow" className="bg-background">
       <div className="mx-auto max-w-3xl text-center">
         <Eyebrow>{ar(locale, "سير العمل", "How it works")}</Eyebrow>
         <h2 className="mt-5 font-serif text-3xl leading-[1.05] tracking-[-0.02em] md:text-[2.5rem]">
@@ -778,7 +778,7 @@ function AiSection() {
 function Honesty() {
   const { locale } = useI18n();
   return (
-    <Section id="honesty" className="bg-pearl/40">
+    <Section id="honesty" className="bg-background">
       <div className="mx-auto max-w-3xl text-center">
         <Eyebrow>{ar(locale, "الصراحة", "Honesty")}</Eyebrow>
         <h2 className="mt-5 font-serif text-3xl leading-[1.05] tracking-[-0.02em] md:text-[2.5rem]">
@@ -840,7 +840,7 @@ function WhoFor() {
     { t: ar(locale, "المكاتب النامية", "Growing firms"), d: ar(locale, "رؤية كاملة، أدوار وصلاحيات، وجاهزية للتوسع.", "Full visibility, roles and permissions, ready to scale.") },
   ];
   return (
-    <Section id="who" className="bg-pearl/40">
+    <Section id="who" className="bg-background">
       <div className="mx-auto max-w-3xl text-center">
         <Eyebrow>{ar(locale, "لمن هو محكم", "Who it's for")}</Eyebrow>
       </div>
@@ -966,7 +966,7 @@ function Beta() {
     }, 500);
   }
   return (
-    <Section id="beta" className="bg-pearl/40">
+    <Section id="beta" className="bg-background">
       <div className="grid gap-12 lg:grid-cols-12">
         <div className="lg:col-span-5">
           <Eyebrow>{ar(locale, "البيتا الخاصة", "Private beta")}</Eyebrow>
