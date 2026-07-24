@@ -332,10 +332,42 @@ export const listOrgDebtPayments = createServerFn({ method: "GET" })
 const PROJECT_ID_FOR_SMS = "fb990850-3f8b-4251-83c6-f826e75969f7";
 const SMS_STATUS_CALLBACK = `https://project--${PROJECT_ID_FOR_SMS}.lovable.app/api/public/hooks/twilio-status`;
 
-async function sendTwilioSms(to: string, body: string, from: string): Promise<{ sid?: string; error?: string; status: string }> {
+/**
+ * Map raw Twilio error codes to human-readable Jordan-friendly explanations.
+ * Twilio docs: https://www.twilio.com/docs/api/errors
+ * The raw JSON is kept in server logs only; users see the friendly message.
+ */
+function humanizeTwilioError(code: number | string | undefined, rawMessage: string): string {
+  const c = code ? String(code) : "";
+  const map: Record<string, string> = {
+    "21211": "Invalid recipient phone number — check the +962 format.",
+    "21214": "Recipient number cannot receive SMS.",
+    "21408": "SMS to this country is not enabled on the sender account.",
+    "21610": "Recipient has unsubscribed (STOP). Cannot send further messages.",
+    "21611": "Sender or recipient number is blocked.",
+    "21612": "Sender number cannot deliver to this recipient.",
+    "21614": "Recipient is not a valid mobile number.",
+    "21617": "Message body exceeds the 1600-character limit.",
+    "30003": "Recipient handset unreachable.",
+    "30004": "Recipient blocked or unsubscribed.",
+    "30005": "Recipient number does not exist.",
+    "30006": "Recipient landline or unreachable carrier.",
+    "30007": "Message flagged as spam by the carrier.",
+    "30008": "Unknown delivery error — carrier did not report a reason.",
+  };
+  if (c && map[c]) return map[c];
+  // Try to extract Twilio's own message from a JSON blob without exposing raw JSON.
+  try {
+    const parsed = typeof rawMessage === "string" && rawMessage.trim().startsWith("{") ? JSON.parse(rawMessage) : null;
+    if (parsed?.message) return String(parsed.message).slice(0, 240);
+  } catch { /* fall through */ }
+  return rawMessage && !rawMessage.trim().startsWith("{") ? rawMessage.slice(0, 240) : "SMS delivery failed. Please try again.";
+}
+
+async function sendTwilioSms(to: string, body: string, from: string): Promise<{ sid?: string; error?: string; errorCode?: string; status: string }> {
   const key = process.env.LOVABLE_API_KEY;
   const twKey = process.env.TWILIO_API_KEY;
-  if (!key || !twKey) return { status: "failed", error: "Twilio not configured" };
+  if (!key || !twKey) return { status: "failed", error: "SMS sender is not configured. Contact your administrator." };
   try {
     const res = await fetch("https://connector-gateway.lovable.dev/twilio/Messages.json", {
       method: "POST",
@@ -349,13 +381,20 @@ async function sendTwilioSms(to: string, body: string, from: string): Promise<{ 
         StatusCallback: SMS_STATUS_CALLBACK,
       }),
     });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) return { status: "failed", error: JSON.stringify(json).slice(0, 500) };
+    const json = await res.json().catch(() => ({} as any));
+    if (!res.ok) {
+      const code = (json as any)?.code ?? (json as any)?.error_code ?? res.status;
+      const raw = (json as any)?.message ?? JSON.stringify(json);
+      console.warn("[twilio] send failed", { code, raw }); // raw JSON only in server logs
+      return { status: "failed", error: humanizeTwilioError(code, String(raw)), errorCode: String(code) };
+    }
     return { status: (json as any).status ?? "sent", sid: (json as any).sid };
   } catch (e: any) {
-    return { status: "failed", error: String(e?.message || e) };
+    console.warn("[twilio] network error", e?.message);
+    return { status: "failed", error: "Could not reach the SMS gateway. Check the network and try again." };
   }
 }
+
 
 async function logSmsMessage(row: Record<string, any>) {
   try {
@@ -397,7 +436,7 @@ export const sendDebtSms = createServerFn({ method: "POST" })
           owner_id: context.userId, org_id: mem.org_id, debt_case_id: data.case_id,
           context: "debt_reminder", to_number: p.phone, from_number: data.from,
           body: data.message, twilio_sid: r.sid ?? null, status: r.status,
-          error_message: r.error ?? null,
+          error_message: r.error ?? null, error_code: r.errorCode ?? null,
         });
         if (r.status === "sent" || r.status === "queued") {
           await context.supabase.from("debt_case_payers")
@@ -425,7 +464,7 @@ export const sendDebtSms = createServerFn({ method: "POST" })
           owner_id: context.userId, org_id: mem.org_id, debt_case_id: data.case_id,
           context: "debt_reminder", to_number: phone, from_number: data.from,
           body: data.message, twilio_sid: r.sid ?? null, status: r.status,
-          error_message: r.error ?? null,
+          error_message: r.error ?? null, error_code: r.errorCode ?? null,
         });
         results.push({ user_id: a.user_id, ...r });
       }

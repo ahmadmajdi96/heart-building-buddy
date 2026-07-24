@@ -35,6 +35,24 @@ function ResearchPage() {
         subtitle={locale === "ar" ? "بحث حصري في التشريعات والاجتهاد القضائي الأردني." : "Search Jordanian legislation and case law exclusively."}
       />
 
+      {/* Corpus scope disclosure — pilot readiness §3: state coverage & last-updated explicitly. */}
+      <div className="rounded-xl border border-gold/30 bg-gradient-to-br from-gold/[0.05] to-transparent p-5">
+        <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-gold">
+          <BookOpen className="size-3.5" />
+          {locale === "ar" ? "نطاق المصادر" : "Corpus scope"}
+        </div>
+        <p className="text-sm text-foreground/80">
+          {locale === "ar"
+            ? "هذه الأداة تجيب من مصادر القانون الأردني المفهرسة فقط — الدستور، القوانين المدنية والجزائية والتجارية والعمل، قانون التحكيم، قانون الجرائم الإلكترونية، وأحكام محكمة التمييز. محدَّث حتى ٢٠٢٦."
+            : "This tool answers only from the indexed Jordanian legal corpus — Constitution, civil, penal, commercial and labour codes, arbitration, cybercrime, and Cassation Court rulings. Updated through 2026."}
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {locale === "ar"
+            ? "إذا كان السؤال خارج هذا النطاق، سيرفض النظام الإجابة بدل التخمين."
+            : "If your question falls outside this scope, the system will refuse to answer rather than guess."}
+        </p>
+      </div>
+
       <div className="card-elev rounded-2xl border bg-gradient-to-br from-card via-card to-gold/5 p-6">
         <div className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-gold">
           <Sparkles className="size-3.5" /> {locale === "ar" ? "مدعوم بالذكاء الاصطناعي — القانون الأردني" : "AI-powered — Jordanian law"}
@@ -67,6 +85,7 @@ function ResearchPage() {
           : <MarkdownView text={answer} />}
         </div>
       )}
+
 
       <div>
         <div className="mb-3 flex items-center justify-between">

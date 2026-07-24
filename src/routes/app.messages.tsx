@@ -12,6 +12,17 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/messages")({ component: MessagesPage });
 
+/** Strip raw Twilio JSON blobs from the UI — leave only a human sentence. */
+function humanizeErrorMessage(raw: string | null | undefined): string {
+  if (!raw) return "";
+  const s = String(raw).trim();
+  if (s.startsWith("{")) {
+    try { const j = JSON.parse(s); return String(j.message ?? j.error ?? "SMS delivery failed."); } catch { return "SMS delivery failed."; }
+  }
+  return s;
+}
+
+
 const STATUS_TONE: Record<string, string> = {
   delivered: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
   sent: "bg-sky-500/15 text-sky-600 border-sky-500/30",
@@ -137,10 +148,11 @@ function MessagesPage() {
                     <p className="mt-1 text-sm break-words">{r.body}</p>
                     {r.error_message && (
                       <p className="mt-1 text-xs text-red-600">
-                        {r.error_code ? `[${r.error_code}] ` : ""}{r.error_message}
+                        {r.error_code ? `[${r.error_code}] ` : ""}{humanizeErrorMessage(r.error_message)}
                       </p>
                     )}
-                    {r.twilio_sid && <p className="mt-1 font-mono text-[10px] text-muted-foreground">SID: {r.twilio_sid}</p>}
+                    {/* Provider SID intentionally hidden from users — visible only in server logs. */}
+
                   </div>
                   <div className="text-xs text-muted-foreground whitespace-nowrap">
                     <div>{new Date(r.sent_at).toLocaleString()}</div>
