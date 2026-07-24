@@ -9,7 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SetPasswordRouteImport } from './routes/set-password'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
@@ -52,9 +54,19 @@ import { Route as ApiPublicHooksDebtRemindersRouteImport } from './routes/api.pu
 import { Route as ApiPublicElevenlabsTranscribeRouteImport } from './routes/api.public.elevenlabs.transcribe'
 import { Route as ApiPublicElevenlabsScribeTokenRouteImport } from './routes/api.public.elevenlabs.scribe-token'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SetPasswordRoute = SetPasswordRouteImport.update({
   id: '/set-password',
   path: '/set-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -273,7 +285,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
   '/set-password': typeof SetPasswordRoute
+  '/terms': typeof TermsRoute
   '/app/activity': typeof AppActivityRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/calendar': typeof AppCalendarRoute
@@ -316,7 +330,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
   '/set-password': typeof SetPasswordRoute
+  '/terms': typeof TermsRoute
   '/app/activity': typeof AppActivityRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/calendar': typeof AppCalendarRoute
@@ -361,7 +377,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
   '/set-password': typeof SetPasswordRoute
+  '/terms': typeof TermsRoute
   '/app/activity': typeof AppActivityRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/calendar': typeof AppCalendarRoute
@@ -407,7 +425,9 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/auth'
+    | '/privacy'
     | '/set-password'
+    | '/terms'
     | '/app/activity'
     | '/app/analytics'
     | '/app/calendar'
@@ -450,7 +470,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/privacy'
     | '/set-password'
+    | '/terms'
     | '/app/activity'
     | '/app/analytics'
     | '/app/calendar'
@@ -494,7 +516,9 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/auth'
+    | '/privacy'
     | '/set-password'
+    | '/terms'
     | '/app/activity'
     | '/app/analytics'
     | '/app/calendar'
@@ -539,7 +563,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
+  PrivacyRoute: typeof PrivacyRoute
   SetPasswordRoute: typeof SetPasswordRoute
+  TermsRoute: typeof TermsRoute
   ShareTokenRoute: typeof ShareTokenRoute
   ApiRagUploadRoute: typeof ApiRagUploadRoute
   ApiPublicElevenlabsScribeTokenRoute: typeof ApiPublicElevenlabsScribeTokenRoute
@@ -551,11 +577,25 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/set-password': {
       id: '/set-password'
       path: '/set-password'
       fullPath: '/set-password'
       preLoaderRoute: typeof SetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -922,7 +962,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
+  PrivacyRoute: PrivacyRoute,
   SetPasswordRoute: SetPasswordRoute,
+  TermsRoute: TermsRoute,
   ShareTokenRoute: ShareTokenRoute,
   ApiRagUploadRoute: ApiRagUploadRoute,
   ApiPublicElevenlabsScribeTokenRoute: ApiPublicElevenlabsScribeTokenRoute,
@@ -934,13 +976,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
