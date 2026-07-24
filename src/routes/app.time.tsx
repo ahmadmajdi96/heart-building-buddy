@@ -123,7 +123,7 @@ function TimePage() {
         case_id: tCase === "none" ? null : tCase,
         client_id: tClient === "none" ? null : tClient,
         hourly_rate: tRate ? Number(tRate) : null,
-        currency: "USD", billable: true,
+        currency: "JOD", billable: true,
       }});
       setTDesc(""); setTRate("");
       await refresh();
@@ -151,7 +151,7 @@ function TimePage() {
         ended_at: ended,
         duration_seconds: dur,
         hourly_rate: editing.hourly_rate ?? null,
-        currency: editing.currency ?? "USD",
+        currency: editing.currency ?? "JOD",
         billable: editing.billable ?? true,
         status: (editing.status as any) ?? "logged",
       }});
@@ -267,7 +267,7 @@ function TimePage() {
             }} disabled={filtered.length === 0}>
               <Download className="size-4" />{ar ? "تصدير CSV" : "Export CSV"}
             </Button>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { setEditing({ started_at: new Date().toISOString(), duration_seconds: 0, billable: true, currency: "USD", status: "logged" }); setEditOpen(true); }}>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { setEditing({ started_at: new Date().toISOString(), duration_seconds: 0, billable: true, currency: "JOD", status: "logged" }); setEditOpen(true); }}>
               <Plus className="size-4" />{ar ? "إدخال يدوي" : "Manual entry"}
             </Button>
           </div>
@@ -616,7 +616,7 @@ function TimePage() {
                 <Input type="number" value={editing?.hourly_rate ?? ""} onChange={(e) => setEditing({ ...editing!, hourly_rate: e.target.value ? Number(e.target.value) : null })} />
               </div>
               <div className="space-y-1.5"><Label>{ar ? "العملة" : "Currency"}</Label>
-                <Input value={editing?.currency ?? "USD"} onChange={(e) => setEditing({ ...editing!, currency: e.target.value })} />
+                <Input value={editing?.currency ?? "JOD"} onChange={(e) => setEditing({ ...editing!, currency: e.target.value })} />
               </div>
             </div>
             <label className="flex items-center gap-2 text-sm">

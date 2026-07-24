@@ -116,7 +116,8 @@ function CasesPage() {
     const won = filtered.filter((c) => c.status === "won").length;
     const lost = filtered.filter((c) => c.status === "lost").length;
     const settled = filtered.filter((c) => c.status === "closed").length;
-    const winRate = (won + lost) > 0 ? Math.round((won / (won + lost)) * 100) : 0;
+    const winDenom = won + lost + settled;
+    const winRate = winDenom > 0 ? Math.round((won / winDenom) * 100) : 0;
     return { total, open, pending, closed, won, lost, settled, winRate };
   }, [filtered]);
 

@@ -108,7 +108,8 @@ function WorkspacePage() {
     const open = byStatus["open"] ?? 0;
     const pending = byStatus["pending"] ?? 0;
     const active = open + pending;
-    const winRate = won + lost > 0 ? Math.round((won / (won + lost)) * 100) : null;
+    const winDenom = won + lost + closed;
+    const winRate = winDenom > 0 ? Math.round((won / winDenom) * 100) : null;
     // Cases per teammate — top 5
     const perUser: Record<string, number> = {};
     for (const c of cases as any[]) for (const m of c.members) perUser[m.user_id] = (perUser[m.user_id] ?? 0) + 1;

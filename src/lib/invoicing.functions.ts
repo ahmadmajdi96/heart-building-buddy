@@ -84,7 +84,7 @@ export const createInvoiceFromTime = createServerFn({ method: "POST" })
         issue_date: new Date().toISOString().slice(0, 10),
         due_date: data.due_date || null,
         status: "draft",
-        currency: mem.organizations?.currency ?? "USD",
+        currency: mem.organizations?.currency ?? "JOD",
         tax_rate: Number(taxRate),
         subtotal: Number(subtotal.toFixed(2)),
         tax_amount, total,

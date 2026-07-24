@@ -31,7 +31,10 @@ export const getAnalytics = createServerFn({ method: "GET" })
     for (const c of cases.data ?? []) statusCounts[c.status] = (statusCounts[c.status] ?? 0) + 1;
     const won = statusCounts["won"] ?? 0;
     const lost = statusCounts["lost"] ?? 0;
-    const winRate = won + lost > 0 ? Math.round((won / (won + lost)) * 100) : null;
+    const settled = statusCounts["closed"] ?? 0;
+    // Honest win rate: settled cases count against the denominator so the KPI cannot inflate to 100%.
+    const denom = won + lost + settled;
+    const winRate = denom > 0 ? Math.round((won / denom) * 100) : null;
 
     // Monthly buckets for last 6 months
     const months: { m: string; cases: number; clients: number; docs: number }[] = [];

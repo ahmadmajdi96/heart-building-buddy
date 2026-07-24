@@ -1000,8 +1000,8 @@ function PaymentPlanDialog({ onSaved, onClose }: { onSaved: () => void; onClose:
         {/* Summary */}
         {total > 0 && (
           <div className="rounded-md border bg-secondary/40 p-3 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "الإجمالي" : "Total"}</span><span className="font-mono tabular-nums">{fmt(total, selectedInvoices[0]?.currency || "USD")}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "كل قسط" : "Per installment"}</span><span className="font-mono tabular-nums">{fmt(perInstallment, selectedInvoices[0]?.currency || "USD")}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "الإجمالي" : "Total"}</span><span className="font-mono tabular-nums">{fmt(total, selectedInvoices[0]?.currency || "JOD")}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "كل قسط" : "Per installment"}</span><span className="font-mono tabular-nums">{fmt(perInstallment, selectedInvoices[0]?.currency || "JOD")}</span></div>
           </div>
         )}
       </div>
