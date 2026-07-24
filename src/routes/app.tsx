@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import { useI18n, type TKey } from "@/lib/i18n";
 import { BrandMark } from "@/components/brand-mark";
 import { LangToggle } from "@/components/lang-toggle";
@@ -83,8 +83,11 @@ function AppLayout() {
   const [checking, setChecking] = useState(true);
   const [userEmail, setUserEmail] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
+  const [hoverExpanded, setHoverExpanded] = useState(false);
+  const expandTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRtl = dir === "rtl";
+  const navCollapsed = collapsed && !hoverExpanded;
 
   useEffect(() => {
     let mounted = true;
@@ -125,6 +128,12 @@ function AppLayout() {
     if (!org && pathname !== "/app/onboarding") navigate({ to: "/app/onboarding" });
   }, [checking, orgLoading, org, pathname, navigate]);
 
+  useEffect(() => {
+    return () => {
+      if (expandTimer.current) clearTimeout(expandTimer.current);
+    };
+  }, []);
+
   async function signOut() { await supabase.auth.signOut(); navigate({ to: "/auth" }); }
 
   if (checking || orgLoading) {
@@ -140,61 +149,79 @@ function AppLayout() {
   const isActive = (to: string) => pathname === to || (to !== "/app/dashboard" && pathname.startsWith(to));
 
   const sideEdge = isRtl ? "border-l" : "border-r";
-  const asideWidth = collapsed ? "lg:w-[76px]" : "lg:w-[268px]";
+  const asideWidth = navCollapsed ? "lg:w-[76px]" : "lg:w-[268px]";
+
+  const startHoverExpand = () => {
+    if (!collapsed) return;
+    if (expandTimer.current) clearTimeout(expandTimer.current);
+    expandTimer.current = setTimeout(() => setHoverExpanded(true), 2000);
+  };
+
+  const stopHoverExpand = () => {
+    if (expandTimer.current) clearTimeout(expandTimer.current);
+    expandTimer.current = null;
+    setHoverExpanded(false);
+  };
 
   /* Nav renderers ------------------------------------------------------- */
   function ItemLink({ item, onClick }: { item: NavItem; onClick?: () => void }) {
     const Icon = item.icon;
     const active = isActive(item.to);
     return (
-      <Link
-        to={item.to}
-        onClick={onClick}
-        title={collapsed ? t(item.key) : undefined}
-        className={cn(
-          "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-all overflow-hidden",
-          active
-            ? "bg-gold/15 text-gold shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--gold),transparent_60%)]"
-            : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-          collapsed && "justify-center px-2",
-        )}
-      >
-        {/* Arabesque rosette watermark on the active item */}
-        {active && (
-          <span
-            aria-hidden
-            className={cn(
-              "pointer-events-none absolute inset-y-0 w-24 arabesque opacity-[0.28] mix-blend-screen",
-              isRtl ? "left-0" : "right-0",
-            )}
-            style={{
-              maskImage: isRtl
-                ? "linear-gradient(to left, black, transparent)"
-                : "linear-gradient(to right, black, transparent)",
-              WebkitMaskImage: isRtl
-                ? "linear-gradient(to left, black, transparent)"
-                : "linear-gradient(to right, black, transparent)",
-            }}
-          />
-        )}
-        {/* Gold gilded rail on the reading edge */}
-        <span
+      <div className="group/item relative">
+        <Link
+          to={item.to}
+          onClick={onClick}
+          aria-label={navCollapsed ? t(item.key) : undefined}
           className={cn(
-            "pointer-events-none absolute top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full bg-gold transition-opacity",
-            isRtl ? "right-0" : "left-0",
-            active ? "opacity-100" : "opacity-0",
+            "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-all overflow-hidden",
+            active
+              ? "bg-gold/18 text-gold ring-1 ring-gold/40 shadow-[inset_0_1px_0_color-mix(in_oklch,var(--gold),transparent_64%)]"
+              : "text-sidebar-foreground/75 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground",
+            navCollapsed && "justify-center px-2",
           )}
-          aria-hidden
-        />
-        <Icon className={cn("relative size-[17px] shrink-0", active ? "text-gold" : "opacity-80 group-hover:opacity-100")} />
-        {!collapsed && <span className="relative truncate">{t(item.key)}</span>}
-      </Link>
+        >
+          {/* Visible manuscript rosette watermark on the active nav section */}
+          {active && (
+            <span
+              aria-hidden
+              className={cn(
+                "pointer-events-none absolute inset-y-0 grid w-20 place-items-center text-gold/45",
+                isRtl ? "left-0" : "right-0",
+                navCollapsed && "inset-x-0 mx-auto w-full text-gold/35",
+              )}
+            >
+              <Rosette size={navCollapsed ? 42 : 54} />
+            </span>
+          )}
+          <span
+            className={cn(
+              "pointer-events-none absolute top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full bg-gold transition-opacity",
+              isRtl ? "right-0" : "left-0",
+              active ? "opacity-100" : "opacity-0",
+            )}
+            aria-hidden
+          />
+          <Icon className={cn("relative z-10 size-[17px] shrink-0", active ? "text-gold" : "opacity-80 group-hover:opacity-100")} />
+          {!navCollapsed && <span className="relative z-10 truncate">{t(item.key)}</span>}
+        </Link>
+        {navCollapsed && (
+          <span
+            className={cn(
+              "pointer-events-none absolute top-1/2 z-50 hidden -translate-y-1/2 rounded-md border border-sidebar-border bg-popover px-2.5 py-1.5 text-xs font-medium text-popover-foreground shadow-elev-2 group-hover/item:block",
+              isRtl ? "right-[calc(100%+0.5rem)]" : "left-[calc(100%+0.5rem)]",
+            )}
+          >
+            {t(item.key)}
+          </span>
+        )}
+      </div>
     );
   }
 
 
   function GroupLabel({ label }: { label: string }) {
-    if (collapsed) {
+    if (navCollapsed) {
       return <div className="my-3 flex justify-center text-gold/50"><Rosette size={9} /></div>;
     }
     return (
@@ -208,7 +235,7 @@ function AppLayout() {
 
   function NavBody({ onNavigate }: { onNavigate?: () => void }) {
     return (
-      <nav className="flex-1 overflow-y-auto px-3 py-2 [scrollbar-width:thin]">
+      <nav className={cn("flex-1 px-3 py-2 [scrollbar-width:thin]", navCollapsed ? "overflow-visible" : "overflow-y-auto")}>
         <ul className="space-y-0.5">
           {visibleSolo.map((i) => <li key={i.to}><ItemLink item={i} onClick={onNavigate} /></li>)}
         </ul>
@@ -237,6 +264,8 @@ function AppLayout() {
       <div className="relative flex min-h-screen">
         {/* ───── Desktop sidebar (fixed, teal, gold typography) ───── */}
         <aside
+          onMouseEnter={startHoverExpand}
+          onMouseLeave={stopHoverExpand}
           className={cn(
             "hidden lg:flex flex-col text-sidebar-foreground relative",
             sideEdge,
@@ -254,23 +283,33 @@ function AppLayout() {
           <CornerFlourish className={cn("absolute bottom-2 text-gold/50", isRtl ? "right-2 -scale-100" : "left-2 -scale-y-100")} size={22} />
 
           {/* Brand */}
-          <div className={cn("relative flex items-center gap-2 border-b border-sidebar-border/70 px-4 py-4", collapsed && "justify-center px-2")}>
-            <Link to="/app/dashboard" className="min-w-0 flex-1">
-              {collapsed ? (
-                <div className="mx-auto grid size-9 place-items-center rounded-lg bg-gold/15 text-gold ring-1 ring-gold/30">
-                  <Rosette size={16} />
-                </div>
+          <div className={cn(
+            "relative flex items-center gap-2 border-b border-sidebar-border/70 px-4 py-4",
+            navCollapsed && "flex-col justify-center gap-2 px-2 py-3",
+          )}>
+            <Link to="/app/dashboard" className={cn("min-w-0", navCollapsed ? "flex-none" : "flex-1")} aria-label="Mohkam dashboard">
+              {navCollapsed ? (
+                <BrandMark tone="dark" size="sm" markOnly />
               ) : (
                 <BrandMark tone="dark" />
               )}
             </Link>
-            <button
-              onClick={() => setCollapsed((v) => !v)}
-              className="hidden lg:grid place-items-center size-8 rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setHoverExpanded(false);
+                setCollapsed((v) => !v);
+              }}
+              className={cn(
+                "hidden lg:grid place-items-center rounded-md text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                navCollapsed ? "size-7" : "size-8",
+              )}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               <CollapseIcon className="size-4" />
-            </button>
+            </Button>
           </div>
 
           {/* Gold hairline */}
@@ -280,18 +319,7 @@ function AppLayout() {
 
           {/* Footer: settings */}
           <div className="relative border-t border-sidebar-border/70 p-3">
-            <Link
-              to="/app/settings"
-              title={collapsed ? t("m_settings") : undefined}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                isActive("/app/settings") && "bg-gold/15 text-gold",
-                collapsed && "justify-center px-2",
-              )}
-            >
-              <Settings className="size-[17px]" />
-              {!collapsed && <span>{t("m_settings")}</span>}
-            </Link>
+            <ItemLink item={{ to: "/app/settings", key: "m_settings", icon: Settings }} />
           </div>
         </aside>
 
