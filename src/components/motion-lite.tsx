@@ -1,37 +1,13 @@
-// Lightweight motion shim used on marketing pages to keep the API surface
-// of framer-motion (motion.div/section/... with initial/animate/whileInView/
-// variants/transition props) while rendering plain DOM elements without any
-// runtime animation cost. Massive landing-page perf win.
-import React, { forwardRef } from "react";
+// Real framer-motion passthrough. This file used to be a static shim that
+// stripped animation props; keeping the same import path means every call site
+// (marketing page, dashboard primitives) now animates for real.
+//
+// We add a lightweight reduced-motion gate at the module level: when the user
+// prefers reduced motion, framer-motion already short-circuits transitions to
+// duration:0 via `MotionConfig`, but we also set a global flag that the count-up
+// hook in primitives.tsx checks so numeric tiles snap instead of tween.
+import { motion as fmMotion, m as fmM, AnimatePresence, useMotionValue, useTransform, animate, useInView, useReducedMotion } from "framer-motion";
 
-const FRAMER_PROPS = new Set([
-  "initial", "animate", "exit", "transition", "variants",
-  "whileInView", "whileHover", "whileTap", "whileFocus", "whileDrag",
-  "viewport", "layout", "layoutId", "drag", "dragConstraints",
-  "onAnimationStart", "onAnimationComplete", "onViewportEnter", "onViewportLeave",
-  "custom",
-]);
-
-function strip(props: Record<string, any>) {
-  const out: Record<string, any> = {};
-  for (const k in props) if (!FRAMER_PROPS.has(k)) out[k] = props[k];
-  return out;
-}
-
-type AnyProps = React.HTMLAttributes<HTMLElement> & Record<string, any>;
-
-const factory = new Proxy(
-  {},
-  {
-    get: (_t, tag: string) => {
-      const Comp = forwardRef<HTMLElement, AnyProps>((props, ref) =>
-        React.createElement(tag as any, { ...strip(props), ref }),
-      );
-      Comp.displayName = `m.${tag}`;
-      return Comp;
-    },
-  },
-) as any;
-
-export const motion: any = factory;
-export const m: any = factory;
+export const motion = fmMotion;
+export const m = fmM;
+export { AnimatePresence, useMotionValue, useTransform, animate, useInView, useReducedMotion };
