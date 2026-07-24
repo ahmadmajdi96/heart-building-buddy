@@ -176,7 +176,7 @@ function AppLayout() {
           className={cn(
             "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-all overflow-hidden",
             active
-              ? "bg-sidebar-accent text-gold ring-1 ring-gold/35 shadow-[inset_0_1px_0_color-mix(in_oklch,var(--gold),transparent_68%)]"
+              ? "bg-gold/18 text-gold ring-1 ring-gold/40 shadow-[inset_0_1px_0_color-mix(in_oklch,var(--gold),transparent_64%)]"
               : "text-sidebar-foreground/75 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground",
             navCollapsed && "justify-center px-2",
           )}
@@ -186,9 +186,9 @@ function AppLayout() {
             <span
               aria-hidden
               className={cn(
-                "pointer-events-none absolute inset-y-0 grid w-20 place-items-center text-gold/30",
+                "pointer-events-none absolute inset-y-0 grid w-20 place-items-center text-gold/45",
                 isRtl ? "left-0" : "right-0",
-                navCollapsed && "inset-x-0 mx-auto w-full text-gold/25",
+                navCollapsed && "inset-x-0 mx-auto w-full text-gold/35",
               )}
             >
               <Rosette size={navCollapsed ? 42 : 54} />
@@ -235,7 +235,7 @@ function AppLayout() {
 
   function NavBody({ onNavigate }: { onNavigate?: () => void }) {
     return (
-      <nav className="flex-1 overflow-y-auto px-3 py-2 [scrollbar-width:thin]">
+      <nav className={cn("flex-1 px-3 py-2 [scrollbar-width:thin]", navCollapsed ? "overflow-visible" : "overflow-y-auto")}>
         <ul className="space-y-0.5">
           {visibleSolo.map((i) => <li key={i.to}><ItemLink item={i} onClick={onNavigate} /></li>)}
         </ul>
@@ -319,12 +319,7 @@ function AppLayout() {
 
           {/* Footer: settings */}
           <div className="relative border-t border-sidebar-border/70 p-3">
-            <Link
-              to="/app/settings"
-              className="block"
-            >
-              <ItemLink item={{ to: "/app/settings", key: "m_settings", icon: Settings }} />
-            </Link>
+            <ItemLink item={{ to: "/app/settings", key: "m_settings", icon: Settings }} />
           </div>
         </aside>
 
