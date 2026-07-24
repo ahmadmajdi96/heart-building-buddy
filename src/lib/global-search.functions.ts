@@ -54,7 +54,7 @@ export const globalSearch = createServerFn({ method: "POST" })
         id: i.id, type: "invoice",
         title: i.number || "Invoice",
         subtitle: [i.status, i.total != null ? `${i.total}` : null].filter(Boolean).join(" · "),
-        href: `/app/invoices`,
+        href: `/app/financials`,
       });
     }
     for (const d of documents.data ?? []) {
