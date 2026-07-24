@@ -12,6 +12,17 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/messages")({ component: MessagesPage });
 
+/** Strip raw Twilio JSON blobs from the UI — leave only a human sentence. */
+function humanizeErrorMessage(raw: string | null | undefined): string {
+  if (!raw) return "";
+  const s = String(raw).trim();
+  if (s.startsWith("{")) {
+    try { const j = JSON.parse(s); return String(j.message ?? j.error ?? "SMS delivery failed."); } catch { return "SMS delivery failed."; }
+  }
+  return s;
+}
+
+
 const STATUS_TONE: Record<string, string> = {
   delivered: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
   sent: "bg-sky-500/15 text-sky-600 border-sky-500/30",
