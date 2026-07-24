@@ -206,7 +206,7 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 55% 45% at 82% 12%, color-mix(in oklch, var(--gold), transparent 55%), transparent 70%), radial-gradient(ellipse 60% 55% at 5% 95%, color-mix(in oklch, var(--primary), transparent 40%), transparent 65%), linear-gradient(180deg, oklch(0.20 0.06 200) 0%, oklch(0.14 0.05 200) 70%, oklch(0.11 0.04 200) 100%)",
+            "radial-gradient(ellipse 55% 45% at 82% 12%, color-mix(in oklch, var(--gold), transparent 55%), transparent 70%), radial-gradient(ellipse 60% 55% at 5% 95%, color-mix(in oklch, var(--primary), transparent 40%), transparent 65%), linear-gradient(180deg, oklch(0.20 0.07 258) 0%, oklch(0.14 0.05 258) 70%, oklch(0.11 0.04 258) 100%)",
         }}
       />
       <motion.div
