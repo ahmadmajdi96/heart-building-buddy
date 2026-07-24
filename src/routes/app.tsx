@@ -238,13 +238,15 @@ function AppLayout() {
         {/* ───── Desktop sidebar (fixed, teal, gold typography) ───── */}
         <aside
           className={cn(
-            "hidden lg:flex flex-col bg-sidebar text-sidebar-foreground",
+            "hidden lg:flex flex-col text-sidebar-foreground relative",
             sideEdge,
             "border-sidebar-border/70 transition-[width] duration-300 ease-out",
             asideWidth,
             "sticky top-0 h-screen shrink-0",
           )}
+          style={{ background: "linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-deep) 100%)" }}
         >
+
           {/* Sidebar surface ornaments */}
           <div aria-hidden className="pointer-events-none absolute inset-0 arabesque-lg opacity-[0.06]" />
           <div aria-hidden className={cn("pointer-events-none absolute inset-y-0 w-24 bg-gradient-to-b from-gold/[0.08] via-transparent to-gold/[0.05]", isRtl ? "left-0" : "right-0")} />
@@ -307,8 +309,10 @@ function AppLayout() {
                 </SheetTrigger>
                 <SheetContent
                   side={isRtl ? "right" : "left"}
-                  className="w-[280px] border-sidebar-border/70 bg-sidebar p-0 text-sidebar-foreground"
+                  className="w-[280px] border-sidebar-border/70 p-0 text-sidebar-foreground"
+                  style={{ background: "linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-deep) 100%)" }}
                 >
+
                   <div aria-hidden className="pointer-events-none absolute inset-0 arabesque-lg opacity-[0.06]" />
                   <SheetHeader className="relative border-b border-sidebar-border/70 p-4">
                     <SheetTitle><BrandMark tone="dark" /></SheetTitle>
