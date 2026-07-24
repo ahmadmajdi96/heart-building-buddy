@@ -396,7 +396,7 @@ function TrustStrip() {
     ar(locale, "التزام بقانون حماية البيانات ٢٤ / ٢٠٢٣", "Committed to PDPL No. 24/2023"),
   ];
   return (
-    <section className="border-b border-border bg-pearl/40 py-8">
+    <section className="border-b border-border bg-background py-8">
       <div className="container mx-auto grid max-w-7xl grid-cols-2 gap-4 px-4 text-center sm:px-6 md:grid-cols-4">
         {items.map((t) => (
           <div key={t} className="flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.22em] text-foreground/60 sm:text-[12px]">
@@ -492,7 +492,7 @@ function Workflow() {
     { t: ar(locale, "عقد", "Contract"), d: ar(locale, "من نماذج المكتب وبنوده", "From your firm's templates and clauses") },
   ];
   return (
-    <Section id="workflow" className="bg-pearl/40">
+    <Section id="workflow" className="bg-background">
       <div className="mx-auto max-w-3xl text-center">
         <Eyebrow>{ar(locale, "سير العمل", "How it works")}</Eyebrow>
         <h2 className="mt-5 font-serif text-3xl leading-[1.05] tracking-[-0.02em] md:text-[2.5rem]">
@@ -523,9 +523,11 @@ function Workflow() {
             ))}
           </ul>
         </div>
-        <div className="rounded-2xl border border-gold/40 bg-onyx p-8 text-pearl">
+        <div className="relative isolate overflow-hidden rounded-2xl border border-gold/40 bg-onyx p-8 text-pearl">
+          <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 arabesque opacity-40" />
           <div className="text-[10px] uppercase tracking-[0.32em] text-gold">{ar(locale, "المخرجات", "Outputs")}</div>
           <ul className="mt-6 space-y-4">
+
             {outputs.map((r) => (
               <li key={r.t} className="flex gap-4">
                 <SealFrame tone="gold"><IconScroll size={16} /></SealFrame>
@@ -778,7 +780,7 @@ function AiSection() {
 function Honesty() {
   const { locale } = useI18n();
   return (
-    <Section id="honesty" className="bg-pearl/40">
+    <Section id="honesty" className="bg-background">
       <div className="mx-auto max-w-3xl text-center">
         <Eyebrow>{ar(locale, "الصراحة", "Honesty")}</Eyebrow>
         <h2 className="mt-5 font-serif text-3xl leading-[1.05] tracking-[-0.02em] md:text-[2.5rem]">
@@ -840,7 +842,7 @@ function WhoFor() {
     { t: ar(locale, "المكاتب النامية", "Growing firms"), d: ar(locale, "رؤية كاملة، أدوار وصلاحيات، وجاهزية للتوسع.", "Full visibility, roles and permissions, ready to scale.") },
   ];
   return (
-    <Section id="who" className="bg-pearl/40">
+    <Section id="who" className="bg-background">
       <div className="mx-auto max-w-3xl text-center">
         <Eyebrow>{ar(locale, "لمن هو محكم", "Who it's for")}</Eyebrow>
       </div>
@@ -913,13 +915,19 @@ function Pricing() {
         {plans.map((p) => (
           <div
             key={p.name}
-            className={`relative flex flex-col rounded-2xl border p-7 ${p.recommended ? "border-gold/60 bg-onyx text-pearl shadow-[0_20px_50px_-20px_color-mix(in_oklch,var(--gold),transparent_50%)]" : "border-border bg-card"}`}
+            className={`relative isolate flex flex-col rounded-2xl border p-7 ${p.recommended ? "border-gold/60 bg-onyx text-pearl shadow-[0_20px_50px_-20px_color-mix(in_oklch,var(--gold),transparent_50%)]" : "border-border bg-card"}`}
           >
             {p.recommended && (
-              <div className="absolute -top-3 start-6 rounded-full bg-gold px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-gold-foreground">
-                {ar(locale, "موصى به", "Recommended")}
-              </div>
+              <>
+                <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-2xl">
+                  <div className="absolute inset-0 arabesque opacity-40" />
+                </div>
+                <div className="absolute -top-3 start-6 rounded-full bg-gold px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-gold-foreground">
+                  {ar(locale, "موصى به", "Recommended")}
+                </div>
+              </>
             )}
+
             <div className="font-serif text-2xl">{p.name}</div>
             <div className={`mt-1 text-[13px] ${p.recommended ? "text-pearl/60" : "text-foreground/55"}`}>{p.audience}</div>
             <ul className={`mt-6 space-y-2 text-[14.5px] ${p.recommended ? "text-pearl/85" : "text-foreground/75"}`}>
@@ -966,7 +974,7 @@ function Beta() {
     }, 500);
   }
   return (
-    <Section id="beta" className="bg-pearl/40">
+    <Section id="beta" className="bg-background">
       <div className="grid gap-12 lg:grid-cols-12">
         <div className="lg:col-span-5">
           <Eyebrow>{ar(locale, "البيتا الخاصة", "Private beta")}</Eyebrow>

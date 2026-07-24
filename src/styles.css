@@ -60,12 +60,13 @@
   --radius: 0.625rem;
 
   /* Warm parchment canvas — "Living Manuscript" */
-  --background: oklch(0.965 0.020 82);
+  --background: #fefaf1;
+
 
   /* Foreground shifted to deep navy (login-screen hue 258) */
   --foreground: oklch(0.18 0.06 258);
 
-  --card: oklch(0.995 0.008 85);
+  --card: #ffffff;
   --card-foreground: oklch(0.18 0.06 258);
   --popover: oklch(0.995 0.008 85);
   --popover-foreground: oklch(0.18 0.06 258);
