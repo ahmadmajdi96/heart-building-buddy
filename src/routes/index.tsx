@@ -199,7 +199,7 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
     ar(locale, "تحصيل الديون والأقساط", "Debt & installment collections"),
   ];
   return (
-    <section className="relative isolate overflow-hidden border-b border-onyx/40 bg-onyx text-pearl">
+    <section className="relative isolate flex min-h-[calc(100svh-64px)] flex-col overflow-hidden border-b border-onyx/40 bg-onyx text-pearl sm:min-h-[calc(100svh-72px)]">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -216,7 +216,11 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
         className="arabesque absolute inset-0"
       />
 
-      <div className="container relative mx-auto max-w-7xl px-4 pb-20 pt-14 sm:px-6 sm:pb-28 sm:pt-20 lg:pb-32 lg:pt-24">
+      <div className="relative z-10">
+        <AnnouncementBar />
+      </div>
+
+      <div className="container relative mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-4 pb-16 pt-12 sm:px-6 sm:pb-20 sm:pt-16 lg:pb-24 lg:pt-20">
         <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-10">
           {/* Editorial headline column */}
           <div className="relative lg:col-span-7">
