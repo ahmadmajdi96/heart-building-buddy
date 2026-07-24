@@ -76,7 +76,7 @@ function Rosette({ className, size = 10 }: { className?: string; size?: number }
 }
 
 function AppLayout() {
-  const { t, dir } = useI18n();
+  const { t, dir, locale } = useI18n();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { org, loading: orgLoading, can } = useOrg();
