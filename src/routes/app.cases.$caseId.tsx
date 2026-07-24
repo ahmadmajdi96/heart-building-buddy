@@ -314,7 +314,7 @@ function InvoicesTab({ data, onChange }: { data: NonNullable<Awaited<ReturnType<
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
-          {ar ? "المسودات تُقبل من صفحة الماليات لتصبح فواتير ضريبية." : "Drafts are accepted from Financials to become tax invoices."}
+          {ar ? "المسودات تُقبل من صفحة الماليات لتصبح سجلات فوترة." : "Drafts are accepted from Financials to become billing records."}
         </p>
         <Button size="sm" variant="gold" className="gap-1.5" onClick={() => setOpen(true)}>
           <Plus className="size-4" />{ar ? "مسودة فاتورة" : "New draft invoice"}

@@ -44,7 +44,7 @@ export async function extractTextFromFile(file: File): Promise<string> {
 
 // Documents module rules
 export const ALLOWED_DOC_EXT = ["pdf", "doc", "docx", "csv", "jpg", "jpeg"] as const;
-export const MAX_DOC_BYTES = 200 * 1024 * 1024; // 4 MB
+export const MAX_DOC_BYTES = 200 * 1024 * 1024; // 200 MB
 
 export function validateDocFile(file: File): { ok: true } | { ok: false; reason: string } {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";

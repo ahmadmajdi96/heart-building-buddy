@@ -500,7 +500,7 @@ function TimePage() {
           <DialogHeader><DialogTitle>{ar ? "إنشاء مسودة فاتورة" : "Create draft invoice"}</DialogTitle></DialogHeader>
           <div className="grid gap-4">
             <div className="rounded-md border bg-secondary/40 p-3 text-sm">
-              {ar ? `سيتم تضمين ${selected.size} سجل. ستذهب إلى تبويب "الفواتير" وتصبح فاتورة ضريبية بعد قبولها.` : `${selected.size} entries will be included. Sent to the Invoices tab — accept it to become a tax invoice.`}
+              {ar ? `سيتم تضمين ${selected.size} سجل. ستذهب إلى تبويب "الفواتير" وتصبح سجل فوترة بعد قبولها.` : `${selected.size} entries will be included. Sent to the Invoices tab — accept it to become a billing record.`}
             </div>
             <div className="space-y-1.5"><Label>{ar ? "اسم العميل *" : "Client name *"}</Label>
               <Input value={invoiceForm.client_name} onChange={(e) => setInvoiceForm({ ...invoiceForm, client_name: e.target.value })} />

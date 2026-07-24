@@ -73,7 +73,7 @@ const dict = {
   m_research_desc: { ar: "بحث في التشريعات والاجتهاد القضائي مدعوم بالذكاء الاصطناعي.", en: "AI-powered search across legislation and case law." },
   m_drafting_desc: { ar: "صياغة العقود والمذكرات بقوالب ذكية وتدقيق فوري.", en: "Draft contracts and briefs with smart templates and review." },
   m_calendar_desc: { ar: "إدارة الجلسات، المواعيد النهائية، والتذكيرات.", en: "Hearings, deadlines and statute-of-limitation reminders." },
-  m_financials_desc: { ar: "المدفوعات والجدولة، عروض الأسعار والفواتير الضريبية.", en: "Payments, schedules, quotes and tax invoices." },
+  m_financials_desc: { ar: "المدفوعات والجدولة، عروض الأسعار وسجلات الفوترة.", en: "Payments, schedules, quotes and billing records." },
   m_education_desc: { ar: "دورات قانونية معتمدة وشهادات للمحامين والطلاب.", en: "Accredited legal courses and certifications." },
   m_analytics_desc: { ar: "مؤشرات الأداء الرئيسية للمكتب والشركاء.", en: "KPIs for the firm, partners and practice areas." },
   m_clients_desc: { ar: "إدارة العلاقات والاتصالات مع الموكلين.", en: "Manage client relationships and communications." },

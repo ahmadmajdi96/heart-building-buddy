@@ -64,7 +64,7 @@ export function DocumentPreview({ kind, doc, onClose }: { kind: "quote" | "invoi
           <div className="my-6 flex items-center justify-between">
             <div>
               <div className="text-xs uppercase tracking-[0.28em] text-gold">
-                {kind === "quote" ? L("عرض سعر","Quote") : L("فاتورة ضريبية","Tax Invoice")}
+                {kind === "quote" ? L("عرض سعر","Quote") : L("سجل فوترة","Billing Record")}
               </div>
               <div className="mt-1 font-serif text-2xl">{doc.number}</div>
             </div>

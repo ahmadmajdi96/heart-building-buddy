@@ -326,7 +326,7 @@ function InvoicesPanel({ drafts, taxInvoices, reload, ar }: {
     setBusy(true);
     try {
       await acceptFn({ data: { id: pendingAccept.id, due_date: acceptDueDate || null } });
-      toast.success(ar ? "تم تحويلها إلى فاتورة ضريبية" : "Converted to tax invoice");
+      toast.success(ar ? "تم تحويلها إلى سجل فوترة" : "Converted to billing record");
       setPendingAccept(null); reload();
     } catch (e) { toast.error((e as Error).message); }
     finally { setBusy(false); }
@@ -374,7 +374,7 @@ function InvoicesPanel({ drafts, taxInvoices, reload, ar }: {
           <div className="border-b p-3">
             <TabsList className="bg-secondary/60">
               <TabsTrigger value="drafts">{ar ? "المسودات" : "Drafts"} <span className="ms-1.5 text-xs text-muted-foreground">({drafts.length})</span></TabsTrigger>
-              <TabsTrigger value="tax">{ar ? "الفواتير الضريبية" : "Tax invoices"} <span className="ms-1.5 text-xs text-muted-foreground">({taxInvoices.length})</span></TabsTrigger>
+              <TabsTrigger value="tax">{ar ? "سجلات الفوترة" : "Billing records"} <span className="ms-1.5 text-xs text-muted-foreground">({taxInvoices.length})</span></TabsTrigger>
             </TabsList>
           </div>
 
@@ -439,7 +439,7 @@ function InvoicesPanel({ drafts, taxInvoices, reload, ar }: {
       <Dialog open={!!pendingAccept} onOpenChange={(o) => { if (!o) setPendingAccept(null); }}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{ar ? "قبول المسودة وتحويلها إلى فاتورة ضريبية" : "Accept draft & convert to tax invoice"}</DialogTitle>
+            <DialogTitle>{ar ? "قبول المسودة وتحويلها إلى سجل فوترة" : "Accept draft & convert to billing record"}</DialogTitle>
           </DialogHeader>
           {pendingAccept && (
             <div className="max-h-[70vh] space-y-4 overflow-y-auto pr-1">
