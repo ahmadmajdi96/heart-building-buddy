@@ -187,6 +187,85 @@ export function SealFrame({
 }
 
 /* ------------------------------------------------------------------ */
+/*  ManuscriptFrame — illuminated-border container for section cards   */
+/* ------------------------------------------------------------------ */
+
+function ManuscriptCorner({ pos }: { pos: "tl" | "tr" | "bl" | "br" }) {
+  const rot = pos === "tl" ? 0 : pos === "tr" ? 90 : pos === "br" ? 180 : 270;
+  const place = {
+    tl: "top-0 left-0",
+    tr: "top-0 right-0",
+    bl: "bottom-0 left-0",
+    br: "bottom-0 right-0",
+  }[pos];
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 96 96"
+      className={cn("pointer-events-none absolute h-20 w-20 md:h-24 md:w-24", place)}
+      style={{ transform: `rotate(${rot}deg)`, transformOrigin: "center" }}
+    >
+      {/* gold filigree — arabesque tendrils on both edges */}
+      <g fill="none" stroke="#b8860b" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 8 L92 8" opacity="0.9" />
+        <path d="M8 8 L8 92" opacity="0.9" />
+        <path d="M12 12 L72 12" opacity="0.45" />
+        <path d="M12 12 L12 72" opacity="0.45" />
+        <path d="M8 26 Q26 26 26 8" />
+        <path d="M8 40 Q40 40 40 8" opacity="0.7" />
+        <path d="M8 56 Q56 56 56 8" opacity="0.35" />
+        <path d="M18 18 q8 -2 12 3 q5 5 3 12" />
+        <path d="M30 30 q6 5 14 3" opacity="0.7" />
+        <path d="M30 30 q5 6 3 14" opacity="0.7" />
+      </g>
+      {/* champagne petals */}
+      <g fill="#c9962a" opacity="0.85">
+        <path d="M46 6 q4 5 0 10 q-4 -5 0 -10 Z" />
+        <path d="M6 46 q5 4 10 0 q-5 -4 -10 0 Z" />
+        <path d="M62 8 q3 4 0 8 q-3 -4 0 -8 Z" opacity="0.65" />
+        <path d="M8 62 q4 3 8 0 q-4 -3 -8 0 Z" opacity="0.65" />
+      </g>
+      {/* indigo diamond bosses with gilded pinpoints */}
+      <g>
+        <path d="M18 18 l5 -5 l5 5 l-5 5 z" fill="#1e3a8f" />
+        <path d="M18 18 l2 -2 l2 2 l-2 2 z" fill="#f5d16a" />
+        <path d="M34 8 l3.5 -3.5 l3.5 3.5 l-3.5 3.5 z" fill="#1e3a8f" opacity="0.9" />
+        <path d="M8 34 l3.5 -3.5 l3.5 3.5 l-3.5 3.5 z" fill="#1e3a8f" opacity="0.9" />
+        <path d="M52 8 l2.5 -2.5 l2.5 2.5 l-2.5 2.5 z" fill="#1e3a8f" opacity="0.7" />
+        <path d="M8 52 l2.5 -2.5 l2.5 2.5 l-2.5 2.5 z" fill="#1e3a8f" opacity="0.7" />
+        <circle cx="70" cy="8" r="0.9" fill="#1e3a8f" opacity="0.55" />
+        <circle cx="8" cy="70" r="0.9" fill="#1e3a8f" opacity="0.55" />
+      </g>
+    </svg>
+  );
+}
+
+export function ManuscriptFrame({
+  children,
+  className,
+  padding = "p-8 md:p-10",
+}: { children: ReactNode; className?: string; padding?: string }) {
+  return (
+    <div className={cn("relative rounded-2xl bg-card shadow-[0_1px_2px_rgb(0_0_0/0.04)]", padding, className)}>
+      {/* Inset double gold rule that hugs the illuminated corners */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-3 rounded-lg"
+        style={{
+          boxShadow:
+            "inset 0 0 0 1px color-mix(in oklch, #b8860b, transparent 55%), inset 0 0 0 3px var(--card), inset 0 0 0 4px color-mix(in oklch, #b8860b, transparent 78%)",
+        }}
+      />
+      <ManuscriptCorner pos="tl" />
+      <ManuscriptCorner pos="tr" />
+      <ManuscriptCorner pos="bl" />
+      <ManuscriptCorner pos="br" />
+      <div className="relative">{children}</div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Count-up hook — respects prefers-reduced-motion                    */
 /* ------------------------------------------------------------------ */
 

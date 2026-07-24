@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useI18n } from "@/lib/i18n";
-import { PageHeader, StatTile } from "@/components/app/primitives";
+import { PageHeader, StatTile, ManuscriptFrame } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
 import { getAnalytics, generateAnalyticsInsights } from "@/lib/analytics.functions";
 import { useOrg } from "@/lib/org-context";
@@ -69,7 +69,7 @@ function AnalyticsPage() {
 
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="card-elev rounded-xl border bg-card p-6">
+        <ManuscriptFrame>
           <div className="mb-4 text-sm font-semibold">{locale === "ar" ? "النشاط الشهري" : "Monthly activity"}</div>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -85,9 +85,9 @@ function AnalyticsPage() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </ManuscriptFrame>
 
-        <div className="card-elev rounded-xl border bg-card p-6">
+        <ManuscriptFrame>
           <div className="mb-4 text-sm font-semibold">{locale === "ar" ? "توزيع حالات القضايا" : "Case status distribution"}</div>
           <div className="h-72">
             {statusData.length === 0 ? <div className="grid h-full place-items-center text-sm text-muted-foreground">{locale === "ar" ? "لا توجد قضايا بعد" : "No cases yet"}</div> :
@@ -101,9 +101,9 @@ function AnalyticsPage() {
               </PieChart>
             </ResponsiveContainer>}
           </div>
-        </div>
+        </ManuscriptFrame>
 
-        <div className="card-elev rounded-xl border bg-card p-6 lg:col-span-2">
+        <ManuscriptFrame className="lg:col-span-2">
           <div className="mb-4 text-sm font-semibold">{locale === "ar" ? "اتجاه المستندات" : "Documents trend"}</div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -116,17 +116,17 @@ function AnalyticsPage() {
               </LineChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </ManuscriptFrame>
       </div>
 
-      <div className="card-elev rounded-xl border bg-card p-6">
+      <ManuscriptFrame>
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gold">
           <Sparkles className="size-4" /> {locale === "ar" ? "رؤى الذكاء الاصطناعي" : "AI insights"}
         </div>
         {insightsLoading ? <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Analyzing your data…</div>
         : insights ? <MarkdownView text={insights} />
         : <p className="text-sm text-muted-foreground">{locale === "ar" ? "اضغط زر «رؤى الذكاء الاصطناعي» لتوليد توصيات بناءً على بياناتك." : "Click \"AI insights\" to generate recommendations from your real data."}</p>}
-      </div>
+      </ManuscriptFrame>
     </div>
   );
 }
