@@ -76,11 +76,9 @@ function Rosette({ className, size = 10 }: { className?: string; size?: number }
   );
 }
 
-const PAGE_BG = ["#fefaf1", "#f1fef3", "#f1f5fe", "#fef1fb"];
-function bgForPath(pathname: string) {
-  let h = 0;
-  for (let i = 0; i < pathname.length; i++) h = (h * 31 + pathname.charCodeAt(i)) >>> 0;
-  return PAGE_BG[h % PAGE_BG.length];
+const PAGE_BG = "#fefaf1";
+function bgForPath(_pathname: string) {
+  return PAGE_BG;
 }
 
 function LiveClock({ locale }: { locale: "en" | "ar" }) {
@@ -93,9 +91,10 @@ function LiveClock({ locale }: { locale: "en" | "ar" }) {
   const time = now.toLocaleTimeString(bcp, { hour: "2-digit", minute: "2-digit" });
   const date = now.toLocaleDateString(bcp, { weekday: "short", day: "2-digit", month: "short" });
   return (
-    <div className="hidden md:flex flex-col items-end leading-tight rounded-full border border-border/70 bg-white px-3 py-1 shadow-sm">
+    <div className="hidden md:inline-flex items-center gap-2 rounded-full border border-border/70 bg-white px-3 py-1 shadow-sm leading-none">
       <span className="text-[13px] font-semibold tabular-nums text-foreground">{time}</span>
-      <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{date}</span>
+      <span className="h-3 w-px bg-border/70" aria-hidden />
+      <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{date}</span>
     </div>
   );
 }
@@ -337,7 +336,7 @@ function AppLayout() {
         {/* ───── Main column ───── */}
         <div className="relative flex min-w-0 flex-1 flex-col" style={{ backgroundColor: bgForPath(pathname) }}>
           {/* Top control strip — thin, ornamental, holds mobile trigger + right controls */}
-          <header className="sticky top-0 z-30 border-b border-border/70 backdrop-blur" style={{ backgroundColor: `color-mix(in oklch, ${bgForPath(pathname)} 85%, white)` }}>
+          <header className="sticky top-0 z-30 border-b border-border/70 bg-white/95 backdrop-blur">
             <div className="flex h-14 items-center gap-2 px-4 md:px-6">
               {/* Mobile menu */}
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -373,6 +372,10 @@ function AppLayout() {
                 <BrandMark />
               </Link>
 
+              {/* Search + live clock — hug the sidebar side */}
+              <GlobalSearch lang={locale === "ar" ? "ar" : "en"} />
+              <LiveClock locale={locale === "ar" ? "ar" : "en"} />
+
               <div className="ms-auto flex items-center gap-1.5">
                 <LangToggle />
                 <NotificationBell />
@@ -403,9 +406,6 @@ function AppLayout() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <div className="mx-1 hidden md:block h-6 w-px bg-border/70" aria-hidden />
-                <GlobalSearch lang={locale === "ar" ? "ar" : "en"} />
-                <LiveClock locale={locale === "ar" ? "ar" : "en"} />
               </div>
             </div>
             {/* Gilded rule under the header */}

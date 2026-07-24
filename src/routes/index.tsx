@@ -335,12 +335,12 @@ function ClaimDocumentMock() {
   const { locale, dir } = useI18n();
   const isRtl = dir === "rtl";
   const rows = [
-    { k: ar(locale, "الأطراف", "Parties"), v: ar(locale, "المدعي · المدعى عليه", "Claimant · Respondent") },
-    { k: ar(locale, "الوقائع", "Facts"), v: ar(locale, "١. … ٢. … ٣. …", "1. … 2. … 3. …") },
-    { k: ar(locale, "التكييف القانوني", "Legal characterization"), v: ar(locale, "المواد ذات العلاقة", "Governing articles") },
-    { k: ar(locale, "موضوع الدعوى وسندها", "Subject & legal basis"), v: ar(locale, "طلب الحكم بـ…", "Prayer for relief in…") },
-    { k: ar(locale, "الطلبات", "Requests"), v: ar(locale, "أولاً · ثانياً · ثالثاً", "First · Second · Third") },
-    { k: ar(locale, "قائمة البينات", "Evidence list"), v: ar(locale, "مبرز ١ · مبرز ٢ · شهود", "Exhibit 1 · Exhibit 2 · Witnesses") },
+    { k: ar(locale, "القضايا والموكلون", "Cases & clients"), v: ar(locale, "ملف قضية واحد لكل موكل", "One case file per client") },
+    { k: ar(locale, "الجلسات والمواعيد", "Hearings & deadlines"), v: ar(locale, "تقويم وتذكيرات آلية", "Calendar with automatic reminders") },
+    { k: ar(locale, "المستندات والصياغة", "Documents & drafting"), v: ar(locale, "لوائح · عقود · مذكرات", "Pleadings · contracts · memos") },
+    { k: ar(locale, "الفوترة", "Billing"), v: ar(locale, "فاتورة ضريبية بالدينار · ١٦٪", "Tax invoice · JOD · 16% GST") },
+    { k: ar(locale, "التحصيل", "Collections"), v: ar(locale, "أقساط · تذكيرات · متابعة", "Installments · reminders · tracking") },
+    { k: ar(locale, "الأبحاث ومحاكاة المحكمة", "Research & courtroom sim"), v: ar(locale, "مبنية على القانون الأردني", "Grounded in Jordanian law") },
   ];
   return (
     <div className="relative overflow-hidden rounded-[1.5rem] border border-gold/30 bg-gradient-to-b from-white/[0.05] to-white/[0.01] p-3 shadow-2xl backdrop-blur-xl">
@@ -351,8 +351,8 @@ function ClaimDocumentMock() {
 
       <div className="rounded-[1.15rem] border border-pearl/10 bg-[color-mix(in_oklch,var(--pearl),transparent_92%)] p-6">
         <div className="flex items-center justify-between border-b border-pearl/10 pb-3 text-[10px] uppercase tracking-[0.28em] text-pearl/60">
-          <span className="text-gold">{ar(locale, "لائحة دعوى", "Statement of claim")}</span>
-          <span>{ar(locale, "محكمة بداية عمّان", "Court of First Instance · Amman")}</span>
+          <span className="text-gold">{ar(locale, "نظام محكم", "The Mohkam OS")}</span>
+          <span>{ar(locale, "مساحة عمل واحدة", "One workspace")}</span>
         </div>
 
         <ul className="mt-4 divide-y divide-pearl/10">

@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { getAnalytics, generateAnalyticsInsights } from "@/lib/analytics.functions";
 import { useOrg } from "@/lib/org-context";
 import { MarkdownView } from "@/lib/markdown";
-import { TrendingUp, Users, Briefcase, Award, Loader2, Sparkles, FileText, CalendarDays, Gavel } from "lucide-react";
+import { TrendingUp, Users, Briefcase, Award, Loader2, Sparkles, FileText, CalendarDays, Gavel, Wallet, Video, Clock } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Pie, PieChart, Cell, Legend, Line, LineChart } from "recharts";
 import { toast } from "sonner";
 
@@ -66,6 +66,9 @@ function AnalyticsPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatTile to="/app/financials" label={locale === "ar" ? "إيرادات الشهر (د.أ)" : "Revenue this month (JOD)"} value={new Intl.NumberFormat(locale === "ar" ? "ar-JO" : "en-JO").format(stats.totals.monthRevenue ?? 0)} icon={<Wallet className="size-4" />} tone="gold" />
+        <StatTile to="/app/meetings" label={locale === "ar" ? "اجتماعات مباشرة" : "Live meetings"} value={String(stats.totals.liveMeetings ?? 0)} icon={<Video className="size-4" />} />
+        <StatTile to="/app/time" label={locale === "ar" ? "ساعات مدفوعة (شهر)" : "Paid hours (month)"} value={String(stats.totals.paidHoursMonth ?? 0)} icon={<Clock className="size-4" />} tone="success" />
         <StatTile to="/app/cases" label={locale === "ar" ? "القضايا" : "Cases"} value={String(stats.totals.cases)} icon={<Briefcase className="size-4" />} tone="gold" />
         <StatTile to="/app/clients" label={locale === "ar" ? "الموكلون" : "Clients"} value={String(stats.totals.clients)} icon={<Users className="size-4" />} />
         <StatTile to="/app/analytics" label={locale === "ar" ? "نسبة الفوز" : "Win rate"} value={stats.winRate != null ? `${stats.winRate}%` : "—"} icon={<TrendingUp className="size-4" />} tone="success" />

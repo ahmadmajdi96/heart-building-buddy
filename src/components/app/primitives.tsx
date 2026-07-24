@@ -170,18 +170,18 @@ export function SealFrame({
   children, tone = "gold", className,
 }: { children: ReactNode; tone?: "gold" | "teal" | "sand"; className?: string }) {
   const tones = {
-    gold: "text-gold bg-gold/10",
-    teal: "text-primary bg-primary/10",
-    sand: "text-primary bg-champagne/40",
+    gold: "text-gold",
+    teal: "text-primary",
+    sand: "text-primary",
   } as const;
   return (
     <span className={cn("relative inline-grid size-11 place-items-center", className)}>
       <svg viewBox="0 0 40 40" className={cn("absolute inset-0 size-full", tones[tone])} aria-hidden>
-        <path d="M20 2 L36 11 V29 L20 38 L4 29 V11 Z" fill="currentColor" opacity="0.14" />
-        <path d="M20 2 L36 11 V29 L20 38 L4 29 V11 Z" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.55" />
+        <path d="M20 2 L36 11 V29 L20 38 L4 29 V11 Z" fill="currentColor" opacity="0.16" />
+        <path d="M20 2 L36 11 V29 L20 38 L4 29 V11 Z" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.6" />
         <path d="M20 8 L30 13.5 V24.5 L20 30 L10 24.5 V13.5 Z" fill="none" stroke="currentColor" strokeWidth="0.7" opacity="0.35" />
       </svg>
-      <span className={cn("relative", tones[tone].split(" ")[0])}>{children}</span>
+      <span className={cn("relative", tones[tone])}>{children}</span>
     </span>
   );
 }
