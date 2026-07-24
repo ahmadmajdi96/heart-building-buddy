@@ -2,7 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useI18n } from "@/lib/i18n";
-import { PageHeader, StatTile, ManuscriptFrame } from "@/components/app/primitives";
+import { PageHeader, StatTile } from "@/components/app/primitives";
+import { cn } from "@/lib/utils";
+
+function Panel({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn("relative rounded-2xl border border-border/60 bg-card p-6 md:p-8 shadow-[0_1px_2px_rgb(0_0_0/0.04)]", className)}>
+      {children}
+    </div>
+  );
+}
 import { Button } from "@/components/ui/button";
 import { getAnalytics, generateAnalyticsInsights } from "@/lib/analytics.functions";
 import { useOrg } from "@/lib/org-context";
