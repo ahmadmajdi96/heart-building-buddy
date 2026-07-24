@@ -13,7 +13,9 @@ export const getAnalytics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const s = context.supabase;
-    const [cases, clients, appts, docs, drafts, sims, events] = await Promise.all([
+    const now = new Date();
+    const startMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const [cases, clients, appts, docs, drafts, sims, events, paymentsMonth, meetingsRecent, timeMonth] = await Promise.all([
       s.from("cases").select("id, status, priority, opened_at, created_at"),
       s.from("clients").select("id, created_at"),
       s.from("appointments").select("id, kind, starts_at"),
@@ -21,8 +23,10 @@ export const getAnalytics = createServerFn({ method: "GET" })
       s.from("drafts").select("id, created_at"),
       s.from("courtroom_simulations").select("id, score, created_at"),
       s.from("case_events").select("id, kind, created_at"),
+      s.from("payments").select("amount, paid_at").gte("paid_at", startMonth),
+      s.from("meetings").select("id, started_at, ended_at").order("created_at", { ascending: false }).limit(100),
+      s.from("time_entries").select("duration_seconds, billable, started_at").gte("started_at", startMonth),
     ]);
-    const now = new Date();
     const sevenDays = new Date(now.getTime() + 7 * 86400_000);
     const apptsUpcoming = (appts.data ?? []).filter(
       (a) => new Date(a.starts_at) >= now && new Date(a.starts_at) <= sevenDays,
@@ -51,6 +55,14 @@ export const getAnalytics = createServerFn({ method: "GET" })
       });
     }
 
+    const monthRevenue = (paymentsMonth.data ?? []).reduce((sum, p: any) => sum + Number(p.amount || 0), 0);
+    const liveMeetings = (meetingsRecent.data ?? []).filter((m: any) => m.started_at && !m.ended_at).length;
+    const paidHoursMonth = Math.round(
+      ((timeMonth.data ?? []) as any[])
+        .filter((e) => e.billable)
+        .reduce((sum, e) => sum + Number(e.duration_seconds || 0), 0) / 3600 * 10,
+    ) / 10;
+
     return {
       totals: {
         cases: cases.data?.length ?? 0,
@@ -61,6 +73,9 @@ export const getAnalytics = createServerFn({ method: "GET" })
         simulations: sims.data?.length ?? 0,
         events: events.data?.length ?? 0,
         upcoming: apptsUpcoming.length,
+        monthRevenue,
+        liveMeetings,
+        paidHoursMonth,
       },
       winRate,
       statusCounts,
