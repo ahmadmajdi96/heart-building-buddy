@@ -341,7 +341,7 @@ function ClaimDocumentMock() {
     { k: ar(locale, "الفوترة والمالية", "Billing & finance"), v: ar(locale, "سجلات فوترة بالدينار · ١٦٪", "Billing records · JOD · 16% GST") },
     { k: ar(locale, "تحصيل الديون", "Debt collection"), v: ar(locale, "أقساط · تذكيرات · متابعة", "Installments · reminders · tracking") },
 
-    { k: ar(locale, "الأبحاث ومحاكاة المحكمة", "Research & courtroom sim"), v: ar(locale, "مبنية على القانون الأردني", "Grounded in Jordanian law") },
+    { k: ar(locale, "الصياغة والبحث القانوني", "Drafting & legal research"), v: ar(locale, "مبنية على القانون الأردني", "Grounded in Jordanian law") },
   ];
   return (
     <div className="relative overflow-hidden rounded-[1.5rem] border border-gold/30 bg-gradient-to-b from-white/[0.05] to-white/[0.01] p-3 shadow-2xl backdrop-blur-xl">
