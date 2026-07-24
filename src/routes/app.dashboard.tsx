@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useI18n } from "@/lib/i18n";
-import { PageHeader, StatTile } from "@/components/app/primitives";
+import { PageHeader, StatTile, ManuscriptFrame } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
 import { getAnalytics, generateAnalyticsInsights } from "@/lib/analytics.functions";
 import { useOrg } from "@/lib/org-context";
