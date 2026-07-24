@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { getAnalytics, generateAnalyticsInsights } from "@/lib/analytics.functions";
 import { useOrg } from "@/lib/org-context";
 import { MarkdownView } from "@/lib/markdown";
-import { TrendingUp, Users, Briefcase, Award, Loader2, Sparkles, FileText, CalendarDays, Gavel } from "lucide-react";
+import { TrendingUp, Users, Briefcase, Award, Loader2, Sparkles, FileText, CalendarDays, Gavel, Wallet, Video, Clock } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Pie, PieChart, Cell, Legend, Line, LineChart } from "recharts";
 import { toast } from "sonner";
 
