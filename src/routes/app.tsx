@@ -350,6 +350,7 @@ function AppLayout() {
               </Link>
 
               <div className="ms-auto flex items-center gap-1.5">
+                <GlobalSearch lang={locale === "ar" ? "ar" : "en"} />
                 <LangToggle />
                 <NotificationBell />
                 <DropdownMenu>
