@@ -226,20 +226,25 @@
     height: 1px;
   }
 
-  /* Subtle damask / arabesque pattern in gold */
+  /* Islamic mashrabiya lattice — 8-point rosette repeat. Replaces the
+     old plain dot pattern that never earned its name. */
   .arabesque {
-    background-image:
-      radial-gradient(circle at 1px 1px, oklch(0.80 0.16 92 / 0.10) 1px, transparent 0);
-    background-size: 28px 28px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60' fill='none' stroke='%23c9962a' stroke-width='0.6' stroke-linecap='round' stroke-linejoin='round'><g opacity='0.55'><path d='M30 4 L38 14 L52 12 L48 26 L58 30 L48 34 L52 48 L38 46 L30 56 L22 46 L8 48 L12 34 L2 30 L12 26 L8 12 L22 14 Z'/><circle cx='30' cy='30' r='10'/><path d='M30 20 L34 28 L42 30 L34 32 L30 40 L26 32 L18 30 L26 28 Z'/><path d='M20 30 A10 10 0 0 1 40 30 M20 30 A10 10 0 0 0 40 30'/></g></svg>");
+    background-size: 60px 60px;
+  }
+  .arabesque-lg {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' fill='none' stroke='%23c9962a' stroke-width='0.7' stroke-linecap='round' stroke-linejoin='round'><g opacity='0.5'><path d='M60 8 L76 28 L104 24 L96 52 L116 60 L96 68 L104 96 L76 92 L60 112 L44 92 L16 96 L24 68 L4 60 L24 52 L16 24 L44 28 Z'/><circle cx='60' cy='60' r='20'/><circle cx='60' cy='60' r='10'/><path d='M60 40 L66 56 L84 60 L66 64 L60 80 L54 64 L36 60 L54 56 Z'/><path d='M40 60 A20 20 0 0 1 80 60 M40 60 A20 20 0 0 0 80 60'/></g></svg>");
+    background-size: 120px 120px;
   }
 
   /* Diamond-grid: refined cross-hatch */
   .diamond-grid {
     background-image:
-      linear-gradient(45deg, oklch(0.18 0.014 60 / 0.04) 1px, transparent 1px),
-      linear-gradient(-45deg, oklch(0.18 0.014 60 / 0.04) 1px, transparent 1px);
+      linear-gradient(45deg, oklch(0.20 0.05 200 / 0.05) 1px, transparent 1px),
+      linear-gradient(-45deg, oklch(0.20 0.05 200 / 0.05) 1px, transparent 1px);
     background-size: 22px 22px;
   }
+
 
   .card-elev {
     box-shadow: var(--shadow-elev-1);
