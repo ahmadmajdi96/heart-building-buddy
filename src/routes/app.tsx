@@ -336,7 +336,7 @@ function AppLayout() {
         {/* ───── Main column ───── */}
         <div className="relative flex min-w-0 flex-1 flex-col" style={{ backgroundColor: bgForPath(pathname) }}>
           {/* Top control strip — thin, ornamental, holds mobile trigger + right controls */}
-          <header className="sticky top-0 z-30 border-b border-border/70 backdrop-blur" style={{ backgroundColor: `color-mix(in oklch, ${bgForPath(pathname)} 85%, white)` }}>
+          <header className="sticky top-0 z-30 border-b border-border/70 bg-white/95 backdrop-blur">
             <div className="flex h-14 items-center gap-2 px-4 md:px-6">
               {/* Mobile menu */}
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
