@@ -412,7 +412,7 @@ function AppLayout() {
             <div aria-hidden className="h-px w-full bg-gradient-to-r from-transparent via-gold/35 to-transparent" />
           </header>
 
-          <main className="relative flex-1 p-4 md:p-8">
+          <main className="relative flex-1 p-4 md:p-8 transition-colors" style={{ backgroundColor: bgForPath(pathname) }}>
             <div className="mx-auto max-w-[1500px]">
               <Outlet />
             </div>
