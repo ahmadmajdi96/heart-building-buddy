@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ComponentType } from "react";
 import { useI18n, type TKey } from "@/lib/i18n";
 import { BrandMark } from "@/components/brand-mark";
 import { LangToggle } from "@/components/lang-toggle";
+import { GlobalSearch } from "@/components/app/global-search";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
