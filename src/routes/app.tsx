@@ -76,6 +76,30 @@ function Rosette({ className, size = 10 }: { className?: string; size?: number }
   );
 }
 
+const PAGE_BG = ["#fefaf1", "#f1fef3", "#f1f5fe", "#fef1fb"];
+function bgForPath(pathname: string) {
+  let h = 0;
+  for (let i = 0; i < pathname.length; i++) h = (h * 31 + pathname.charCodeAt(i)) >>> 0;
+  return PAGE_BG[h % PAGE_BG.length];
+}
+
+function LiveClock({ locale }: { locale: "en" | "ar" }) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const bcp = locale === "ar" ? "ar-JO" : "en-GB";
+  const time = now.toLocaleTimeString(bcp, { hour: "2-digit", minute: "2-digit" });
+  const date = now.toLocaleDateString(bcp, { weekday: "short", day: "2-digit", month: "short" });
+  return (
+    <div className="hidden md:flex flex-col items-end leading-tight rounded-full border border-border/70 bg-white px-3 py-1 shadow-sm">
+      <span className="text-[13px] font-semibold tabular-nums text-foreground">{time}</span>
+      <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{date}</span>
+    </div>
+  );
+}
+
 function AppLayout() {
   const { t, dir, locale } = useI18n();
   const { pathname } = useLocation();
