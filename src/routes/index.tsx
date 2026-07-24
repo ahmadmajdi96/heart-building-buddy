@@ -523,9 +523,11 @@ function Workflow() {
             ))}
           </ul>
         </div>
-        <div className="rounded-2xl border border-gold/40 bg-onyx p-8 text-pearl">
+        <div className="relative isolate overflow-hidden rounded-2xl border border-gold/40 bg-onyx p-8 text-pearl">
+          <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 arabesque opacity-40" />
           <div className="text-[10px] uppercase tracking-[0.32em] text-gold">{ar(locale, "المخرجات", "Outputs")}</div>
           <ul className="mt-6 space-y-4">
+
             {outputs.map((r) => (
               <li key={r.t} className="flex gap-4">
                 <SealFrame tone="gold"><IconScroll size={16} /></SealFrame>
