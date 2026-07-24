@@ -372,6 +372,10 @@ function AppLayout() {
                 <BrandMark />
               </Link>
 
+              {/* Search + live clock — hug the sidebar side */}
+              <GlobalSearch lang={locale === "ar" ? "ar" : "en"} />
+              <LiveClock locale={locale === "ar" ? "ar" : "en"} />
+
               <div className="ms-auto flex items-center gap-1.5">
                 <LangToggle />
                 <NotificationBell />
@@ -402,9 +406,6 @@ function AppLayout() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <div className="mx-1 hidden md:block h-6 w-px bg-border/70" aria-hidden />
-                <GlobalSearch lang={locale === "ar" ? "ar" : "en"} />
-                <LiveClock locale={locale === "ar" ? "ar" : "en"} />
               </div>
             </div>
             {/* Gilded rule under the header */}
