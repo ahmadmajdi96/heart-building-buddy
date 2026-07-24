@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/brand-mark";
 import { LangToggle } from "@/components/lang-toggle";
 import { motion } from "@/components/motion-lite";
+import { CornerFlourish, OrnamentalRule, LatticeDivider, SealFrame, IconScales, IconSeal, IconLattice, IconScroll, IconGavel, IconCrescent } from "@/components/app/primitives";
+
 import logoSrc from "@/assets/mohkam-logo.jpeg";
 import {
   ArrowLeft,
