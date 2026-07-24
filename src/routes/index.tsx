@@ -915,13 +915,19 @@ function Pricing() {
         {plans.map((p) => (
           <div
             key={p.name}
-            className={`relative flex flex-col rounded-2xl border p-7 ${p.recommended ? "border-gold/60 bg-onyx text-pearl shadow-[0_20px_50px_-20px_color-mix(in_oklch,var(--gold),transparent_50%)]" : "border-border bg-card"}`}
+            className={`relative isolate flex flex-col rounded-2xl border p-7 ${p.recommended ? "border-gold/60 bg-onyx text-pearl shadow-[0_20px_50px_-20px_color-mix(in_oklch,var(--gold),transparent_50%)]" : "border-border bg-card"}`}
           >
             {p.recommended && (
-              <div className="absolute -top-3 start-6 rounded-full bg-gold px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-gold-foreground">
-                {ar(locale, "موصى به", "Recommended")}
-              </div>
+              <>
+                <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-2xl">
+                  <div className="absolute inset-0 arabesque opacity-40" />
+                </div>
+                <div className="absolute -top-3 start-6 rounded-full bg-gold px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-gold-foreground">
+                  {ar(locale, "موصى به", "Recommended")}
+                </div>
+              </>
             )}
+
             <div className="font-serif text-2xl">{p.name}</div>
             <div className={`mt-1 text-[13px] ${p.recommended ? "text-pearl/60" : "text-foreground/55"}`}>{p.audience}</div>
             <ul className={`mt-6 space-y-2 text-[14.5px] ${p.recommended ? "text-pearl/85" : "text-foreground/75"}`}>
