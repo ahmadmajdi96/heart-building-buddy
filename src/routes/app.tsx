@@ -181,19 +181,8 @@ function AppLayout() {
             navCollapsed && "justify-center px-2",
           )}
         >
-          {/* Visible manuscript rosette watermark on the active nav section */}
-          {active && (
-            <span
-              aria-hidden
-              className={cn(
-                "pointer-events-none absolute inset-y-0 grid w-20 place-items-center text-gold/45",
-                isRtl ? "left-0" : "right-0",
-                navCollapsed && "inset-x-0 mx-auto w-full text-gold/35",
-              )}
-            >
-              <Rosette size={navCollapsed ? 42 : 54} />
-            </span>
-          )}
+
+
           <span
             className={cn(
               "pointer-events-none absolute top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full bg-gold transition-opacity",
@@ -255,13 +244,9 @@ function AppLayout() {
 
   return (
     <div className="relative min-h-screen bg-background text-foreground">
-      {/* Global ivory canvas with a very faint mashrabiya watermark */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 arabesque-lg opacity-[0.05]"
-      />
 
       <div className="relative flex min-h-screen">
+
         {/* ───── Desktop sidebar (fixed, teal, gold typography) ───── */}
         <aside
           onMouseEnter={startHoverExpand}
@@ -277,7 +262,8 @@ function AppLayout() {
         >
 
           {/* Sidebar surface ornaments */}
-          <div aria-hidden className="pointer-events-none absolute inset-0 arabesque-lg opacity-[0.06]" />
+          <div aria-hidden className="pointer-events-none absolute inset-0 arabesque-lg opacity-[0.18]" />
+
           <div aria-hidden className={cn("pointer-events-none absolute inset-y-0 w-24 bg-gradient-to-b from-gold/[0.08] via-transparent to-gold/[0.05]", isRtl ? "left-0" : "right-0")} />
           <CornerFlourish className={cn("absolute top-2 text-gold/60", isRtl ? "right-2 -scale-x-100" : "left-2")} size={22} />
           <CornerFlourish className={cn("absolute bottom-2 text-gold/50", isRtl ? "right-2 -scale-100" : "left-2 -scale-y-100")} size={22} />
@@ -341,7 +327,7 @@ function AppLayout() {
                   style={{ background: "linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-deep) 100%)" }}
                 >
 
-                  <div aria-hidden className="pointer-events-none absolute inset-0 arabesque-lg opacity-[0.06]" />
+                  <div aria-hidden className="pointer-events-none absolute inset-0 arabesque-lg opacity-[0.18]" />
                   <SheetHeader className="relative border-b border-sidebar-border/70 p-4">
                     <SheetTitle><BrandMark tone="dark" /></SheetTitle>
                   </SheetHeader>
