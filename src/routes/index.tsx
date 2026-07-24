@@ -124,8 +124,9 @@ function LandingPage() {
 function AnnouncementBar() {
   const { locale } = useI18n();
   return (
-    <div className="border-b border-onyx/40 bg-onyx text-pearl">
-      <div className="container mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-2 text-center text-[11px] uppercase tracking-[0.24em] text-pearl/85 sm:text-[12px]">
+    <div className="relative overflow-hidden border-b border-onyx/40 bg-onyx text-pearl">
+      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-[0.08]" />
+      <div className="container relative mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-2 text-center text-[11px] uppercase tracking-[0.24em] text-pearl/85 sm:text-[12px]">
         <span className="inline-block size-1.5 rounded-full bg-gold" />
         {ar(
           locale,
@@ -150,17 +151,18 @@ function SiteHeader() {
     { href: "#faq", label: ar(locale, "الأسئلة", "FAQ") },
   ];
   return (
-    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-xl">
-      <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-[72px] sm:gap-6 sm:px-6">
+    <header className="sticky top-0 z-40 border-b border-gold/25 bg-onyx/95 text-pearl backdrop-blur-xl">
+      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-[0.07]" />
+      <div className="container relative mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-[72px] sm:gap-6 sm:px-6">
         <Link to="/" className="flex min-w-0 items-center">
-          <BrandMark />
+          <BrandMark tone="dark" />
         </Link>
         <nav className="hidden items-center gap-1 lg:flex">
           {nav.map((item) => (
             <a
               key={item.href}
               href={item.href}
-              className="rounded-full px-3.5 py-1.5 text-[13.5px] font-medium text-foreground/70 transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+              className="rounded-full px-3.5 py-1.5 text-[13.5px] font-medium text-pearl/75 transition-colors hover:bg-gold/15 hover:text-gold"
             >
               {item.label}
             </a>
@@ -168,7 +170,7 @@ function SiteHeader() {
         </nav>
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <LangToggle />
-          <Button asChild variant="ghost" size="sm" className="hidden text-[13px] font-medium sm:inline-flex">
+          <Button asChild variant="ghost" size="sm" className="hidden text-[13px] font-medium text-pearl/85 hover:bg-gold/15 hover:text-gold sm:inline-flex">
             <Link to="/auth">{ar(locale, "تسجيل الدخول", "Sign in")}</Link>
           </Button>
           <Button
@@ -204,7 +206,7 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 55% 45% at 82% 12%, color-mix(in oklch, var(--gold), transparent 55%), transparent 70%), radial-gradient(ellipse 60% 55% at 5% 95%, color-mix(in oklch, var(--primary), transparent 40%), transparent 65%), linear-gradient(180deg, oklch(0.20 0.06 200) 0%, oklch(0.14 0.05 200) 70%, oklch(0.11 0.04 200) 100%)",
+            "radial-gradient(ellipse 55% 45% at 82% 12%, color-mix(in oklch, var(--gold), transparent 55%), transparent 70%), radial-gradient(ellipse 60% 55% at 5% 95%, color-mix(in oklch, var(--primary), transparent 40%), transparent 65%), linear-gradient(180deg, oklch(0.20 0.07 258) 0%, oklch(0.14 0.05 258) 70%, oklch(0.11 0.04 258) 100%)",
         }}
       />
       <motion.div
@@ -701,9 +703,11 @@ function Collections() {
     ar(locale, "سجل رسائل كامل لكل قضية", "A full message log per case"),
   ];
   return (
-    <section id="collections" className="relative border-b border-onyx/40 bg-onyx text-pearl">
+    <section id="collections" className="relative overflow-hidden border-b border-onyx/40 bg-onyx text-pearl">
       <LatticeDivider className="absolute inset-x-0 -top-5 z-10" />
-      <div className="container mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
+      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque-lg opacity-[0.08]" />
+      <div className="container relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
+
         <div className="grid gap-14 lg:grid-cols-12">
           <div className="lg:col-span-5">
             <Eyebrow>{ar(locale, "التميّز", "The differentiator")}</Eyebrow>
