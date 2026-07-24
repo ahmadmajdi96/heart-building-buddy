@@ -31,7 +31,6 @@ const dict = {
   },
   hero_cta_primary: { ar: "ابدأ تجربتك", en: "Start free trial" },
   hero_cta_secondary: { ar: "شاهد العرض التوضيحي", en: "Watch product tour" },
-  hero_trust: { ar: "موثوق به من قبل المؤسسات القانونية الرائدة", en: "Trusted by leading legal institutions" },
 
   // Modules section
   modules_eyebrow: { ar: "منصة موحدة", en: "Unified platform" },

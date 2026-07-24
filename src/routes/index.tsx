@@ -338,9 +338,10 @@ function ClaimDocumentMock() {
     { k: ar(locale, "القضايا والموكلون", "Cases & clients"), v: ar(locale, "ملف قضية واحد لكل موكل", "One case file per client") },
     { k: ar(locale, "الجلسات والمواعيد", "Hearings & deadlines"), v: ar(locale, "تقويم وتذكيرات آلية", "Calendar with automatic reminders") },
     { k: ar(locale, "المستندات والصياغة", "Documents & drafting"), v: ar(locale, "لوائح · عقود · مذكرات", "Pleadings · contracts · memos") },
-    { k: ar(locale, "الفوترة", "Billing"), v: ar(locale, "فاتورة ضريبية بالدينار · ١٦٪", "Tax invoice · JOD · 16% GST") },
-    { k: ar(locale, "التحصيل", "Collections"), v: ar(locale, "أقساط · تذكيرات · متابعة", "Installments · reminders · tracking") },
-    { k: ar(locale, "الأبحاث ومحاكاة المحكمة", "Research & courtroom sim"), v: ar(locale, "مبنية على القانون الأردني", "Grounded in Jordanian law") },
+    { k: ar(locale, "الفوترة والمالية", "Billing & finance"), v: ar(locale, "سجلات فوترة بالدينار · ١٦٪", "Billing records · JOD · 16% GST") },
+    { k: ar(locale, "تحصيل الديون", "Debt collection"), v: ar(locale, "أقساط · تذكيرات · متابعة", "Installments · reminders · tracking") },
+
+    { k: ar(locale, "الصياغة والبحث القانوني", "Drafting & legal research"), v: ar(locale, "مبنية على القانون الأردني", "Grounded in Jordanian law") },
   ];
   return (
     <div className="relative overflow-hidden rounded-[1.5rem] border border-gold/30 bg-gradient-to-b from-white/[0.05] to-white/[0.01] p-3 shadow-2xl backdrop-blur-xl">
