@@ -13,8 +13,9 @@ function EducationPage() {
     <div className="space-y-6">
       <PageHeader
         title={locale === "ar" ? "الأكاديمية القانونية" : "Legal Academy"}
-        subtitle={locale === "ar" ? "دورات معتمدة وشهادات للمحامين والطلاب والقضاة." : "Accredited courses and certifications for lawyers, students and judges."}
+        subtitle={locale === "ar" ? "دورات وشهادات داخلية للفريق — قيد التطوير، غير معتمدة رسمياً." : "In-house training and certificates for the team — in development, not officially accredited."}
       />
+
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile label={locale === "ar" ? "دورات نشطة" : "Active courses"} value={String(courses.length)} icon={<GraduationCap className="size-4" />} />

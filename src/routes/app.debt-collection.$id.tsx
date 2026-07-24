@@ -468,7 +468,7 @@ function PaymentDialog({ caseId, caseData, payers, onSubmit, pending, ar }: any)
     case_id: caseId, payer_id: "", amount_received: 0, service_fee: 0, amount_forwarded: 0,
     forwarder_name: caseData.forwarder_name ?? "", method: "bank_transfer" as const,
     reference: "", paid_at: new Date().toISOString().slice(0, 10),
-    currency: caseData.currency ?? "USD", notes: "",
+    currency: caseData.currency ?? "JOD", notes: "",
   });
 
   function autoCompute(received: number) {

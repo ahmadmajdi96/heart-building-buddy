@@ -166,7 +166,7 @@ function DebtCollectionListPage() {
 
 function NewCaseDialog({ clients, onSubmit, pending, ar }: { clients: any[]; onSubmit: (v: any) => void; pending: boolean; ar: boolean }) {
   const [form, setForm] = useState({
-    title: "", description: "", debt_type: "rent" as const, total_amount: 0, currency: "USD",
+    title: "", description: "", debt_type: "rent" as const, total_amount: 0, currency: "JOD",
     client_id: "", service_fee_type: "percent" as const, service_fee_value: 10,
     due_date: "", forwarder_name: "", forwarder_contact: "", reference: "",
     recurrence: "none" as "none" | "weekly" | "monthly" | "yearly",

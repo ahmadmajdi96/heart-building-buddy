@@ -58,11 +58,11 @@ const navGroups: NavGroup[] = [
     items: [
       { to: "/app/time", key: "m_time", icon: Clock, perm: "view_cases" },
       { to: "/app/research", key: "m_research", icon: Search },
-      { to: "/app/courtroom", key: "m_courtroom", icon: Gavel },
       { to: "/app/drafting", key: "m_drafting", icon: Sparkles, perm: "edit_cases" },
       { to: "/app/live-sessions", key: "m_live_sessions", icon: Mic },
       { to: "/app/messages", key: "m_messages", icon: MessageSquare },
-      { to: "/app/education", key: "m_education", icon: GraduationCap },
+      // Courtroom Simulation and Legal Academy are hidden from the pilot navigation per the
+      // readiness spec (§5). Routes remain reachable by URL behind a future feature flag.
     ],
   },
 ];

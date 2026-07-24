@@ -27,7 +27,7 @@ const CaseInput = z.object({
   description: z.string().optional(),
   debt_type: z.enum(["rent", "loan", "service", "installment", "other"]).default("other"),
   total_amount: z.number().min(0).default(0),
-  currency: z.string().default("USD"),
+  currency: z.string().default("JOD"),
   service_fee_type: z.enum(["percent", "fixed"]).default("percent"),
   service_fee_value: z.number().min(0).default(0),
   due_date: z.string().nullable().optional(),
@@ -264,7 +264,7 @@ const PaymentInput = z.object({
   method: z.enum(["bank_transfer", "card", "cash", "cheque", "other"]).default("bank_transfer"),
   reference: z.string().optional(),
   paid_at: z.string().default(() => new Date().toISOString().slice(0, 10)),
-  currency: z.string().default("USD"),
+  currency: z.string().default("JOD"),
   notes: z.string().optional(),
 });
 

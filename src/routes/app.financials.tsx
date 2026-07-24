@@ -103,7 +103,7 @@ function FinancialsPage() {
     <div className="space-y-6">
       <PageHeader
         title={locale === "ar" ? "الماليات" : "Financials"}
-        subtitle={locale === "ar" ? "المدفوعات، الجدولة، عروض الأسعار، والفواتير الضريبية." : "Payments, schedules, quotes, and tax invoices."}
+        subtitle={locale === "ar" ? "المدفوعات، الجدولة، عروض الأسعار، وسجلات الفوترة." : "Payments, schedules, quotes, and billing records."}
       />
       <Tabs value={search.tab} onValueChange={(v) => navigate({ to: "/app/financials", search: { ...search, tab: v as any } })} className="space-y-6">
         <TabsList className="bg-secondary/60">
@@ -111,7 +111,7 @@ function FinancialsPage() {
           <TabsTrigger value="schedules">{locale === "ar" ? "الجدولة" : "Schedules"}</TabsTrigger>
           <TabsTrigger value="quotes">{locale === "ar" ? "عروض الأسعار" : "Quotes"}</TabsTrigger>
           <TabsTrigger value="drafts">{locale === "ar" ? "الفواتير" : "Invoices"}</TabsTrigger>
-          <TabsTrigger value="invoices">{locale === "ar" ? "الفواتير الضريبية" : "Tax invoices"}</TabsTrigger>
+          <TabsTrigger value="invoices">{locale === "ar" ? "سجلات الفوترة" : "Billing records"}</TabsTrigger>
           <TabsTrigger value="collections">{locale === "ar" ? "التحصيل" : "Collections"}</TabsTrigger>
         </TabsList>
         <TabsContent value="payments"><CaseFeesStrip /><PaymentsTab /></TabsContent>
@@ -1000,8 +1000,8 @@ function PaymentPlanDialog({ onSaved, onClose }: { onSaved: () => void; onClose:
         {/* Summary */}
         {total > 0 && (
           <div className="rounded-md border bg-secondary/40 p-3 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "الإجمالي" : "Total"}</span><span className="font-mono tabular-nums">{fmt(total, selectedInvoices[0]?.currency || "USD")}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "كل قسط" : "Per installment"}</span><span className="font-mono tabular-nums">{fmt(perInstallment, selectedInvoices[0]?.currency || "USD")}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "الإجمالي" : "Total"}</span><span className="font-mono tabular-nums">{fmt(total, selectedInvoices[0]?.currency || "JOD")}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{locale === "ar" ? "كل قسط" : "Per installment"}</span><span className="font-mono tabular-nums">{fmt(perInstallment, selectedInvoices[0]?.currency || "JOD")}</span></div>
           </div>
         )}
       </div>
@@ -1191,7 +1191,7 @@ function InvoicesTab() {
       <Card className="overflow-hidden">
         <div className="flex flex-wrap items-center gap-3 border-b p-4">
           <div className="text-sm font-semibold mr-auto">
-            {locale === "ar" ? "الفواتير الضريبية" : "Tax invoices"}
+            {locale === "ar" ? "سجلات الفوترة" : "Billing records"}
             <span className="ms-2 text-xs font-normal text-muted-foreground">({filtered.length}/{rows.length})</span>
             {overdueCount > 0 && (
               <button onClick={() => setStatus("overdue")} className="ms-3 inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive hover:bg-destructive/20">
@@ -1481,7 +1481,7 @@ function DraftInvoicesTab() {
     setBusyId(row.id);
     try {
       await acceptFn({ data: { id: row.id, due_date: acceptDueDate || null } });
-      toast.success(ar ? "تم قبول الفاتورة وتحويلها إلى فاتورة ضريبية" : "Accepted — moved to Tax invoices");
+      toast.success(ar ? "تم قبول الفاتورة وتحويلها إلى سجل فوترة" : "Accepted — moved to Billing records");
       setPendingAccept(null); load();
     } catch (e) { toast.error((e as Error).message); }
     finally { setBusyId(null); }
@@ -1621,7 +1621,7 @@ function DraftInvoicesTab() {
           <DialogHeader><DialogTitle>{ar ? `قبول ${selected.size} مسودة` : `Accept ${selected.size} drafts`}</DialogTitle></DialogHeader>
           <div className="space-y-3 text-sm">
             <p className="text-muted-foreground">
-              {ar ? "سيتم تحويل جميع المسودات المحددة إلى فواتير ضريبية بأرقام متسلسلة." : "All selected drafts will be converted into tax invoices with sequential numbers."}
+              {ar ? "سيتم تحويل جميع المسودات المحددة إلى سجلات فوترة بأرقام متسلسلة." : "All selected drafts will be converted into billing records with sequential numbers."}
             </p>
             <div>
               <Label>{ar ? "تاريخ استحقاق موحد (اختياري)" : "Uniform due date (optional)"}</Label>
@@ -1646,7 +1646,7 @@ function DraftInvoicesTab() {
       <Dialog open={!!pendingAccept} onOpenChange={(o) => { if (!o) setPendingAccept(null); }}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{ar ? "قبول المسودة وتحويلها إلى فاتورة ضريبية" : "Accept draft & convert to tax invoice"}</DialogTitle>
+            <DialogTitle>{ar ? "قبول المسودة وتحويلها إلى سجل فوترة" : "Accept draft & convert to billing record"}</DialogTitle>
           </DialogHeader>
           {pendingAccept && (
             <div className="max-h-[70vh] space-y-4 overflow-y-auto pr-1">
@@ -1713,7 +1713,7 @@ function DraftInvoicesTab() {
               )}
 
               <p className="text-xs text-muted-foreground">
-                {ar ? "سيتم إنشاء فاتورة ضريبية رسمية برقم متسلسل. لا يمكن التراجع." : "An official tax invoice will be created with a sequential number. This cannot be undone."}
+                {ar ? "سيتم إنشاء سجل فوترة رسمية برقم متسلسل. لا يمكن التراجع." : "An official billing record will be created with a sequential number. This cannot be undone."}
               </p>
             </div>
           )}

@@ -39,9 +39,9 @@ function DashboardPage() {
   }, []);
 
   const fmtMoney = (n: number) => {
-    const raw = (org?.currency || "USD").toUpperCase();
+    const raw = (org?.currency || "JOD").toUpperCase();
     // Common short codes we accept in org settings but Intl doesn't recognize.
-    const currency = raw === "JD" ? "JOD" : raw.length === 3 ? raw : "USD";
+    const currency = raw === "JD" ? "JOD" : raw.length === 3 ? raw : "JOD";
     try {
       return new Intl.NumberFormat(locale === "ar" ? "ar" : "en", {
         style: "currency", currency, maximumFractionDigits: 0,

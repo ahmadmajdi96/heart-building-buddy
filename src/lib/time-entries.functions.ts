@@ -12,7 +12,7 @@ const EntryInput = z.object({
   ended_at: z.string().nullable().optional(),
   duration_seconds: z.number().int().nonnegative().default(0),
   hourly_rate: z.number().nullable().optional(),
-  currency: z.string().default("USD"),
+  currency: z.string().default("JOD"),
   billable: z.boolean().default(true),
   status: z.enum(["logged", "billed"]).default("logged"),
 });
@@ -90,7 +90,7 @@ const TimerStart = z.object({
   client_id: z.string().uuid().nullable().optional(),
   description: z.string().default(""),
   hourly_rate: z.number().nullable().optional(),
-  currency: z.string().default("USD"),
+  currency: z.string().default("JOD"),
   billable: z.boolean().default(true),
 });
 

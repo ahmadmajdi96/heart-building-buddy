@@ -103,7 +103,7 @@ export const createPaymentPlan = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => PlanInput.parse(d))
   .handler(async ({ data, context }) => {
     const mem = await getCallerOrg(context);
-    const currency = mem.organizations?.currency ?? "USD";
+    const currency = mem.organizations?.currency ?? "JOD";
 
     // Fetch invoices → compute total remaining
     const { data: invs, error: iErr } = await context.supabase

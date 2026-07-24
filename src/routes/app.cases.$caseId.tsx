@@ -314,7 +314,7 @@ function InvoicesTab({ data, onChange }: { data: NonNullable<Awaited<ReturnType<
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
-          {ar ? "المسودات تُقبل من صفحة الماليات لتصبح فواتير ضريبية." : "Drafts are accepted from Financials to become tax invoices."}
+          {ar ? "المسودات تُقبل من صفحة الماليات لتصبح سجلات فوترة." : "Drafts are accepted from Financials to become billing records."}
         </p>
         <Button size="sm" variant="gold" className="gap-1.5" onClick={() => setOpen(true)}>
           <Plus className="size-4" />{ar ? "مسودة فاتورة" : "New draft invoice"}
@@ -535,7 +535,7 @@ function DocumentsTab({ caseId, docs, onChange }: { caseId: string; docs: any[];
   const [previewLoading, setPreviewLoading] = useState(false);
 
   const ALLOWED_EXT = ["pdf", "doc", "docx", "csv", "jpg", "jpeg"];
-  const MAX_BYTES = 4 * 1024 * 1024;
+  const MAX_BYTES = 200 * 1024 * 1024;
 
   const categories = [
     { v: "pleading", ar: "مذكرات", en: "Pleadings" },
@@ -555,7 +555,7 @@ function DocumentsTab({ caseId, docs, onChange }: { caseId: string; docs: any[];
       return;
     }
     if (file.size > MAX_BYTES) {
-      toast.error(locale === "ar" ? "الحد الأقصى 4 ميغابايت" : "Max size 4 MB");
+      toast.error(locale === "ar" ? "الحد الأقصى 200 ميغابايت" : "Max size 200 MB");
       return;
     }
     setUploading(true);
