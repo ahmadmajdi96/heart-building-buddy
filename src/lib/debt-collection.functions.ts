@@ -436,7 +436,7 @@ export const sendDebtSms = createServerFn({ method: "POST" })
           owner_id: context.userId, org_id: mem.org_id, debt_case_id: data.case_id,
           context: "debt_reminder", to_number: p.phone, from_number: data.from,
           body: data.message, twilio_sid: r.sid ?? null, status: r.status,
-          error_message: r.error ?? null,
+          error_message: r.error ?? null, error_code: r.errorCode ?? null,
         });
         if (r.status === "sent" || r.status === "queued") {
           await context.supabase.from("debt_case_payers")
@@ -464,7 +464,7 @@ export const sendDebtSms = createServerFn({ method: "POST" })
           owner_id: context.userId, org_id: mem.org_id, debt_case_id: data.case_id,
           context: "debt_reminder", to_number: phone, from_number: data.from,
           body: data.message, twilio_sid: r.sid ?? null, status: r.status,
-          error_message: r.error ?? null,
+          error_message: r.error ?? null, error_code: r.errorCode ?? null,
         });
         results.push({ user_id: a.user_id, ...r });
       }

@@ -137,10 +137,11 @@ function MessagesPage() {
                     <p className="mt-1 text-sm break-words">{r.body}</p>
                     {r.error_message && (
                       <p className="mt-1 text-xs text-red-600">
-                        {r.error_code ? `[${r.error_code}] ` : ""}{r.error_message}
+                        {r.error_code ? `[${r.error_code}] ` : ""}{humanizeErrorMessage(r.error_message)}
                       </p>
                     )}
-                    {r.twilio_sid && <p className="mt-1 font-mono text-[10px] text-muted-foreground">SID: {r.twilio_sid}</p>}
+                    {/* Provider SID intentionally hidden from users — visible only in server logs. */}
+
                   </div>
                   <div className="text-xs text-muted-foreground whitespace-nowrap">
                     <div>{new Date(r.sent_at).toLocaleString()}</div>
