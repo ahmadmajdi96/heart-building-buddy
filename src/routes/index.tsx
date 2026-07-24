@@ -151,17 +151,18 @@ function SiteHeader() {
     { href: "#faq", label: ar(locale, "الأسئلة", "FAQ") },
   ];
   return (
-    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-xl">
-      <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-[72px] sm:gap-6 sm:px-6">
+    <header className="sticky top-0 z-40 border-b border-gold/25 bg-onyx/95 text-pearl backdrop-blur-xl">
+      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-[0.07]" />
+      <div className="container relative mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-[72px] sm:gap-6 sm:px-6">
         <Link to="/" className="flex min-w-0 items-center">
-          <BrandMark />
+          <BrandMark tone="light" />
         </Link>
         <nav className="hidden items-center gap-1 lg:flex">
           {nav.map((item) => (
             <a
               key={item.href}
               href={item.href}
-              className="rounded-full px-3.5 py-1.5 text-[13.5px] font-medium text-foreground/70 transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+              className="rounded-full px-3.5 py-1.5 text-[13.5px] font-medium text-pearl/75 transition-colors hover:bg-gold/15 hover:text-gold"
             >
               {item.label}
             </a>
@@ -169,7 +170,7 @@ function SiteHeader() {
         </nav>
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <LangToggle />
-          <Button asChild variant="ghost" size="sm" className="hidden text-[13px] font-medium sm:inline-flex">
+          <Button asChild variant="ghost" size="sm" className="hidden text-[13px] font-medium text-pearl/85 hover:bg-gold/15 hover:text-gold sm:inline-flex">
             <Link to="/auth">{ar(locale, "تسجيل الدخول", "Sign in")}</Link>
           </Button>
           <Button
