@@ -125,7 +125,7 @@ function AnnouncementBar() {
   const { locale } = useI18n();
   return (
     <div className="relative overflow-hidden border-b border-onyx/40 bg-onyx text-pearl">
-      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-[0.08]" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-40" />
       <div className="container relative mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-2 text-center text-[11px] uppercase tracking-[0.24em] text-pearl/85 sm:text-[12px]">
         <span className="inline-block size-1.5 rounded-full bg-gold" />
         {ar(
@@ -152,7 +152,7 @@ function SiteHeader() {
   ];
   return (
     <header className="sticky top-0 z-40 border-b border-gold/25 bg-onyx/95 text-pearl backdrop-blur-xl">
-      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-[0.07]" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-40" />
       <div className="container relative mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-[72px] sm:gap-6 sm:px-6">
         <Link to="/" className="flex min-w-0 items-center">
           <BrandMark tone="dark" />
@@ -212,9 +212,9 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
       <motion.div
         aria-hidden
         initial={{ opacity: 0, scale: 1.05 }}
-        animate={{ opacity: 0.11, scale: 1 }}
+        animate={{ opacity: 0.4, scale: 1 }}
         transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
-        className="arabesque-lg absolute inset-0"
+        className="arabesque absolute inset-0"
       />
 
       <div className="container relative mx-auto max-w-7xl px-4 pb-20 pt-14 sm:px-6 sm:pb-28 sm:pt-20 lg:pb-32 lg:pt-24">
@@ -705,7 +705,7 @@ function Collections() {
   return (
     <section id="collections" className="relative overflow-hidden border-b border-onyx/40 bg-onyx text-pearl">
       <LatticeDivider className="absolute inset-x-0 -top-5 z-10" />
-      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque-lg opacity-[0.08]" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-40" />
       <div className="container relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
 
         <div className="grid gap-14 lg:grid-cols-12">
@@ -1101,7 +1101,7 @@ function FinalCTA({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
   const { locale } = useI18n();
   return (
     <section className="relative border-b border-onyx/40 bg-onyx text-pearl">
-      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque-lg opacity-[0.08]" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-40" />
       <div className="container relative mx-auto max-w-5xl px-4 py-16 text-center sm:px-6 sm:py-24">
         <OrnamentalRule className="mx-auto mb-6 w-28 text-gold" />
         <h2 className="font-serif text-3xl leading-[1.05] tracking-[-0.02em] text-pearl md:text-[2.75rem]">

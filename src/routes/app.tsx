@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ComponentType } from "react";
 import { useI18n, type TKey } from "@/lib/i18n";
 import { BrandMark } from "@/components/brand-mark";
 import { LangToggle } from "@/components/lang-toggle";
+import { GlobalSearch } from "@/components/app/global-search";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -76,7 +77,7 @@ function Rosette({ className, size = 10 }: { className?: string; size?: number }
 }
 
 function AppLayout() {
-  const { t, dir } = useI18n();
+  const { t, dir, locale } = useI18n();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { org, loading: orgLoading, can } = useOrg();
@@ -349,6 +350,7 @@ function AppLayout() {
               </Link>
 
               <div className="ms-auto flex items-center gap-1.5">
+                <GlobalSearch lang={locale === "ar" ? "ar" : "en"} />
                 <LangToggle />
                 <NotificationBell />
                 <DropdownMenu>
