@@ -62,39 +62,40 @@
   /* Warm parchment canvas — "Living Manuscript" */
   --background: oklch(0.965 0.020 82);
 
-  --foreground: oklch(0.20 0.05 200);
+  /* Foreground shifted to deep navy (login-screen hue 258) */
+  --foreground: oklch(0.18 0.06 258);
 
   --card: oklch(0.995 0.008 85);
-  --card-foreground: oklch(0.20 0.05 200);
+  --card-foreground: oklch(0.18 0.06 258);
   --popover: oklch(0.995 0.008 85);
-  --popover-foreground: oklch(0.20 0.05 200);
+  --popover-foreground: oklch(0.18 0.06 258);
 
-  /* Deep teal — primary authority (replaces navy) */
-  --primary: oklch(0.34 0.08 195);
+  /* Deep navy — primary authority (matches login hero gradient) */
+  --primary: oklch(0.28 0.09 258);
   --primary-foreground: oklch(0.985 0.012 85);
 
   --secondary: oklch(0.955 0.020 88);
-  --secondary-foreground: oklch(0.26 0.08 195);
+  --secondary-foreground: oklch(0.24 0.09 258);
 
   --muted: oklch(0.955 0.018 85);
-  --muted-foreground: oklch(0.46 0.04 195);
+  --muted-foreground: oklch(0.46 0.05 258);
 
   --accent: oklch(0.93 0.05 90);
-  --accent-foreground: oklch(0.26 0.08 195);
+  --accent-foreground: oklch(0.24 0.09 258);
 
   /* Gold — warm brass */
   --gold: oklch(0.76 0.15 78);
-  --gold-foreground: oklch(0.18 0.06 200);
+  --gold-foreground: oklch(0.16 0.07 258);
   --champagne: oklch(0.92 0.08 88);
   --sand: oklch(0.93 0.045 82);
   --pearl: oklch(0.985 0.012 85);
   --platinum: oklch(0.88 0.020 85);
-  --onyx: oklch(0.17 0.06 200);
+  --onyx: oklch(0.15 0.06 258);
 
   --success: oklch(0.60 0.13 165);
   --success-foreground: oklch(0.99 0 0);
   --warning: oklch(0.78 0.15 82);
-  --warning-foreground: oklch(0.22 0.07 200);
+  --warning-foreground: oklch(0.22 0.08 258);
   --destructive: oklch(0.57 0.22 27);
   --destructive-foreground: oklch(0.99 0 0);
 
@@ -103,18 +104,22 @@
   --ring: oklch(0.76 0.15 78);
 
   --chart-1: oklch(0.76 0.15 78);
-  --chart-2: oklch(0.34 0.08 195);
-  --chart-3: oklch(0.55 0.09 195);
+  --chart-2: oklch(0.28 0.09 258);
+  --chart-3: oklch(0.52 0.10 258);
   --chart-4: oklch(0.80 0.11 90);
-  --chart-5: oklch(0.42 0.07 195);
+  --chart-5: oklch(0.40 0.09 258);
 
-  /* Sidebar: deep teal with gold typography */
-  --sidebar: oklch(0.22 0.06 200);
+  /* Sidebar: two-tone navy matching the login hero. --sidebar is the top tone,
+     --sidebar-deep is the bottom tone, joined via linear-gradient in the layout.
+     --sidebar-accent is used for hover on inactive items. */
+  --sidebar: oklch(0.20 0.07 258);
+  --sidebar-deep: oklch(0.13 0.05 258);
   --sidebar-foreground: oklch(0.94 0.05 88);
-  --sidebar-border: oklch(0.28 0.06 200);
-  --sidebar-accent: oklch(0.27 0.06 200);
+  --sidebar-border: oklch(0.26 0.07 258);
+  --sidebar-accent: oklch(0.25 0.07 258);
   --sidebar-accent-foreground: oklch(0.98 0.05 88);
 }
+
 
 
 .dark {
