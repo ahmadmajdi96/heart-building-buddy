@@ -18,6 +18,23 @@ type Doc = {
   items?: { description?: string; quantity?: number; unit_price?: number }[];
 };
 
+/** "2026-07-24 (10 Safar 1448 AH)" — Hijri alongside Gregorian, Latin script for the PDF font. */
+function withHijri(d?: string | null): string {
+  if (!d) return "";
+  const date = new Date(d);
+  if (Number.isNaN(date.getTime())) return String(d);
+  try {
+    const h = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura-nu-latn", {
+      day: "numeric", month: "long", year: "numeric",
+    }).format(date);
+    return `${d} (${h})`;
+  } catch {
+    return String(d);
+  }
+}
+
+
+
 function money(n: number | undefined) {
   return Number(n ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
