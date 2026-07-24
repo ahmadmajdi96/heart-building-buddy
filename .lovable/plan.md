@@ -1,166 +1,101 @@
+# Coverage plan — mohkam_landing_content.md + mohkam_readiness.md
 
-# Fill the payment-system gaps — phased plan
+Two separate documents, two very different scopes. I want to confirm the plan before I start editing 30+ files.
 
-Scope is large, so I'll ship in the doc's migration order. Each phase is a self-contained batch that leaves the app in a working state. **WhatsApp is dropped everywhere — SMS only.** All reminder channels comply with Jordan TRC rules (see §J).
+## Track A — Landing page rewrite (`mohkam_landing_content.md`)
 
-Status:
-- ✅ Phase 1 — Single ledger + derived statuses (shipped)
-- ✅ Phase 2 — Currency lockdown (shipped)
-- ✅ Phase 3 — Fee installments off Debt Collection (shipped: installment plans now create invoice + payment_schedules linked by invoice_id, no debt_case)
-- ✅ Phase 4 — Expenses + pre-bill queue (shipped: expenses/prebills/prebill_lines tables, CRUD server fns, Expenses & Pre-bills tabs on case profile with approve → invoice flow)
-- ✅ Phase 5 — Jordan SMS compliance rail (shipped)
-- ⏳ Phase 6, 7, 8, 9, 10, 11 — pending
+This is a full content + IA rewrite of `src/routes/index.tsx`. Bounded, low risk, purely presentational.
 
+**Remove**
+1. "Trusted by" logo marquee (`Trust` section).
+2. Placeholder testimonial block (`Testimonial`).
+3. All Courtroom Simulation & Legal Academy mentions on marketing.
+4. "والعالم العربي" / "wider Arab world" positioning — Jordan only.
+5. "فواتير ضريبية" wording (until JoFotara live).
 
-## Phase 1 — Single ledger + derived statuses (kills the over-count bug class)
+**Change / rewrite in place**
+6. Announcement bar → new AR/EN copy.
+7. Nav → Platform · How it works · Compliance · Collections · Pricing · FAQ.
+8. Hero → new eyebrow / headline / subhead / CTAs / proof bullets; hero visual becomes an anatomized لائحة دعوى document (parties → facts → characterization → subject & basis → requests → evidence list) with a "Ready for lawyer review" seal — no dashboard mock.
+9. Six-pillar names → real modules (Case Management, Clients, Deadlines & Hearings, Billing & Finance, Debt Collection, Drafting & Legal Research).
+10. Unify CTA verb to "Request beta access / اطلب الوصول للبيتا".
+11. Hero mock numbers → realistic JOD only.
+12. Fix Privacy/Terms links → route to real `/privacy` and `/terms` pages (new stubs, PDPL-aligned copy from the spec).
+13. Unify domain/email to `mohkamlaw.com`.
 
-**Schema (one migration)**
-- New `payment_allocations` (payment_id, invoice_id?, schedule_id?, retainer_case_id?, amount, currency, created_at). One payment → many allocations.
-- `tax_invoices.status` enum gains `sent`, `viewed`, `written_off`. Keep existing values.
-- `tax_invoices.amount_paid` demoted to a **generated / view-computed** value; add trigger that recomputes from `SUM(payment_allocations.amount)` on allocation write. Status derived: paid = allocations ≥ total, partial > 0, overdue = due_date < today AND paid < total.
-- New `client_credits` (client_id, org_id, amount, currency, source_payment_id) for overpayments.
-- Backfill: existing `payments.invoice_id` → one allocation row per legacy payment.
+**Add new sections (bilingual, AR primary)**
+14. Honest trust strip (replaces fake logos).
+15. Problem section — six pains + closer.
+16. "How lawyers work" (inputs → outputs) — centerpiece.
+17. Jordan Compliance section with the JoFotara readiness wording + swap-in line.
+18. Collections spotlight.
+19. AI honest framing + oath line.
+20. Honesty block ("What we don't claim").
+21. Security summary.
+22. Who it's for.
+23. Pricing (Starter / Growth / Pro, JOD, "request" CTAs).
+24. Beta form (add practice-area field, reply-time promise, cohort scarcity).
+25. FAQ (8 items from spec).
+26. Final CTA + Footer with real disclaimer + one brand email + +962.
 
-**Server**
-- Rewrite `markInvoicePaid`, `deletePayment`, retainer sync, and `debt_collection_payments` to write allocations.
-- Remove `setInvoiceStatus` for computed states (`paid/partial/overdue`); allow only `draft/sent/void/written_off` manual transitions.
-- Overpay → automatic client-credit row + auto-apply to next invoice.
+**SEO**
+27. Rewrite `head()` meta (AR + EN title/description/keywords per §3.19).
 
-**UI**
-- Payments dialog gets a multi-invoice allocation picker.
-- Invoice detail shows allocations table.
-- Client profile shows a "Credit balance" tile.
+**New files**
+- `src/routes/privacy.tsx`, `src/routes/terms.tsx` — real PDPL-aligned stubs.
 
----
+## Track B — Pilot Readiness (`mohkam_readiness.md`)
 
-## Phase 2 — Currency lockdown + written-off status
-- `payments/tax_invoices/payment_schedules.currency` default changes from `'SAR'` to workspace currency (`organizations.currency`, JOD).
-- Insert paths take currency from org, not payload.
-- Written-off flow (already added by enum in Phase 1) exposed as a case-closure / invoice action with a required reason.
+This one is much bigger and mixes copy, config, product, infra. I'll split by feasibility inside this repo.
 
----
+### B1. Ships now (config + UI, all inside the app)
+- **Currency/tax/phone/timezone defaults** — JOD, 16%, +962, Asia/Amman as org-level settings; audit and replace any USD/SAR/15%/+966 leftovers across financials, invoicing, expenses, payment plans, seed/mock data.
+- **Rename "Tax invoice" → "Billing record"** everywhere in UI + PDF until JoFotara is wired.
+- **Hide raw Twilio errors** — replace with human-readable delivery status in SMS logs / debt collection.
+- **Research corpus scope** — surface "covers X laws, Y rulings, updated to Z" and enforce "out of corpus → say so" (already partly in `ai-tasks.functions.ts`; make the scope banner visible).
+- **Purge junk demo data** — clean `mock-data.ts` (`asdfasdf`, `0.00 SAR`, non-Arabic filler) and reseed with realistic Arabic demo rows.
+- **Hide Courtroom Simulation & Legal Academy** behind a flag; remove from the app sidebar nav; keep routes reachable only via direct URL.
+- **Reposition SMS** as "Reminders engine" inside Collections/Deadlines, not a top-level product.
+- **Analytics vanity cut** — keep revenue, outstanding, overdue deadlines, hours, caseload; drop the rest.
+- **Dashboard reorg** — "lawyer's day first": today's hearings, this week's deadlines, overdue invoices, recent documents at the top; KPIs demoted.
+- **Nav flatten** — Dashboard · Cases · Clients · Calendar · Billing · Collections · AI Tools · Settings.
+- **RTL-first default** — set Arabic as the default locale on first load (keep toggle); audit tables/modals/charts for RTL issues.
+- **Hijri + Gregorian on all legal PDFs** — extend the quote helper to invoices, receipts, pleadings.
+- **Arabic terminology glossary** — unify موكل/خصم/لائحة دعوى/جلسة/بينة/دفوع via `i18n.tsx`.
+- **Empty states + skeletons** on the core list pages (Cases, Clients, Invoices, Deadlines).
+- **Table density + column control** on Cases/Invoices lists (extend the existing `data-table-pager`).
+- **Global search** — omnibox over cases/clients/documents/invoices (server fn + Cmd-K sheet).
+- **Notification center** — bell that surfaces deadlines/hearings/payments in one panel (extend existing `notification-bell`).
+- **Onboarding checklist** — org profile → tax settings → first case → first invoice on the dashboard.
+- **Case detail merge** — keep one canonical `app.cases.$caseId.tsx`, redirect `app.workspace.$caseId.tsx` to it.
+- **New Case wizard** — court level/type · case type · number/year · client + وكالة · opposing party/counsel.
+- **Hearing outcome capture** — post-hearing outcome + next-hearing date fields on the session screen.
+- **JBA fee + court-fee calculator** — table-driven, wired into quotes/invoices.
+- **Power of Attorney (وكالة)** — new table + CRUD tab on client profile (number, notary, scope, expiry, linked case, expiry alerts).
+- **Conflict check v2** — extend client-create to screen opposing parties, log dataset version + result.
+- **File-cap raise** — bump upload limit to ≥200 MB, chunked upload path (client + server route).
+- **Client portal read-only v1** — a `/portal/$token` route showing case status, hearings, invoices, docs (share-token gated).
 
-## Phase 3 — Split own-fee installments from Debt Collection
-- Own-fee installment plans move onto `payment_schedules` linked only to `invoice_id` (Financials domain). The "Convert to installments" button on the Client Owed tab creates an **invoice + schedule set**, no longer a `debt_case`.
-- Existing debt cases created from client fees are migrated to the new plan model (data migration inside Phase 3 migration).
-- `debt_cases` becomes strictly third-party recovery (matching Principle 5).
+### B2. Cannot ship in this repo (I'll list them in the coverage report as "out of scope, why")
+- **JoFotara integration** — needs an external certified integrator + ISTD credentials the user does not have in-project. Deliverable here: rename "Tax invoice" → "Billing record", keep the "readiness" copy on the landing, prepare the invoice PDF to accept a QR + UBL payload later.
+- **Arabic OCR + full-text search** — Cloudflare Worker runtime has no `sharp`/Tesseract; needs an external OCR service. Deliverable: raise cap + queue placeholder; flag as roadmap.
+- **WhatsApp Business channel** — requires WhatsApp BSP + Meta review. Deliverable: keep SMS as primary, leave WA channel as a stub.
+- **PDPL 24h/72h breach workflow** — process/legal, not code. Deliverable: privacy page + DPA download stub.
+- **Native mobile app** — out of scope; PWA manifest is already responsive.
 
----
+## Deliverables at the end
+- Landing page rewritten AR-primary against the spec.
+- Two new legal pages (Privacy, Terms).
+- App-wide JOD/16%/+962/Asia-Amman lockdown.
+- Nav flatten + dashboard "lawyer's day" + onboarding checklist + global search + notification center.
+- Case wizard + POA + conflict v2 + hearing outcome + JBA fee calc + client portal v1.
+- Hidden Sim/Academy, cleaned demo data, human-readable SMS errors.
+- Full **coverage report** at the end, item-by-item against both files, marking each as Done / Partial / Deferred (with reason).
 
-## Phase 4 — Pre-bill review queue + expense/disbursement object
+## Confirm before I start
+This is roughly 30–50 file edits and 3–5 new DB migrations. Two questions:
 
-**Schema**
-- New `expenses` (org_id, case_id, client_id, kind [court_fee/expert/translation/other], amount, currency, incurred_on, billable, status [wip/billed/written_off], invoice_id).
-- New `prebills` (org_id, case_id, period_start, period_end, status [draft/approved/billed], subtotal_time, subtotal_expenses, discount, narrative, approved_by, approved_at). A prebill snapshots `time_entries` + `expenses` in a WIP window.
+1. **Order of shipping** — do you want Track A (landing) merged first as a standalone pass so you can preview it, then Track B (app) after? Or one big pass?
+2. **Anything in the B2 "cannot ship" list you want me to attempt anyway** (I'd flag the limits in the report), or leave them as documented gaps?
 
-**UI**
-- New "Pre-bill" tab per case: shows current-period WIP (time + expenses), inline write-up/write-down, mark non-billable, edit client-facing narrative, "Approve → generate invoice".
-- `createInvoiceFromTime` becomes `createInvoiceFromPrebill`; direct time→invoice path deprecated.
-- Case + Client tabs add an Expenses list with CRUD.
-
----
-
-## Phase 5 — Promise-to-pay, aging buckets, and the Jordan compliance rail
-
-**Schema**
-- Extend `debt_cases`/`debt_case_payers`: add `promise_to_pay_date`, `promise_amount`, `promised_at`, `dispute_reason`, `disputed_at`, `opted_out_at`, `last_reminder_at`.
-- New enum `debtor_status`: `new, contacted, promise_to_pay, partial, paid, disputed, formal_notice, in_litigation, judgment, enforcement, settled, written_off`. Derived from payer state.
-- New `sms_opt_outs` (org_id, phone unique, reason, opted_out_at).
-- `organizations` gets `sms_quiet_hours_start/end` (defaults **09:00** and **21:00** Asia/Amman), `sms_daily_cap_per_recipient` (default 1), `sms_sender_id` (approved TRC alphanumeric), `sms_bilingual_footer` (bool).
-
-**Server (aging + rail)**
-- View `debtor_aging` returning bucket in {0-30, 31-60, 61-90, 90+} per payer, driving ladder position.
-- SMS gateway wrapper (`whatsapp.server.ts` → renamed `sms.server.ts`, removes any WhatsApp branch) refuses to send when:
-  - recipient in `sms_opt_outs`,
-  - local time outside quiet-hours window (Asia/Amman),
-  - recipient already received `sms_daily_cap_per_recipient` messages today,
-  - status = `promise_to_pay` and today < promise date,
-  - status = `disputed`.
-- Every send logs to `sms_messages` with template id + language + segment count.
-
-**UI**
-- Debtor row: promise-to-pay action (date + amount), dispute action, opt-out marker.
-- Debt-collection index gets aging-bucket tiles.
-- Workspace Settings → SMS: sender ID, quiet hours, daily cap, opt-out list, compliance preview.
-
-**§J — Jordan SMS regulations enforced by the rail**
-- **Sender ID**: must be a TRC-approved alphanumeric; stored per org, injected into every send. UI blocks sends until set.
-- **Consent**: `clients`/`debt_case_payers` get `sms_consent_at` + `sms_consent_source`; sends refused without consent for commercial/reminder categories.
-- **Opt-out keywords**: inbound STOP / إيقاف / الغاء / UNSUB → write `sms_opt_outs`; every outbound message appends a bilingual opt-out line: `للإيقاف أرسل إيقاف · Reply STOP to unsubscribe`.
-- **Language + encoding**: template picked from client's `preferred_language`; Arabic body sent as UCS-2 (70-char segments), Latin as GSM-7 (160). Segment count computed and logged; UI warns before multi-segment sends.
-- **Quiet hours**: Amman local 21:00–09:00 blocked; queued for next open window.
-- **Frequency cap**: max 1 commercial SMS per recipient per 24h (configurable, default matches TRC guidance).
-- **Content limits**: no misleading sender, no third-party promotion, no unsolicited marketing to non-consenting recipients; templates reviewed and versioned in `sms_templates`.
-- **Record retention**: `sms_messages` keeps message body, sender id, delivery status, and consent snapshot for 12 months minimum (TRC audit).
-- No WhatsApp anywhere — connector references + UI paths removed.
-
----
-
-## Phase 6 — Quote e-acceptance link; merge billing tabs
-
-- `quotes.share_token`, `accepted_at`, `accepted_ip`, `accepted_otp_hash`.
-- Public route `src/routes/share.quote.$token.tsx` shows the quote PDF preview and an OTP-to-accept flow (SMS OTP via the same rail).
-- On acceptance → auto-create invoice or engagement (fixed-fee → invoice, hourly → engagement record) and set quote status.
-- Financials IA collapses from three tabs (Quotes / Invoices / Tax Invoices) to two (Quotes / Invoices) with `Draft` as a status.
-
----
-
-## Phase 7 — Payment links (CliQ / eFAWATEERcom) + auto-reconcile
-
-- Abstraction `payment_links` (invoice_id or schedule_id, provider, external_ref, url, qr_svg, status, paid_amount, paid_at).
-- Provider adapter interface with two implementations: **CliQ (JoPACC alias)** and **eFAWATEERcom (MADFOOATCOM)**. Public webhook routes under `src/routes/api/public/hooks/{cliq,efawateer}.ts` with HMAC verification; on paid callback create a payment + allocation automatically.
-- Invoice PDF + SMS templates embed the pay link + QR.
-- Secrets needed from user before this phase: PSP merchant id + webhook secret (add_secret at that point).
-
----
-
-## Phase 8 — إنذار عدلي generation + debt-case → litigation
-
-- One-click "Generate formal notice" on a debt case: pulls debtor/evidence, calls the drafting module with a bilingual إنذار عدلي template, saves the PDF as a document on the case, logs delivery event.
-- "Escalate to litigation" button: creates a `cases` row with debtor as party, links `evidence`, copies amounts as claim value, marks debt case status `in_litigation`. Enforcement (`حجز/تنفيذ`) tracked as case events.
-
----
-
-## Phase 9 — Remittance runs + client statements
-
-**Schema**
-- `remittance_runs` (org_id, client_id, period_start, period_end, total_collected, success_fee, net_remit, status [draft/awaiting_approval/approved/paid], client_approved_at, bank_ref, paid_at).
-- `remittance_lines` (run_id, debt_collection_payment_id, amount, fee).
-
-**UI**
-- Debt-collection → "Remit" opens a run wizard: pick client + period, preview كشف حساب PDF (bilingual), send to client for approval via signed link (same OTP as quote acceptance), mark remitted with bank reference.
-
----
-
-## Phase 10 — Trust / retainer accounting (flagship)
-
-- Retainer stops being a synthetic payments row. New `trust_accounts` (org_id, client_id, currency, balance) + `trust_ledger` (account_id, direction [in/out], amount, kind [deposit/apply/refund/adjust], invoice_id?, note, created_by).
-- Case `retainer_amount` becomes an expected commitment; actual money lives in trust.
-- Apply-to-invoice writes both a trust `out` and a payment allocation of type `retainer`.
-- Trust reconciliation report; segregation warnings when firm cash and trust cash mix.
-
----
-
-## Phase 11 — Reports (aging, realization, collection) + client-facing PDFs
-
-- New `/app/financials/reports` with three canonical KPIs (aging buckets, realization = billed ÷ worked, collection = collected ÷ billed).
-- Per-client recovery PDF report for debt-collection engagements.
-- Activity log gets consistent writes across payments/allocations/trust/remittance/prebill/expenses.
-
----
-
-## Cross-cutting cleanup
-- Remove `WhatsApp` label and code paths from `whatsapp.server.ts`, `sms.functions.ts`, i18n strings, and UI.
-- Drop the 25-payer ceiling; CSV import for debt portfolios (Rung 0).
-- Fuzzy Arabic conflict-check against `cases` + `clients` on debtor intake.
-- Fee-agreement object on debt cases (success %, flat, hybrid, per-rung tier).
-
----
-
-## Sequencing note
-Phases 1–5 are the bug-killers and the compliance rail — biggest wins. Phase 7 requires PSP credentials (I'll pause and request them at that point via the secure secrets form). Phase 10 is the flagship and depends on Phase 1's ledger, so it ships last.
-
-## Out of scope for this initiative
-- Design token / visual redesign.
-- Auth changes.
-- Native mobile app.
+Approve as-is and I'll start immediately with Track A.
