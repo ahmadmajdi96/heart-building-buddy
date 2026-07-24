@@ -152,13 +152,31 @@ function AppLayout() {
         onClick={onClick}
         title={collapsed ? t(item.key) : undefined}
         className={cn(
-          "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-all",
+          "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-all overflow-hidden",
           active
             ? "bg-gold/15 text-gold shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--gold),transparent_60%)]"
             : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground",
           collapsed && "justify-center px-2",
         )}
       >
+        {/* Arabesque rosette watermark on the active item */}
+        {active && (
+          <span
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute inset-y-0 w-24 arabesque opacity-[0.28] mix-blend-screen",
+              isRtl ? "left-0" : "right-0",
+            )}
+            style={{
+              maskImage: isRtl
+                ? "linear-gradient(to left, black, transparent)"
+                : "linear-gradient(to right, black, transparent)",
+              WebkitMaskImage: isRtl
+                ? "linear-gradient(to left, black, transparent)"
+                : "linear-gradient(to right, black, transparent)",
+            }}
+          />
+        )}
         {/* Gold gilded rail on the reading edge */}
         <span
           className={cn(
@@ -168,11 +186,12 @@ function AppLayout() {
           )}
           aria-hidden
         />
-        <Icon className={cn("size-[17px] shrink-0", active ? "text-gold" : "opacity-80 group-hover:opacity-100")} />
-        {!collapsed && <span className="truncate">{t(item.key)}</span>}
+        <Icon className={cn("relative size-[17px] shrink-0", active ? "text-gold" : "opacity-80 group-hover:opacity-100")} />
+        {!collapsed && <span className="relative truncate">{t(item.key)}</span>}
       </Link>
     );
   }
+
 
   function GroupLabel({ label }: { label: string }) {
     if (collapsed) {
@@ -219,13 +238,15 @@ function AppLayout() {
         {/* ───── Desktop sidebar (fixed, teal, gold typography) ───── */}
         <aside
           className={cn(
-            "hidden lg:flex flex-col bg-sidebar text-sidebar-foreground",
+            "hidden lg:flex flex-col text-sidebar-foreground relative",
             sideEdge,
             "border-sidebar-border/70 transition-[width] duration-300 ease-out",
             asideWidth,
             "sticky top-0 h-screen shrink-0",
           )}
+          style={{ background: "linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-deep) 100%)" }}
         >
+
           {/* Sidebar surface ornaments */}
           <div aria-hidden className="pointer-events-none absolute inset-0 arabesque-lg opacity-[0.06]" />
           <div aria-hidden className={cn("pointer-events-none absolute inset-y-0 w-24 bg-gradient-to-b from-gold/[0.08] via-transparent to-gold/[0.05]", isRtl ? "left-0" : "right-0")} />
@@ -288,8 +309,10 @@ function AppLayout() {
                 </SheetTrigger>
                 <SheetContent
                   side={isRtl ? "right" : "left"}
-                  className="w-[280px] border-sidebar-border/70 bg-sidebar p-0 text-sidebar-foreground"
+                  className="w-[280px] border-sidebar-border/70 p-0 text-sidebar-foreground"
+                  style={{ background: "linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-deep) 100%)" }}
                 >
+
                   <div aria-hidden className="pointer-events-none absolute inset-0 arabesque-lg opacity-[0.06]" />
                   <SheetHeader className="relative border-b border-sidebar-border/70 p-4">
                     <SheetTitle><BrandMark tone="dark" /></SheetTitle>
