@@ -66,6 +66,8 @@ const dict = {
   m_grp_management: { ar: "الإدارة", en: "Management" },
   m_grp_scheduling: { ar: "الجدولة", en: "Scheduling" },
   m_grp_operations: { ar: "العمليات", en: "Operations" },
+  m_grp_ai_tools: { ar: "أدوات الذكاء الاصطناعي", en: "AI Tools" },
+  m_grp_firm: { ar: "المكتب", en: "Firm" },
 
   m_dashboard_desc: { ar: "نظرة شاملة على أداء المكتب والإنذارات والمهام.", en: "Firm-wide overview of performance, alerts and tasks." },
   m_cases_desc: { ar: "تتبع القضايا، الأطراف، الجلسات، والوثائق المرتبطة.", en: "Track matters, parties, hearings and linked documents." },
