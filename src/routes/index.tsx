@@ -703,9 +703,11 @@ function Collections() {
     ar(locale, "سجل رسائل كامل لكل قضية", "A full message log per case"),
   ];
   return (
-    <section id="collections" className="relative border-b border-onyx/40 bg-onyx text-pearl">
+    <section id="collections" className="relative overflow-hidden border-b border-onyx/40 bg-onyx text-pearl">
       <LatticeDivider className="absolute inset-x-0 -top-5 z-10" />
-      <div className="container mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
+      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque-lg opacity-[0.08]" />
+      <div className="container relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
+
         <div className="grid gap-14 lg:grid-cols-12">
           <div className="lg:col-span-5">
             <Eyebrow>{ar(locale, "التميّز", "The differentiator")}</Eyebrow>
