@@ -10,7 +10,10 @@ function getGateway() {
   return createAiGatewayProvider(getAiGatewayApiKey());
 }
 
-async function ragJordanianContext(userId: string, question: string): Promise<string> {
+async function ragJordanianContext(
+  userId: string,
+  question: string,
+): Promise<{ grounding: string; hitCount: number }> {
   try {
     const { ragFetch } = await import("./rag.server");
     const res = await ragFetch(`/v1/query`, {
@@ -25,23 +28,24 @@ async function ragJordanianContext(userId: string, question: string): Promise<st
         max_tokens: 800,
       }),
     });
-    if (!res.ok) return "";
+    if (!res.ok) return { grounding: "", hitCount: 0 };
     const json = (await res.json()) as {
       answer?: string;
       sources?: Array<{ filename?: string; page?: number; excerpt?: string }>;
     };
     const parts: string[] = [];
     if (json.answer) parts.push(json.answer.trim());
-    if (json.sources?.length) {
-      const src = json.sources
+    const sources = json.sources ?? [];
+    if (sources.length) {
+      const src = sources
         .slice(0, 6)
         .map((s, i) => `[${i + 1}] ${s.filename ?? "source"}${s.page ? ` p.${s.page}` : ""}: ${(s.excerpt ?? "").slice(0, 500)}`)
         .join("\n");
       parts.push(`SOURCES:\n${src}`);
     }
-    return parts.join("\n\n").slice(0, 5000);
+    return { grounding: parts.join("\n\n").slice(0, 5000), hitCount: sources.length };
   } catch {
-    return "";
+    return { grounding: "", hitCount: 0 };
   }
 }
 
@@ -51,6 +55,31 @@ const ResearchInput = z.object({
   locale: z.enum(["ar", "en"]).default("en"),
 });
 
+/**
+ * Public corpus scope disclosure — shown in the UI banner AND enforced server-side.
+ * When the RAG index returns zero hits for a question, we refuse to guess and return
+ * this notice instead of a hallucinated answer. Per the pilot readiness spec (§3):
+ * "block answers outside corpus instead of guessing".
+ */
+export const CORPUS_SCOPE = {
+  jurisdiction: "Jordan",
+  updatedThrough: "2026",
+  covers: [
+    "Constitution 1952 + amendments",
+    "Civil Code 43/1976",
+    "Penal Code 16/1960",
+    "Codes of Civil & Criminal Procedure",
+    "Commercial Code 12/1966, Companies Law 22/1997, Insolvency Law 21/2018",
+    "Labour Law 8/1996, Social Security 1/2014",
+    "Personal Status Law 15/2019",
+    "Landlords & Tenants Law",
+    "Income Tax 34/2014, General Sales Tax",
+    "Cybercrime 17/2023, PDPL 24/2023, Electronic Transactions",
+    "Arbitration 31/2001, Execution Law, Evidence Law",
+    "Cassation Court rulings",
+  ],
+} as const;
+
 export const legalResearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => ResearchInput.parse(d))
@@ -58,44 +87,33 @@ export const legalResearch = createServerFn({ method: "POST" })
     const gateway = getGateway();
     const lang = data.locale === "ar" ? "Arabic" : "English";
     const sourcesLabel = data.locale === "ar" ? "المصادر" : "Sources";
-    const grounding = await ragJordanianContext(context.userId, data.query);
+    const { grounding, hitCount } = await ragJordanianContext(context.userId, data.query);
+
+    // Guardrail: refuse-to-guess when the Jordanian corpus returns no matches.
+    if (hitCount === 0) {
+      const answer = data.locale === "ar"
+        ? `**خارج نطاق المصادر المتاحة.**\n\nلم يعثر المحرك على مقاطع في مصادر القانون الأردني المفهرسة تُطابق سؤالك. لن نُقدّم إجابة مبنية على التخمين.\n\nاقتراحات:\n- أعد صياغة السؤال بذكر القانون أو المادة أو رقم القضية.\n- إن كانت لديك وثيقة ذات صلة، ارفعها إلى فهرس مكتبك من خلال المستندات ثم أعد السؤال.\n- إن كان السؤال خارج القانون الأردني، فهو خارج نطاق هذه الأداة.`
+        : `**Outside the available corpus.**\n\nThe retrieval engine found no passages in the indexed Jordanian legal corpus that match your question. We will not answer by guessing.\n\nSuggestions:\n- Rephrase the question with a specific statute, article, or case number.\n- If you have a relevant document, upload it to your firm's index in Documents and re-ask.\n- If the question is not about Jordanian law, it is outside this tool's scope.`;
+      return { answer, outsideCorpus: true };
+    }
+
     const { text } = await generateText({
       model: gateway(MODEL),
       system: `${strictLanguageDirective(data.locale)}
 
 You are an expert legal research assistant specialized EXCLUSIVELY in the Hashemite Kingdom of Jordan's laws, regulations and jurisprudence. Do NOT answer about any other jurisdiction — if asked, politely note you only cover Jordanian law.
 
-Cover the FULL Jordanian legal corpus, citing primary articles, paragraphs and case numbers wherever possible. Sources you must search and reference when relevant include (but are not limited to):
-- The Jordanian Constitution (الدستور الأردني) of 1952 and amendments.
-- Civil Code (القانون المدني رقم 43 لسنة 1976) and its explanatory memoranda.
-- Penal Code (قانون العقوبات رقم 16 لسنة 1960) and amendments.
-- Code of Civil Procedure (قانون أصول المحاكمات المدنية رقم 24 لسنة 1988).
-- Code of Criminal Procedure (قانون أصول المحاكمات الجزائية رقم 9 لسنة 1961).
-- Commercial Code (قانون التجارة رقم 12 لسنة 1966), Companies Law (قانون الشركات رقم 22 لسنة 1997), Insolvency Law (قانون الإعسار رقم 21 لسنة 2018).
-- Labour Law (قانون العمل رقم 8 لسنة 1996) and Social Security Law (قانون الضمان الاجتماعي رقم 1 لسنة 2014).
-- Personal Status Law (قانون الأحوال الشخصية رقم 15 لسنة 2019), Shari'a court procedure.
-- Real Estate / Lands laws, Landlords & Tenants Law (قانون المالكين والمستأجرين).
-- Income Tax Law (قانون ضريبة الدخل رقم 34 لسنة 2014 وتعديلاته) and General Sales Tax Law.
-- Investment Environment Law, Securities Law, Banks Law, Central Bank of Jordan regulations.
-- Public Procurement Bylaw, Administrative Judiciary Law, Constitutional Court Law.
-- Cybercrime Law (قانون الجرائم الإلكترونية رقم 17 لسنة 2023), Personal Data Protection Law (رقم 24 لسنة 2023), Electronic Transactions Law.
-- Intellectual property statutes: Copyright, Trademarks, Patents, Industrial Designs.
-- Arbitration Law (قانون التحكيم رقم 31 لسنة 2001), Execution Law, Evidence Law (قانون البينات).
-- Cassation Court (محكمة التمييز) rulings — cite as "تمييز حقوق رقم X/سنة" or "تمييز جزاء رقم X/سنة".
-- High Court of Justice / Administrative Court (المحكمة الإدارية) and Constitutional Court decisions.
-- Official Gazette (الجريدة الرسمية) for any law/regulation issuance date.
-- Fatwas and circulars from the Ministry of Justice, Bar Association (نقابة المحامين الأردنيين), and relevant ministries.
+STRICT GROUNDING RULE: You MUST base your answer on the RAG CONTEXT below. Do not invent article numbers, case numbers, dates, or statute titles. If the RAG CONTEXT does not contain enough information to answer, say so explicitly rather than guessing.
 
-When RAG CONTEXT is provided below, prefer it as the authoritative source and cite the retrieved documents explicitly.
+Cover the Jordanian legal corpus — Constitution, Civil Code, Penal Code, procedural codes, Commercial Code, Companies Law, Labour Law, Personal Status Law, tax and IP statutes, Cassation rulings, Official Gazette. Cite the specific article and case number in ${lang}. End with a "${sourcesLabel}" list of every law/ruling referenced from the RAG CONTEXT.
 
-Answer concisely and professionally. Cite specific articles and case numbers in ${lang}. End with a "${sourcesLabel}" list of every law and ruling referenced, with article numbers and year. Reply entirely in ${lang}.
-
-RAG CONTEXT (Jordanian corpus, may be empty):
-${grounding || "(no retrieved context)"}`,
+RAG CONTEXT (Jordanian corpus):
+${grounding}`,
       prompt: data.query,
     });
-    return { answer: sanitizeLanguageText(text, data.locale) };
+    return { answer: sanitizeLanguageText(text, data.locale), outsideCorpus: false };
   });
+
 
 // ---------- AI drafting ----------
 const DraftInput = z.object({
