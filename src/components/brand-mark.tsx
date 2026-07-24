@@ -5,10 +5,12 @@ export function BrandMark({
   className,
   tone = "light",
   size = "md",
+  markOnly = false,
 }: {
   className?: string;
   tone?: "light" | "dark";
   size?: "sm" | "md" | "lg";
+  markOnly?: boolean;
 }) {
   const dims =
     size === "lg" ? "h-14 w-14" : size === "sm" ? "h-9 w-9" : "h-11 w-11";
@@ -29,7 +31,7 @@ export function BrandMark({
           draggable={false}
         />
       </div>
-      <div className="leading-tight">
+      {!markOnly && <div className="leading-tight">
         <div
           className={cn(
             "font-semibold tracking-tight",
@@ -47,7 +49,7 @@ export function BrandMark({
         >
           محكم
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
