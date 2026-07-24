@@ -423,7 +423,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
   const modules = [
     {
       tag: "01 / Assistant",
-      icon: Sparkles,
+      icon: IconCrescent,
       title: ar(locale, "المساعد القانوني", "Assistant"),
       desc: ar(
         locale,
@@ -433,7 +433,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
     },
     {
       tag: "02 / Vault",
-      icon: Lock,
+      icon: IconSeal,
       title: ar(locale, "خزينة المستندات", "Vault"),
       desc: ar(
         locale,
@@ -443,7 +443,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
     },
     {
       tag: "03 / Knowledge",
-      icon: BookOpen,
+      icon: IconScroll,
       title: ar(locale, "المعرفة القانونية", "Knowledge"),
       desc: ar(
         locale,
@@ -453,7 +453,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
     },
     {
       tag: "04 / Matters",
-      icon: Briefcase,
+      icon: IconScales,
       title: ar(locale, "إدارة القضايا", "Matters"),
       desc: ar(
         locale,
@@ -463,7 +463,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
     },
     {
       tag: "05 / Billing",
-      icon: Receipt,
+      icon: IconGavel,
       title: ar(locale, "الفوترة", "Billing"),
       desc: ar(
         locale,
@@ -473,7 +473,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
     },
     {
       tag: "06 / Command",
-      icon: Activity,
+      icon: IconLattice,
       title: ar(locale, "مركز التحكم", "Command Center"),
       desc: ar(
         locale,
