@@ -76,6 +76,30 @@ function Rosette({ className, size = 10 }: { className?: string; size?: number }
   );
 }
 
+const PAGE_BG = ["#fefaf1", "#f1fef3", "#f1f5fe", "#fef1fb"];
+function bgForPath(pathname: string) {
+  let h = 0;
+  for (let i = 0; i < pathname.length; i++) h = (h * 31 + pathname.charCodeAt(i)) >>> 0;
+  return PAGE_BG[h % PAGE_BG.length];
+}
+
+function LiveClock({ locale }: { locale: "en" | "ar" }) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const bcp = locale === "ar" ? "ar-JO" : "en-GB";
+  const time = now.toLocaleTimeString(bcp, { hour: "2-digit", minute: "2-digit" });
+  const date = now.toLocaleDateString(bcp, { weekday: "short", day: "2-digit", month: "short" });
+  return (
+    <div className="hidden md:flex flex-col items-end leading-tight rounded-full border border-border/70 bg-white px-3 py-1 shadow-sm">
+      <span className="text-[13px] font-semibold tabular-nums text-foreground">{time}</span>
+      <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{date}</span>
+    </div>
+  );
+}
+
 function AppLayout() {
   const { t, dir, locale } = useI18n();
   const { pathname } = useLocation();
@@ -311,9 +335,9 @@ function AppLayout() {
         </aside>
 
         {/* ───── Main column ───── */}
-        <div className="relative flex min-w-0 flex-1 flex-col">
+        <div className="relative flex min-w-0 flex-1 flex-col" style={{ backgroundColor: bgForPath(pathname) }}>
           {/* Top control strip — thin, ornamental, holds mobile trigger + right controls */}
-          <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+          <header className="sticky top-0 z-30 border-b border-border/70 backdrop-blur" style={{ backgroundColor: `color-mix(in oklch, ${bgForPath(pathname)} 85%, white)` }}>
             <div className="flex h-14 items-center gap-2 px-4 md:px-6">
               {/* Mobile menu */}
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -350,7 +374,6 @@ function AppLayout() {
               </Link>
 
               <div className="ms-auto flex items-center gap-1.5">
-                <GlobalSearch lang={locale === "ar" ? "ar" : "en"} />
                 <LangToggle />
                 <NotificationBell />
                 <DropdownMenu>
@@ -380,13 +403,16 @@ function AppLayout() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                <div className="mx-1 hidden md:block h-6 w-px bg-border/70" aria-hidden />
+                <GlobalSearch lang={locale === "ar" ? "ar" : "en"} />
+                <LiveClock locale={locale === "ar" ? "ar" : "en"} />
               </div>
             </div>
             {/* Gilded rule under the header */}
             <div aria-hidden className="h-px w-full bg-gradient-to-r from-transparent via-gold/35 to-transparent" />
           </header>
 
-          <main className="relative flex-1 p-4 md:p-8">
+          <main className="relative flex-1 p-4 md:p-8 transition-colors" style={{ backgroundColor: bgForPath(pathname) }}>
             <div className="mx-auto max-w-[1500px]">
               <Outlet />
             </div>
