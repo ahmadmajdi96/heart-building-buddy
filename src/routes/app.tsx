@@ -262,7 +262,7 @@ function AppLayout() {
         >
 
           {/* Sidebar surface ornaments */}
-          <div aria-hidden className="pointer-events-none absolute inset-0 arabesque-lg opacity-[0.45] mix-blend-screen" />
+          <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-40" />
 
           <div aria-hidden className={cn("pointer-events-none absolute inset-y-0 w-24 bg-gradient-to-b from-gold/[0.08] via-transparent to-gold/[0.05]", isRtl ? "left-0" : "right-0")} />
           <CornerFlourish className={cn("absolute top-2 text-gold/60", isRtl ? "right-2 -scale-x-100" : "left-2")} size={22} />
