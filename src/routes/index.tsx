@@ -529,9 +529,9 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
                   <span className="text-[10px] uppercase tracking-[0.32em] text-foreground/40 group-hover:text-gold">
                     {m.tag}
                   </span>
-                  <div className="grid size-10 place-items-center rounded-xl bg-onyx text-gold transition-colors group-hover:bg-gold group-hover:text-onyx">
-                    <m.icon className="size-4" />
-                  </div>
+                  <SealFrame tone="gold" className="transition-transform duration-500 group-hover:rotate-6">
+                    <m.icon size={18} />
+                  </SealFrame>
                 </div>
                 <h3 className="mt-8 font-serif text-[1.625rem] leading-[1.1] tracking-[-0.015em] text-foreground group-hover:text-pearl sm:mt-10 sm:text-[2rem]">
                   {m.title}
