@@ -26,41 +26,39 @@ export const Route = createFileRoute("/app")({
 type NavItem = { to: string; key: TKey; icon: ComponentType<{ className?: string }>; perm?: Permission; firmOnly?: boolean };
 type NavGroup = { key: TKey; items: NavItem[] };
 
+// Flat top-level primary items (no group). Per the pilot readiness spec (§6):
+// "flatten Management overload → Dashboard · Cases · Clients · Calendar · Billing ·
+// Collections · AI Tools · Settings. Case is the hub."
 const soloItems: NavItem[] = [
   { to: "/app/dashboard", key: "m_dashboard", icon: LayoutDashboard },
-  { to: "/app/analytics", key: "m_analytics", icon: BarChart3, perm: "view_financials" },
-  { to: "/app/activity", key: "m_activity", icon: History, perm: "manage_members" },
+  { to: "/app/cases", key: "m_cases", icon: Briefcase, perm: "view_cases" },
+  { to: "/app/clients", key: "m_clients", icon: Building2, perm: "view_clients" },
+  { to: "/app/calendar", key: "m_calendar", icon: CalendarDays },
+  { to: "/app/deadlines", key: "m_deadlines", icon: AlertTriangle, perm: "view_cases" },
+  { to: "/app/documents", key: "m_documents", icon: FileText, perm: "view_cases" },
+  { to: "/app/financials", key: "m_financials", icon: Receipt, perm: "view_financials" },
+  { to: "/app/debt-collection", key: "m_debt_collection", icon: Wallet, perm: "view_financials" },
 ];
 
 const navGroups: NavGroup[] = [
   {
-    key: "m_grp_management",
+    key: "m_grp_ai_tools",
     items: [
-      { to: "/app/cases", key: "m_cases", icon: Briefcase, perm: "view_cases" },
-      { to: "/app/documents", key: "m_documents", icon: FileText, perm: "view_cases" },
-      { to: "/app/clients", key: "m_clients", icon: Building2, perm: "view_clients" },
-      { to: "/app/team", key: "m_team", icon: Users, firmOnly: true },
-      { to: "/app/workspace", key: "m_workspace", icon: Network, perm: "view_cases" },
-      { to: "/app/debt-collection", key: "m_debt_collection", icon: Wallet, perm: "view_financials" },
-      { to: "/app/financials", key: "m_financials", icon: Receipt, perm: "view_financials" },
-    ],
-  },
-  {
-    key: "m_grp_scheduling",
-    items: [
-      { to: "/app/deadlines", key: "m_deadlines", icon: AlertTriangle, perm: "view_cases" },
-      { to: "/app/calendar", key: "m_calendar", icon: CalendarDays },
-      { to: "/app/meetings", key: "m_meetings", icon: Video },
-    ],
-  },
-  {
-    key: "m_grp_operations",
-    items: [
-      { to: "/app/time", key: "m_time", icon: Clock, perm: "view_cases" },
       { to: "/app/research", key: "m_research", icon: Search },
       { to: "/app/drafting", key: "m_drafting", icon: Sparkles, perm: "edit_cases" },
       { to: "/app/live-sessions", key: "m_live_sessions", icon: Mic },
+    ],
+  },
+  {
+    key: "m_grp_firm",
+    items: [
+      { to: "/app/time", key: "m_time", icon: Clock, perm: "view_cases" },
+      { to: "/app/meetings", key: "m_meetings", icon: Video },
       { to: "/app/messages", key: "m_messages", icon: MessageSquare },
+      { to: "/app/team", key: "m_team", icon: Users, firmOnly: true },
+      { to: "/app/workspace", key: "m_workspace", icon: Network, perm: "view_cases" },
+      { to: "/app/analytics", key: "m_analytics", icon: BarChart3, perm: "view_financials" },
+      { to: "/app/activity", key: "m_activity", icon: History, perm: "manage_members" },
       // Courtroom Simulation and Legal Academy are hidden from the pilot navigation per the
       // readiness spec (§5). Routes remain reachable by URL behind a future feature flag.
     ],
