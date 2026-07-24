@@ -212,9 +212,9 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
       <motion.div
         aria-hidden
         initial={{ opacity: 0, scale: 1.05 }}
-        animate={{ opacity: 0.11, scale: 1 }}
+        animate={{ opacity: 0.4, scale: 1 }}
         transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
-        className="arabesque-lg absolute inset-0"
+        className="arabesque absolute inset-0"
       />
 
       <div className="container relative mx-auto max-w-7xl px-4 pb-20 pt-14 sm:px-6 sm:pb-28 sm:pt-20 lg:pb-32 lg:pt-24">
