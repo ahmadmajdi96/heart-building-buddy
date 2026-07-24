@@ -77,13 +77,16 @@ function Section({
   id,
   children,
   className = "",
+  divider = true,
 }: {
   id?: string;
   children: ReactNode;
   className?: string;
+  divider?: boolean;
 }) {
   return (
     <section id={id} className={`relative border-b border-border ${className}`}>
+      {divider && <LatticeDivider className="absolute inset-x-0 -top-5 z-10" />}
       <div className="container mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-32">{children}</div>
     </section>
   );
