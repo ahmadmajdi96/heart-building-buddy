@@ -181,19 +181,8 @@ function AppLayout() {
             navCollapsed && "justify-center px-2",
           )}
         >
-          {/* Visible manuscript rosette watermark on the active nav section */}
-          {active && (
-            <span
-              aria-hidden
-              className={cn(
-                "pointer-events-none absolute inset-y-0 grid w-20 place-items-center text-gold/45",
-                isRtl ? "left-0" : "right-0",
-                navCollapsed && "inset-x-0 mx-auto w-full text-gold/35",
-              )}
-            >
-              <Rosette size={navCollapsed ? 42 : 54} />
-            </span>
-          )}
+
+
           <span
             className={cn(
               "pointer-events-none absolute top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full bg-gold transition-opacity",
