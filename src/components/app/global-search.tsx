@@ -158,7 +158,7 @@ export function GlobalSearch({ lang = "en" }: { lang?: "en" | "ar" }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="group hidden md:inline-flex h-9 min-w-[240px] items-center gap-2 rounded-full border border-border/70 bg-background/70 px-3 text-[13px] text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-gold/40"
+        className="group hidden md:inline-flex h-9 min-w-[240px] items-center gap-2 rounded-full border border-border/70 bg-white px-3 text-[13px] text-muted-foreground shadow-sm transition-colors hover:bg-white hover:text-foreground focus:outline-none focus:ring-2 focus:ring-gold/40"
         aria-label={isAr ? "بحث شامل" : "Search everywhere"}
       >
         <Search className="size-4" />
