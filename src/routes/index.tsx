@@ -123,7 +123,7 @@ function LandingPage() {
 function AnnouncementBar() {
   const { locale } = useI18n();
   return (
-    <div className="relative overflow-hidden border-b border-onyx/40 bg-onyx text-pearl">
+    <div className="relative overflow-hidden border-b border-gold/20 bg-white/[0.05]">
       <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-40" />
       <div className="container relative mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-2 text-center text-[11px] uppercase tracking-[0.24em] text-pearl/85 sm:text-[12px]">
         <span className="inline-block size-1.5 rounded-full bg-gold" />
