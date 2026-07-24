@@ -97,7 +97,6 @@ function LandingPage() {
   const Arrow = dir === "rtl" ? ArrowLeft : ArrowRight;
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <AnnouncementBar />
       <SiteHeader />
       <Hero Arrow={Arrow} />
       <TrustStrip />
