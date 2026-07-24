@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/brand-mark";
 import { LangToggle } from "@/components/lang-toggle";
 import { motion } from "@/components/motion-lite";
+import { CornerFlourish, OrnamentalRule, LatticeDivider, SealFrame, IconScales, IconSeal, IconLattice, IconScroll, IconGavel, IconCrescent } from "@/components/app/primitives";
+
 import logoSrc from "@/assets/mohkam-logo.jpeg";
 import {
   ArrowLeft,
@@ -75,13 +77,16 @@ function Section({
   id,
   children,
   className = "",
+  divider = true,
 }: {
   id?: string;
   children: ReactNode;
   className?: string;
+  divider?: boolean;
 }) {
   return (
     <section id={id} className={`relative border-b border-border ${className}`}>
+      {divider && <LatticeDivider className="absolute inset-x-0 -top-5 z-10" />}
       <div className="container mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-32">{children}</div>
     </section>
   );
@@ -171,7 +176,8 @@ function SiteHeader() {
 /* ───────────────────────── HERO ───────────────────────── */
 
 function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
-  const { locale } = useI18n();
+  const { locale, dir } = useI18n();
+  const isRtl = dir === "rtl";
   const ticks = [
     ar(locale, "بحث قانوني أردني", "Jordanian legal research"),
     ar(locale, "صياغة ومراجعة العقود", "Drafting & contract review"),
@@ -180,150 +186,202 @@ function Hero({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
   ];
   return (
     <section className="relative isolate overflow-hidden border-b border-onyx/40 bg-onyx text-pearl">
-      {/* Cinematic background */}
+      {/* Deep-teal manuscript background */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 80% 60% at 78% 8%, color-mix(in oklch, var(--gold), transparent 70%), transparent 65%), radial-gradient(ellipse 70% 60% at 8% 110%, color-mix(in oklch, var(--primary), transparent 55%), transparent 60%), linear-gradient(180deg, oklch(0.18 0.10 262) 0%, oklch(0.13 0.07 262) 60%, oklch(0.10 0.05 262) 100%)",
+            "radial-gradient(ellipse 55% 45% at 82% 12%, color-mix(in oklch, var(--gold), transparent 55%), transparent 70%), radial-gradient(ellipse 60% 55% at 5% 95%, color-mix(in oklch, var(--primary), transparent 40%), transparent 65%), linear-gradient(180deg, oklch(0.20 0.06 200) 0%, oklch(0.14 0.05 200) 70%, oklch(0.11 0.04 200) 100%)",
         }}
       />
-      <div className="arabesque absolute inset-0 opacity-[0.06]" aria-hidden />
-
-
-      <div className="container relative mx-auto max-w-7xl px-4 pb-20 pt-14 sm:px-6 sm:pb-28 sm:pt-20 lg:pb-40 lg:pt-32">
-        {/* Top status pill */}
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mx-auto mb-10 flex w-fit max-w-full items-center gap-3 rounded-full border border-gold/25 bg-white/[0.04] px-3 py-1.5 text-center text-[10px] uppercase tracking-[0.22em] text-pearl/80 backdrop-blur-sm sm:mb-12 sm:px-4 sm:text-[11px] sm:tracking-[0.28em]"
-        >
-          <span className="relative grid size-2 place-items-center">
-            <span className="absolute inset-0 animate-ping rounded-full bg-gold/60" />
-            <span className="relative size-2 rounded-full bg-gold" />
-          </span>
-          {ar(locale, "النسخة الخاصة مفتوحة — الأردن ٢٠٢٦", "Private beta open · Jordan 2026")}
-        </motion.div>
-
-        {/* Centered editorial headline — Harvey style */}
-        <div className="mx-auto max-w-5xl text-center">
-          <motion.h1
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-            className="font-serif text-[2.25rem] leading-[0.98] tracking-[-0.025em] text-pearl md:text-[3.5rem] lg:text-[4.25rem]"
-          >
-            {ar(locale, "ممارسة ", "Practice ")}
-            <em className="not-italic [font-style:italic] text-gilded">
-              {ar(locale, "بلا أعباء", "made effortless")}
-            </em>
-            <span className="block mt-2 text-pearl/95">
-              {ar(locale, "لمكاتب القانون العربية", "for Arab law firms")}
-            </span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.15 }}
-            className="mx-auto mt-10 max-w-2xl text-[17px] leading-[1.75] text-pearl/70"
-          >
-            {ar(
-              locale,
-              "محكم منصة قانونية ثنائية اللغة، مدعومة بالذكاء الاصطناعي، تجمع القضايا والعملاء والمستندات والمواعيد والفوترة في نظام تشغيل واحد للمكاتب القانونية في الأردن والعالم العربي.",
-              "Mohkam is a bilingual, AI-native legal platform that unifies cases, clients, documents, deadlines and billing into one operating system — built for law firms in Jordan and the wider Arab world.",
-            )}
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.28 }}
-            className="mt-10 flex flex-wrap items-center justify-center gap-3 sm:mt-12"
-          >
-            <Button
-              asChild
-              size="lg"
-              variant="gold"
-              className="h-12 w-full px-6 text-[11px] uppercase tracking-[0.22em] shadow-[0_10px_40px_-10px_rgba(252,227,67,0.5)] sm:w-auto sm:px-8 sm:text-[12px] sm:tracking-[0.24em]"
-            >
-              <a href="#beta">
-                {ar(locale, "طلب عرض توضيحي", "Request a Demo")} <Arrow className="size-4" />
-              </a>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="ghost"
-              className="h-12 w-full border border-pearl/15 bg-white/[0.03] px-6 text-[11px] uppercase tracking-[0.22em] text-pearl hover:bg-white/[0.08] hover:text-pearl sm:w-auto sm:px-8 sm:text-[12px] sm:tracking-[0.24em]"
-            >
-              <a href="#platform">{ar(locale, "استكشف المنصة", "Explore the Platform")}</a>
-            </Button>
-          </motion.div>
-
-          {/* Capability ticks */}
-          <motion.ul
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.45 }}
-            className="mx-auto mt-12 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-[10px] uppercase tracking-[0.18em] text-pearl/55 sm:mt-14 sm:gap-x-8 sm:text-[12px] sm:tracking-[0.22em]"
-          >
-            {ticks.map((t) => (
-              <li key={t} className="flex items-center gap-2">
-                <span className="size-1 rounded-full bg-gold" />
-                {t}
-              </li>
+      {/* Animated mashrabiya lattice as hero signature */}
+      <motion.div
+        aria-hidden
+        initial={{ opacity: 0, scale: 1.05 }}
+        animate={{ opacity: 0.11, scale: 1 }}
+        transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }}
+        className="arabesque-lg absolute inset-0"
+      />
+      <motion.div
+        aria-hidden
+        initial={{ opacity: 0, rotate: -8, scale: 0.9 }}
+        animate={{ opacity: 0.22, rotate: 0, scale: 1 }}
+        transition={{ duration: 1.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        className={`pointer-events-none absolute -top-24 hidden aspect-square w-[42rem] text-gold sm:block ${isRtl ? "-left-40" : "-right-40"}`}
+      >
+        <svg viewBox="0 0 400 400" className="size-full" fill="none" stroke="currentColor" strokeWidth="0.5" aria-hidden>
+          <g>
+            {[80, 130, 180, 230].map((r) => (
+              <circle key={r} cx="200" cy="200" r={r} />
             ))}
-          </motion.ul>
-        </div>
+            <path d="M200 20 L232 168 L380 200 L232 232 L200 380 L168 232 L20 200 L168 168 Z" />
+            <path d="M200 60 L224 176 L340 200 L224 224 L200 340 L176 224 L60 200 L176 176 Z" />
+            <path d="M200 100 L216 184 L300 200 L216 216 L200 300 L184 216 L100 200 L184 184 Z" />
+            <circle cx="200" cy="200" r="12" fill="currentColor" opacity="0.4" />
+          </g>
+        </svg>
+      </motion.div>
 
-        {/* Floating product preview strip */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.5 }}
-          className="relative mx-auto mt-14 max-w-5xl sm:mt-20"
-        >
-          <div className="absolute -inset-x-8 -inset-y-6 -z-10 rounded-[2rem] opacity-50 blur-3xl"
-            style={{ background: "radial-gradient(ellipse 60% 60% at 50% 50%, color-mix(in oklch, var(--gold), transparent 60%), transparent 70%)" }}
-            aria-hidden
-          />
-          <div className="overflow-hidden rounded-2xl border border-pearl/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] backdrop-blur-xl shadow-2xl">
-            {/* Window chrome */}
-            <div className="flex items-center justify-between border-b border-pearl/10 px-5 py-3">
-              <div className="flex items-center gap-2">
-                <span className="size-2.5 rounded-full bg-pearl/20" />
-                <span className="size-2.5 rounded-full bg-pearl/20" />
-                <span className="size-2.5 rounded-full bg-pearl/20" />
-              </div>
-              <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.28em] text-pearl/40">
-                <img src={logoSrc} alt="" className="h-5 w-5 rounded object-cover" />
-                mohkam.app / cases
-              </div>
-              <span className="text-[10px] uppercase tracking-[0.28em] text-gold/70">JOD</span>
-            </div>
-            <div className="grid gap-px bg-pearl/5 md:grid-cols-3">
-              {[
-                { icon: Briefcase, label: ar(locale, "القضايا النشطة", "Active matters"), value: "124" },
-                { icon: CalendarDays, label: ar(locale, "مواعيد هذا الأسبوع", "Deadlines this week"), value: "18" },
-                { icon: Receipt, label: ar(locale, "فواتير مستحقة", "Outstanding invoices"), value: "JOD 42,800" },
-              ].map((s) => (
-                <div key={s.label} className="bg-onyx/60 p-6">
-                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.28em] text-pearl/50">
-                    <s.icon className="size-3.5 text-gold" /> {s.label}
-                  </div>
-                  <div className="mt-3 font-serif text-3xl text-pearl">{s.value}</div>
-                </div>
-              ))}
+      <div className="container relative mx-auto max-w-7xl px-4 pb-20 pt-14 sm:px-6 sm:pb-28 sm:pt-20 lg:pb-36 lg:pt-28">
+        {/* Asymmetric grid — headline column + preview column */}
+        <div className={`grid items-center gap-12 lg:grid-cols-12 lg:gap-8 ${isRtl ? "" : ""}`}>
+          {/* Editorial headline column (spans 7, sits at the start of the reading axis so it's naturally right-anchored in RTL) */}
+          <div className="relative lg:col-span-7">
+            <CornerFlourish className={`absolute -top-2 text-gold/80 ${isRtl ? "-right-2 -scale-x-100" : "-left-2"}`} size={40} />
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className={`mb-8 inline-flex items-center gap-3 rounded-full border border-gold/25 bg-white/[0.04] px-3 py-1.5 text-[10px] uppercase tracking-[0.24em] text-pearl/80 backdrop-blur-sm sm:text-[11px] sm:tracking-[0.28em] ${isRtl ? "ms-10" : "ms-10"}`}
+            >
+              <span className="relative grid size-2 place-items-center">
+                <span className="absolute inset-0 animate-ping rounded-full bg-gold/60" />
+                <span className="relative size-2 rounded-full bg-gold" />
+              </span>
+              {ar(locale, "النسخة الخاصة مفتوحة — الأردن ٢٠٢٦", "Private beta open · Jordan 2026")}
+            </motion.div>
+
+            <div className="ps-10">
+              <OrnamentalRule className="mb-6 w-28 text-gold" />
+              <motion.h1
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                className={`font-serif tracking-[-0.025em] text-pearl ${isRtl ? "text-[2.5rem] leading-[1.1] md:text-[3.75rem] lg:text-[4.75rem]" : "text-[2.5rem] leading-[0.98] md:text-[3.75rem] lg:text-[4.5rem]"}`}
+              >
+                {isRtl ? (
+                  <>
+                    <span className="block">ممارسة القانون</span>
+                    <em className="not-italic [font-style:italic] text-gilded">بروح المخطوطة</em>
+                    <span className="mt-2 block text-pearl/95">وبدقّة المكتب الحديث</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="block">Practice like a </span>
+                    <em className="not-italic [font-style:italic] text-gilded">manuscript</em>
+                    <span className="block">runs like a modern firm</span>
+                  </>
+                )}
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.2 }}
+                className="mt-8 max-w-xl text-[16px] leading-[1.85] text-pearl/70 sm:text-[17px]"
+              >
+                {ar(
+                  locale,
+                  "محكم منصة قانونية ثنائية اللغة، مدعومة بالذكاء الاصطناعي، تجمع القضايا والعملاء والمستندات والمواعيد والفوترة في نظام تشغيل واحد للمكاتب القانونية في الأردن والعالم العربي.",
+                  "Mohkam is a bilingual, AI-native legal platform that unifies cases, clients, documents, deadlines and billing into one operating system — built for law firms in Jordan and the wider Arab world.",
+                )}
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.35 }}
+                className="mt-10 flex flex-wrap items-center gap-3"
+              >
+                <Button
+                  asChild
+                  size="lg"
+                  variant="gold"
+                  className="h-12 px-7 text-[11px] uppercase tracking-[0.22em] shadow-[0_10px_40px_-10px_color-mix(in_oklch,var(--gold),transparent_40%)] sm:text-[12px] sm:tracking-[0.24em]"
+                >
+                  <a href="#beta">
+                    {ar(locale, "طلب عرض توضيحي", "Request a Demo")} <Arrow className="size-4" />
+                  </a>
+                </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  variant="ghost"
+                  className="h-12 border border-pearl/15 bg-white/[0.03] px-7 text-[11px] uppercase tracking-[0.22em] text-pearl hover:bg-white/[0.08] hover:text-pearl sm:text-[12px] sm:tracking-[0.24em]"
+                >
+                  <a href="#platform">{ar(locale, "استكشف المنصة", "Explore the Platform")}</a>
+                </Button>
+              </motion.div>
+
+              <motion.ul
+                initial="hidden"
+                animate="show"
+                variants={{ show: { transition: { staggerChildren: 0.08, delayChildren: 0.5 } } }}
+                className="mt-12 flex flex-wrap items-center gap-x-5 gap-y-3 text-[10px] uppercase tracking-[0.18em] text-pearl/60 sm:text-[11px] sm:tracking-[0.22em]"
+              >
+                {ticks.map((t) => (
+                  <motion.li key={t} variants={fadeUp} className="flex items-center gap-2">
+                    <span className="size-1 rounded-full bg-gold" />
+                    {t}
+                  </motion.li>
+                ))}
+              </motion.ul>
             </div>
           </div>
-        </motion.div>
+
+          {/* Product-preview column (spans 5), offset to keep asymmetry */}
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.9, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            className={`relative lg:col-span-5 ${isRtl ? "lg:-ms-4" : "lg:ms-4"}`}
+          >
+            <div
+              className="absolute -inset-8 -z-10 rounded-[2rem] opacity-60 blur-3xl"
+              style={{ background: "radial-gradient(ellipse 60% 60% at 50% 50%, color-mix(in oklch, var(--gold), transparent 55%), transparent 75%)" }}
+              aria-hidden
+            />
+            {/* Framed like an illuminated manuscript folio */}
+            <div className="relative overflow-hidden rounded-[1.75rem] border border-gold/30 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-2 shadow-2xl backdrop-blur-xl">
+              <CornerFlourish className="absolute left-3 top-3 z-10 text-gold" size={22} />
+              <CornerFlourish className="absolute right-3 top-3 z-10 -scale-x-100 text-gold" size={22} />
+              <CornerFlourish className="absolute bottom-3 left-3 z-10 -scale-y-100 text-gold" size={22} />
+              <CornerFlourish className="absolute bottom-3 right-3 z-10 -scale-100 text-gold" size={22} />
+              <div className="overflow-hidden rounded-[1.25rem] border border-pearl/10 bg-onyx/60">
+                <div className="flex items-center justify-between border-b border-pearl/10 px-5 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="size-2 rounded-full bg-gold/50" />
+                    <span className="size-2 rounded-full bg-pearl/20" />
+                    <span className="size-2 rounded-full bg-pearl/20" />
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.28em] text-pearl/50">
+                    <img src={logoSrc} alt="" className="h-5 w-5 rounded object-cover" />
+                    mohkam.app
+                  </div>
+                  <span className="text-[10px] uppercase tracking-[0.28em] text-gold/80">JOD</span>
+                </div>
+                <div className="divide-y divide-pearl/5">
+                  {[
+                    { Icon: IconScales, label: ar(locale, "القضايا النشطة", "Active matters"), value: "124" },
+                    { Icon: IconScroll, label: ar(locale, "مواعيد الأسبوع", "Deadlines this week"), value: "18" },
+                    { Icon: IconSeal, label: ar(locale, "فواتير مستحقة", "Outstanding invoices"), value: "JOD 42,800" },
+                  ].map((s, i) => (
+                    <motion.div
+                      key={s.label}
+                      initial={{ opacity: 0, x: isRtl ? -12 : 12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.5, delay: 0.7 + i * 0.1 }}
+                      className="flex items-center gap-4 p-5"
+                    >
+                      <SealFrame tone="gold"><s.Icon size={18} /></SealFrame>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] uppercase tracking-[0.28em] text-pearl/55">{s.label}</div>
+                        <div className="mt-1 font-serif text-2xl text-pearl">{s.value}</div>
+                      </div>
+                      <Arrow className="size-4 text-gold/60" />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </section>
   );
 }
+
 
 /* ───────────────────────── TRUST / MARQUEE ───────────────────────── */
 
@@ -365,7 +423,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
   const modules = [
     {
       tag: "01 / Assistant",
-      icon: Sparkles,
+      icon: IconCrescent,
       title: ar(locale, "المساعد القانوني", "Assistant"),
       desc: ar(
         locale,
@@ -375,7 +433,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
     },
     {
       tag: "02 / Vault",
-      icon: Lock,
+      icon: IconSeal,
       title: ar(locale, "خزينة المستندات", "Vault"),
       desc: ar(
         locale,
@@ -385,7 +443,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
     },
     {
       tag: "03 / Knowledge",
-      icon: BookOpen,
+      icon: IconScroll,
       title: ar(locale, "المعرفة القانونية", "Knowledge"),
       desc: ar(
         locale,
@@ -395,7 +453,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
     },
     {
       tag: "04 / Matters",
-      icon: Briefcase,
+      icon: IconScales,
       title: ar(locale, "إدارة القضايا", "Matters"),
       desc: ar(
         locale,
@@ -405,7 +463,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
     },
     {
       tag: "05 / Billing",
-      icon: Receipt,
+      icon: IconGavel,
       title: ar(locale, "الفوترة", "Billing"),
       desc: ar(
         locale,
@@ -415,7 +473,7 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
     },
     {
       tag: "06 / Command",
-      icon: Activity,
+      icon: IconLattice,
       title: ar(locale, "مركز التحكم", "Command Center"),
       desc: ar(
         locale,
@@ -471,9 +529,9 @@ function Platform({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
                   <span className="text-[10px] uppercase tracking-[0.32em] text-foreground/40 group-hover:text-gold">
                     {m.tag}
                   </span>
-                  <div className="grid size-10 place-items-center rounded-xl bg-onyx text-gold transition-colors group-hover:bg-gold group-hover:text-onyx">
-                    <m.icon className="size-4" />
-                  </div>
+                  <SealFrame tone="gold" className="transition-transform duration-500 group-hover:rotate-6">
+                    <m.icon size={18} />
+                  </SealFrame>
                 </div>
                 <h3 className="mt-8 font-serif text-[1.625rem] leading-[1.1] tracking-[-0.015em] text-foreground group-hover:text-pearl sm:mt-10 sm:text-[2rem]">
                   {m.title}
