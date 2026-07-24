@@ -327,7 +327,7 @@ function AppLayout() {
                   style={{ background: "linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-deep) 100%)" }}
                 >
 
-                  <div aria-hidden className="pointer-events-none absolute inset-0 arabesque-lg opacity-[0.06]" />
+                  <div aria-hidden className="pointer-events-none absolute inset-0 arabesque-lg opacity-[0.18]" />
                   <SheetHeader className="relative border-b border-sidebar-border/70 p-4">
                     <SheetTitle><BrandMark tone="dark" /></SheetTitle>
                   </SheetHeader>
