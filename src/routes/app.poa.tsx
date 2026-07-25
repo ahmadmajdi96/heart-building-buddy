@@ -437,6 +437,43 @@ ${r.notes ? `<p>${r.notes}</p>` : ""}
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={newClientOpen} onOpenChange={setNewClientOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{ar ? "موكّل جديد" : "New client"}</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">{ar ? "الاسم الكامل" : "Full name"} *</Label>
+              <Input className="h-9" value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })} />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label className="text-xs">{ar ? "الهاتف" : "Phone"}</Label>
+                <Input className="h-9" value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">{ar ? "الرقم الوطني" : "National ID"}</Label>
+                <Input className="h-9" value={newClient.national_id} onChange={(e) => setNewClient({ ...newClient, national_id: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">{ar ? "البريد الإلكتروني" : "Email"}</Label>
+              <Input className="h-9" value={newClient.email} onChange={(e) => setNewClient({ ...newClient, email: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">{ar ? "العنوان" : "Address"}</Label>
+              <Input className="h-9" value={newClient.address} onChange={(e) => setNewClient({ ...newClient, address: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewClientOpen(false)}>{ar ? "إلغاء" : "Cancel"}</Button>
+            <Button variant="gold" onClick={createClient} disabled={savingClient}>
+              {savingClient ? (ar ? "جارٍ الحفظ…" : "Saving…") : (ar ? "إضافة" : "Add client")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
