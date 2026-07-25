@@ -305,15 +305,21 @@ export type Database = {
         Row: {
           agreed_fee: number | null
           case_number: string | null
+          case_type: string | null
+          claim_value: number | null
           client_id: string | null
           close_note: string | null
           close_result: string | null
           closed_at: string | null
           court: string | null
+          court_branch: string | null
+          court_level: string | null
           court_room: string | null
           created_at: string
           description: string | null
+          estimated_fees: number | null
           fee_currency: string | null
+          governorate: string | null
           hourly_rate: number | null
           id: string
           judge: string | null
@@ -333,15 +339,21 @@ export type Database = {
         Insert: {
           agreed_fee?: number | null
           case_number?: string | null
+          case_type?: string | null
+          claim_value?: number | null
           client_id?: string | null
           close_note?: string | null
           close_result?: string | null
           closed_at?: string | null
           court?: string | null
+          court_branch?: string | null
+          court_level?: string | null
           court_room?: string | null
           created_at?: string
           description?: string | null
+          estimated_fees?: number | null
           fee_currency?: string | null
+          governorate?: string | null
           hourly_rate?: number | null
           id?: string
           judge?: string | null
@@ -361,15 +373,21 @@ export type Database = {
         Update: {
           agreed_fee?: number | null
           case_number?: string | null
+          case_type?: string | null
+          claim_value?: number | null
           client_id?: string | null
           close_note?: string | null
           close_result?: string | null
           closed_at?: string | null
           court?: string | null
+          court_branch?: string | null
+          court_level?: string | null
           court_room?: string | null
           created_at?: string
           description?: string | null
+          estimated_fees?: number | null
           fee_currency?: string | null
+          governorate?: string | null
           hourly_rate?: number | null
           id?: string
           judge?: string | null
@@ -620,6 +638,7 @@ export type Database = {
       }
       deadlines: {
         Row: {
+          adjourned_to: string | null
           assigned_to: string | null
           case_id: string | null
           completed_at: string | null
@@ -631,7 +650,10 @@ export type Database = {
           id: string
           kind: string
           location: string | null
+          next_action: string | null
           org_id: string | null
+          outcome: string | null
+          outcome_note: string | null
           owner_id: string
           reminder_days: number[]
           status: string
@@ -639,6 +661,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          adjourned_to?: string | null
           assigned_to?: string | null
           case_id?: string | null
           completed_at?: string | null
@@ -650,7 +673,10 @@ export type Database = {
           id?: string
           kind?: string
           location?: string | null
+          next_action?: string | null
           org_id?: string | null
+          outcome?: string | null
+          outcome_note?: string | null
           owner_id: string
           reminder_days?: number[]
           status?: string
@@ -658,6 +684,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          adjourned_to?: string | null
           assigned_to?: string | null
           case_id?: string | null
           completed_at?: string | null
@@ -669,7 +696,10 @@ export type Database = {
           id?: string
           kind?: string
           location?: string | null
+          next_action?: string | null
           org_id?: string | null
+          outcome?: string | null
+          outcome_note?: string | null
           owner_id?: string
           reminder_days?: number[]
           status?: string
@@ -2151,6 +2181,103 @@ export type Database = {
             columns: ["schedule_id"]
             isOneToOne: false
             referencedRelation: "payment_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      powers_of_attorney: {
+        Row: {
+          agent_bar_number: string | null
+          agent_name: string
+          case_id: string | null
+          client_id: string | null
+          created_at: string
+          document_id: string | null
+          expires_on: string | null
+          id: string
+          notarised_on: string | null
+          notary_office: string | null
+          notes: string | null
+          org_id: string
+          owner_id: string
+          powers: string[]
+          principal_address: string | null
+          principal_id_number: string | null
+          principal_name: string
+          reference: string | null
+          scope: string
+          starts_on: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agent_bar_number?: string | null
+          agent_name: string
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          document_id?: string | null
+          expires_on?: string | null
+          id?: string
+          notarised_on?: string | null
+          notary_office?: string | null
+          notes?: string | null
+          org_id: string
+          owner_id: string
+          powers?: string[]
+          principal_address?: string | null
+          principal_id_number?: string | null
+          principal_name: string
+          reference?: string | null
+          scope?: string
+          starts_on?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agent_bar_number?: string | null
+          agent_name?: string
+          case_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          document_id?: string | null
+          expires_on?: string | null
+          id?: string
+          notarised_on?: string | null
+          notary_office?: string | null
+          notes?: string | null
+          org_id?: string
+          owner_id?: string
+          powers?: string[]
+          principal_address?: string | null
+          principal_id_number?: string | null
+          principal_name?: string
+          reference?: string | null
+          scope?: string
+          starts_on?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "powers_of_attorney_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "powers_of_attorney_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "powers_of_attorney_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
         ]
