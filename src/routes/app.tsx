@@ -17,7 +17,7 @@ import { CornerFlourish } from "@/components/app/primitives";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Briefcase, FileText, Search, Sparkles, CalendarDays,
-  Receipt, GraduationCap, BarChart3, Building2, Settings, Clock,
+  Receipt, GraduationCap, BarChart3, Building2, Settings, Clock, Stamp,
   Gavel, LogOut, Loader2, Mic, Video, Menu, ChevronDown, ChevronsLeft, ChevronsRight,
   AlertTriangle, History, Users, Network, Wallet, MessageSquare,
 } from "lucide-react";
