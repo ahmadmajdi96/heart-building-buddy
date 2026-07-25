@@ -94,10 +94,10 @@ function LiveClock({ locale }: { locale: "en" | "ar" }) {
   const time = now.toLocaleTimeString(bcp, { hour: "2-digit", minute: "2-digit" });
   const date = now.toLocaleDateString(bcp, { weekday: "short", day: "2-digit", month: "short" });
   return (
-    <div className="hidden md:inline-flex items-center gap-2 rounded-full border border-border/70 bg-white px-3 py-1 shadow-sm leading-none">
-      <span className="text-[13px] font-semibold tabular-nums text-foreground">{time}</span>
-      <span className="h-3 w-px bg-border/70" aria-hidden />
-      <span className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{date}</span>
+    <div className="hidden md:inline-flex items-center gap-2 rounded-full border border-gold/30 bg-white/10 px-3 py-1 shadow-sm leading-none">
+      <span className="text-[13px] font-semibold tabular-nums text-sidebar-foreground">{time}</span>
+      <span className="h-3 w-px bg-gold/40" aria-hidden />
+      <span className="text-[11px] uppercase tracking-[0.14em] text-sidebar-foreground/65">{date}</span>
     </div>
   );
 }
@@ -341,8 +341,12 @@ function AppLayout() {
         {/* ───── Main column ───── */}
         <div className="relative flex min-w-0 flex-1 flex-col" style={{ backgroundColor: bgForPath(pathname) }}>
           {/* Top control strip — thin, ornamental, holds mobile trigger + right controls */}
-          <header className="sticky top-0 z-30 border-b border-border/70 bg-white/95 backdrop-blur">
-            <div className="flex h-14 items-center gap-2 px-4 md:px-6">
+          <header
+            className="sticky top-0 z-30 border-b border-sidebar-border/70 text-sidebar-foreground"
+            style={{ background: "linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-deep) 100%)" }}
+          >
+            <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-40" />
+            <div className="relative flex h-14 items-center gap-2 px-4 md:px-6">
               {/* Mobile menu */}
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                 <SheetTrigger asChild>
