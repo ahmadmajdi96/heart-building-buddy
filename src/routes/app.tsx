@@ -350,7 +350,7 @@ function AppLayout() {
               {/* Mobile menu */}
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Menu">
+                  <Button variant="ghost" size="icon" className="lg:hidden text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground" aria-label="Menu">
                     <Menu className="size-5" />
                   </Button>
                 </SheetTrigger>
@@ -378,7 +378,7 @@ function AppLayout() {
 
               {/* Mobile brand */}
               <Link to="/app/dashboard" className="lg:hidden">
-                <BrandMark />
+                <BrandMark tone="dark" />
               </Link>
 
               {/* Search + live clock — hug the sidebar side */}
@@ -390,11 +390,11 @@ function AppLayout() {
                 <NotificationCenter />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 rounded-full p-1 pr-2 ring-1 ring-transparent transition hover:ring-border focus:outline-none focus-visible:ring-gold/40">
-                      <Avatar className="size-8">
-                        <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">{(userEmail[0] ?? "L").toUpperCase()}</AvatarFallback>
+                    <button className="flex items-center gap-2 rounded-full p-1 pr-2 ring-1 ring-transparent transition hover:ring-gold/40 focus:outline-none focus-visible:ring-gold/40">
+                      <Avatar className="size-8 ring-1 ring-gold/50">
+                        <AvatarFallback className="bg-gold text-onyx text-xs font-semibold">{(userEmail[0] ?? "L").toUpperCase()}</AvatarFallback>
                       </Avatar>
-                      <ChevronDown className="size-3.5 text-muted-foreground hidden md:block" />
+                      <ChevronDown className="size-3.5 text-gold/80 hidden md:block" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
