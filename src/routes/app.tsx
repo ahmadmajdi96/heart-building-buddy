@@ -55,6 +55,7 @@ const navGroups: NavGroup[] = [
   {
     key: "m_grp_firm",
     items: [
+      { to: "/app/poa", key: "m_poa", icon: Stamp, perm: "view_cases" },
       { to: "/app/time", key: "m_time", icon: Clock, perm: "view_cases" },
       { to: "/app/meetings", key: "m_meetings", icon: Video },
       { to: "/app/messages", key: "m_messages", icon: MessageSquare },
