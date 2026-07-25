@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useDensityClasses } from "@/hooks/use-density";
 import { bi, POA_SCOPES, POA_POWERS, powersForScope, type PoaScope } from "@/lib/jordan-legal";
 import { listPowersOfAttorney, savePowerOfAttorney, deletePowerOfAttorney, revokePowerOfAttorney } from "@/lib/poa.functions";
-import { listClients } from "@/lib/clients.functions";
+import { listClients, saveClient } from "@/lib/clients.functions";
 import { exportDraftPdf } from "@/lib/draft-export";
 
 export const Route = createFileRoute("/app/poa")({
@@ -56,6 +56,8 @@ const blank = {
   notes: "",
 };
 
+type ClientRow = { id: string; name: string; national_id?: string | null; address?: string | null; phone?: string | null };
+
 function PoaPage() {
   const { locale } = useI18n(); const ar = locale === "ar";
   const { org } = useOrg();
@@ -65,24 +67,74 @@ function PoaPage() {
   const del = useServerFn(deletePowerOfAttorney);
   const revoke = useServerFn(revokePowerOfAttorney);
   const clientsFn = useServerFn(listClients);
+  const saveClientFn = useServerFn(saveClient);
 
   const [rows, setRows] = useState<Poa[]>([]);
-  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [clients, setClients] = useState<ClientRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ ...blank });
   const [q, setQ] = useState("");
+  const [clientQuery, setClientQuery] = useState("");
+  const [newClientOpen, setNewClientOpen] = useState(false);
+  const [newClient, setNewClient] = useState({ name: "", phone: "", email: "", national_id: "", address: "" });
+  const [savingClient, setSavingClient] = useState(false);
 
   async function refresh() {
     setLoading(true);
     try {
       const [p, c] = await Promise.all([list(), clientsFn()]);
       setRows(p as Poa[]);
-      setClients((c as any[]).map((x) => ({ id: x.id, name: x.name })));
+      setClients((c as any[]).map((x) => ({
+        id: x.id, name: x.name, national_id: x.national_id, address: x.address, phone: x.phone,
+      })));
     } catch (e) { toast.error((e as Error).message); }
     finally { setLoading(false); }
   }
   useEffect(() => { refresh(); }, []);
+
+  const clientOptions = useMemo(() => {
+    const n = clientQuery.trim().toLowerCase();
+    if (!n) return clients;
+    return clients.filter((c) => (c.name ?? "").toLowerCase().includes(n) || (c.phone ?? "").includes(n));
+  }, [clients, clientQuery]);
+
+  /** Selecting a client fills the principal block from their profile. */
+  function pickClient(id: string) {
+    if (!id) { setForm((f) => ({ ...f, client_id: "" })); return; }
+    const c = clients.find((x) => x.id === id);
+    setForm((f) => ({
+      ...f,
+      client_id: id,
+      principal_name: c?.name ?? f.principal_name,
+      principal_id_number: c?.national_id || f.principal_id_number,
+      principal_address: c?.address || f.principal_address,
+    }));
+  }
+
+  async function createClient() {
+    if (!newClient.name.trim()) {
+      toast.error(ar ? "اسم الموكّل مطلوب." : "Client name is required.");
+      return;
+    }
+    setSavingClient(true);
+    try {
+      const row: any = await saveClientFn({ data: { ...newClient, type: "individual", status: "active", locale } });
+      const created: ClientRow = { id: row.id, name: row.name, national_id: row.national_id, address: row.address, phone: row.phone };
+      setClients((prev) => [created, ...prev]);
+      setForm((f) => ({
+        ...f,
+        client_id: created.id,
+        principal_name: created.name ?? f.principal_name,
+        principal_id_number: created.national_id || f.principal_id_number,
+        principal_address: created.address || f.principal_address,
+      }));
+      setNewClient({ name: "", phone: "", email: "", national_id: "", address: "" });
+      setNewClientOpen(false);
+      toast.success(ar ? "تم إضافة الموكّل" : "Client added");
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setSavingClient(false); }
+  }
 
   const filtered = useMemo(() => {
     const n = q.trim().toLowerCase();
@@ -90,6 +142,7 @@ function PoaPage() {
     return rows.filter((r) =>
       [r.principal_name, r.agent_name, r.reference, r.clients?.name].filter(Boolean).join(" ").toLowerCase().includes(n));
   }, [rows, q]);
+
 
   function edit(r: Poa) {
     setForm({
@@ -280,15 +333,38 @@ ${r.notes ? `<p>${r.notes}</p>` : ""}
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs">{ar ? "الموكّل من العملاء" : "Link to client"}</Label>
-              <Select value={form.client_id || "none"} onValueChange={(v) => setForm({ ...form, client_id: v === "none" ? "" : v })}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">{ar ? "الموكّل من العملاء" : "Link to client"}</Label>
+                <button type="button" onClick={() => setNewClientOpen(true)}
+                  className="text-[11px] font-medium text-gold underline-offset-2 hover:underline">
+                  + {ar ? "موكّل جديد" : "New client"}
+                </button>
+              </div>
+              <Select value={form.client_id || "none"} onValueChange={(v) => pickClient(v === "none" ? "" : v)}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder={ar ? "اختر موكّلاً" : "Select a client"}>
+                    {form.client_id
+                      ? (clients.find((c) => c.id === form.client_id)?.name ?? (ar ? "موكّل" : "Client"))
+                      : (ar ? "بدون" : "None")}
+                  </SelectValue>
+                </SelectTrigger>
                 <SelectContent>
+                  <div className="p-1.5">
+                    <Input autoFocus className="h-8" value={clientQuery} onChange={(e) => setClientQuery(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      placeholder={ar ? "ابحث بالاسم أو الهاتف…" : "Search name or phone…"} />
+                  </div>
                   <SelectItem value="none">{ar ? "بدون" : "None"}</SelectItem>
-                  {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  {clientOptions.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  {clientOptions.length === 0 && (
+                    <div className="px-2 py-3 text-center text-xs text-muted-foreground">
+                      {ar ? "لا نتائج" : "No matches"}
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-1">
               <Label className="text-xs">{ar ? "المرجع" : "Reference"}</Label>
               <Input className="h-9" value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
@@ -361,6 +437,43 @@ ${r.notes ? `<p>${r.notes}</p>` : ""}
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={newClientOpen} onOpenChange={setNewClientOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{ar ? "موكّل جديد" : "New client"}</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">{ar ? "الاسم الكامل" : "Full name"} *</Label>
+              <Input className="h-9" value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })} />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label className="text-xs">{ar ? "الهاتف" : "Phone"}</Label>
+                <Input className="h-9" value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">{ar ? "الرقم الوطني" : "National ID"}</Label>
+                <Input className="h-9" value={newClient.national_id} onChange={(e) => setNewClient({ ...newClient, national_id: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">{ar ? "البريد الإلكتروني" : "Email"}</Label>
+              <Input className="h-9" value={newClient.email} onChange={(e) => setNewClient({ ...newClient, email: e.target.value })} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">{ar ? "العنوان" : "Address"}</Label>
+              <Input className="h-9" value={newClient.address} onChange={(e) => setNewClient({ ...newClient, address: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewClientOpen(false)}>{ar ? "إلغاء" : "Cancel"}</Button>
+            <Button variant="gold" onClick={createClient} disabled={savingClient}>
+              {savingClient ? (ar ? "جارٍ الحفظ…" : "Saving…") : (ar ? "إضافة" : "Add client")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

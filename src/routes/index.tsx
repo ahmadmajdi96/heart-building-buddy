@@ -24,6 +24,20 @@ import {
   Sparkles,
 } from "lucide-react";
 
+/* ───────────────────────── Shared navy backdrop (same as hero) ───────────────────────── */
+
+const NAVY_GRADIENT =
+  "radial-gradient(ellipse 55% 45% at 82% 12%, color-mix(in oklch, var(--gold), transparent 55%), transparent 70%), radial-gradient(ellipse 60% 55% at 5% 95%, color-mix(in oklch, var(--primary), transparent 40%), transparent 65%), linear-gradient(180deg, oklch(0.20 0.07 258) 0%, oklch(0.14 0.05 258) 70%, oklch(0.11 0.04 258) 100%)";
+
+function NavyBackdrop({ rounded }: { rounded?: string }) {
+  return (
+    <div aria-hidden className={`pointer-events-none absolute inset-0 -z-10 overflow-hidden ${rounded ?? ""}`}>
+      <div className="absolute inset-0" style={{ background: NAVY_GRADIENT }} />
+      <div className="absolute inset-0 arabesque opacity-40" />
+    </div>
+  );
+}
+
 /* ───────────────────────── Route ───────────────────────── */
 
 export const Route = createFileRoute("/")({
@@ -150,8 +164,9 @@ function SiteHeader() {
     { href: "#faq", label: ar(locale, "الأسئلة", "FAQ") },
   ];
   return (
-    <header className="sticky top-0 z-40 border-b border-gold/25 bg-onyx/95 text-pearl backdrop-blur-xl">
-      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-40" />
+    <header className="sticky top-0 z-40 isolate border-b border-gold/25 text-pearl backdrop-blur-xl">
+      <NavyBackdrop />
+
       <div className="container relative mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-[72px] sm:gap-6 sm:px-6">
         <Link to="/" className="flex min-w-0 items-center">
           <BrandMark tone="dark" />
@@ -527,8 +542,9 @@ function Workflow() {
             ))}
           </ul>
         </div>
-        <div className="relative isolate overflow-hidden rounded-2xl border border-gold/40 bg-onyx p-8 text-pearl">
-          <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 arabesque opacity-40" />
+        <div className="relative isolate overflow-hidden rounded-2xl border border-gold/40 p-8 text-pearl">
+          <NavyBackdrop rounded="rounded-2xl" />
+
           <div className="text-[10px] uppercase tracking-[0.32em] text-gold">{ar(locale, "المخرجات", "Outputs")}</div>
           <ul className="mt-6 space-y-4">
 
@@ -594,8 +610,15 @@ function Platform() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
               transition={{ delay: (i % 3) * 0.08, duration: 0.5 }}
-              className="group relative flex flex-col justify-between overflow-hidden bg-background p-6 transition-all duration-500 hover:bg-onyx hover:text-pearl sm:p-8"
+              className="group relative isolate flex flex-col justify-between overflow-hidden bg-background p-6 transition-all duration-500 hover:text-pearl sm:p-8"
             >
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 -z-10 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+              >
+                <div className="absolute inset-0" style={{ background: NAVY_GRADIENT }} />
+                <div className="absolute inset-0 arabesque opacity-40" />
+              </div>
               <div className="relative">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] uppercase tracking-[0.32em] text-foreground/40 group-hover:text-gold">
@@ -709,9 +732,10 @@ function Collections() {
     ar(locale, "سجل رسائل كامل لكل قضية", "A full message log per case"),
   ];
   return (
-    <section id="collections" className="relative overflow-hidden border-b border-onyx/40 bg-onyx text-pearl">
+    <section id="collections" className="relative isolate overflow-hidden border-b border-onyx/40 text-pearl">
       <LatticeDivider className="absolute inset-x-0 -top-5 z-10" />
-      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-40" />
+      <NavyBackdrop />
+
       <div className="container relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
 
         <div className="grid gap-14 lg:grid-cols-12">
@@ -919,13 +943,12 @@ function Pricing() {
         {plans.map((p) => (
           <div
             key={p.name}
-            className={`relative isolate flex flex-col rounded-2xl border p-7 ${p.recommended ? "border-gold/60 bg-onyx text-pearl shadow-[0_20px_50px_-20px_color-mix(in_oklch,var(--gold),transparent_50%)]" : "border-border bg-card"}`}
+            className={`relative isolate flex flex-col rounded-2xl border p-7 ${p.recommended ? "border-gold/60 text-pearl shadow-[0_20px_50px_-20px_color-mix(in_oklch,var(--gold),transparent_50%)]" : "border-border bg-card"}`}
           >
             {p.recommended && (
               <>
-                <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-2xl">
-                  <div className="absolute inset-0 arabesque opacity-40" />
-                </div>
+                <NavyBackdrop rounded="rounded-2xl" />
+
                 <div className="absolute -top-3 start-6 rounded-full bg-gold px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-gold-foreground">
                   {ar(locale, "موصى به", "Recommended")}
                 </div>
@@ -1112,8 +1135,9 @@ function FAQ() {
 function FinalCTA({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
   const { locale } = useI18n();
   return (
-    <section className="relative border-b border-onyx/40 bg-onyx text-pearl">
-      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-40" />
+    <section className="relative isolate border-b border-onyx/40 text-pearl">
+      <NavyBackdrop />
+
       <div className="container relative mx-auto max-w-5xl px-4 py-16 text-center sm:px-6 sm:py-24">
         <OrnamentalRule className="mx-auto mb-6 w-28 text-gold" />
         <h2 className="font-serif text-3xl leading-[1.05] tracking-[-0.02em] text-pearl md:text-[2.75rem]">
