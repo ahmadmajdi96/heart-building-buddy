@@ -1135,8 +1135,9 @@ function FAQ() {
 function FinalCTA({ Arrow }: { Arrow: ComponentType<{ className?: string }> }) {
   const { locale } = useI18n();
   return (
-    <section className="relative border-b border-onyx/40 bg-onyx text-pearl">
-      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-40" />
+    <section className="relative isolate border-b border-onyx/40 text-pearl">
+      <NavyBackdrop />
+
       <div className="container relative mx-auto max-w-5xl px-4 py-16 text-center sm:px-6 sm:py-24">
         <OrnamentalRule className="mx-auto mb-6 w-28 text-gold" />
         <h2 className="font-serif text-3xl leading-[1.05] tracking-[-0.02em] text-pearl md:text-[2.75rem]">
