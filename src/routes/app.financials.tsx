@@ -32,9 +32,10 @@ import { toCsv, downloadCsv, inRange } from "@/lib/csv-export";
 
 import { ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Layers } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { FinancialAnalyticsTab } from "@/components/financials/financial-analytics-tab";
 
 const financialsSearchSchema = z.object({
-  tab: fallback(z.enum(["payments", "schedules", "quotes", "drafts", "invoices", "collections"]), "payments").default("payments"),
+  tab: fallback(z.enum(["analytics", "payments", "schedules", "quotes", "drafts", "invoices", "collections"]), "payments").default("payments"),
   q: fallback(z.string(), "").default(""),
   status: fallback(z.string(), "all").default("all"),
   dueFrom: fallback(z.string(), "").default(""),
