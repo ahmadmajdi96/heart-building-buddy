@@ -732,9 +732,10 @@ function Collections() {
     ar(locale, "سجل رسائل كامل لكل قضية", "A full message log per case"),
   ];
   return (
-    <section id="collections" className="relative overflow-hidden border-b border-onyx/40 bg-onyx text-pearl">
+    <section id="collections" className="relative isolate overflow-hidden border-b border-onyx/40 text-pearl">
       <LatticeDivider className="absolute inset-x-0 -top-5 z-10" />
-      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-40" />
+      <NavyBackdrop />
+
       <div className="container relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
 
         <div className="grid gap-14 lg:grid-cols-12">
