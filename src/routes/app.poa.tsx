@@ -56,6 +56,8 @@ const blank = {
   notes: "",
 };
 
+type ClientRow = { id: string; name: string; national_id?: string | null; address?: string | null; phone?: string | null };
+
 function PoaPage() {
   const { locale } = useI18n(); const ar = locale === "ar";
   const { org } = useOrg();
@@ -65,24 +67,74 @@ function PoaPage() {
   const del = useServerFn(deletePowerOfAttorney);
   const revoke = useServerFn(revokePowerOfAttorney);
   const clientsFn = useServerFn(listClients);
+  const saveClientFn = useServerFn(saveClient);
 
   const [rows, setRows] = useState<Poa[]>([]);
-  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [clients, setClients] = useState<ClientRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ ...blank });
   const [q, setQ] = useState("");
+  const [clientQuery, setClientQuery] = useState("");
+  const [newClientOpen, setNewClientOpen] = useState(false);
+  const [newClient, setNewClient] = useState({ name: "", phone: "", email: "", national_id: "", address: "" });
+  const [savingClient, setSavingClient] = useState(false);
 
   async function refresh() {
     setLoading(true);
     try {
       const [p, c] = await Promise.all([list(), clientsFn()]);
       setRows(p as Poa[]);
-      setClients((c as any[]).map((x) => ({ id: x.id, name: x.name })));
+      setClients((c as any[]).map((x) => ({
+        id: x.id, name: x.name, national_id: x.national_id, address: x.address, phone: x.phone,
+      })));
     } catch (e) { toast.error((e as Error).message); }
     finally { setLoading(false); }
   }
   useEffect(() => { refresh(); }, []);
+
+  const clientOptions = useMemo(() => {
+    const n = clientQuery.trim().toLowerCase();
+    if (!n) return clients;
+    return clients.filter((c) => (c.name ?? "").toLowerCase().includes(n) || (c.phone ?? "").includes(n));
+  }, [clients, clientQuery]);
+
+  /** Selecting a client fills the principal block from their profile. */
+  function pickClient(id: string) {
+    if (!id) { setForm((f) => ({ ...f, client_id: "" })); return; }
+    const c = clients.find((x) => x.id === id);
+    setForm((f) => ({
+      ...f,
+      client_id: id,
+      principal_name: c?.name ?? f.principal_name,
+      principal_id_number: c?.national_id || f.principal_id_number,
+      principal_address: c?.address || f.principal_address,
+    }));
+  }
+
+  async function createClient() {
+    if (!newClient.name.trim()) {
+      toast.error(ar ? "اسم الموكّل مطلوب." : "Client name is required.");
+      return;
+    }
+    setSavingClient(true);
+    try {
+      const row: any = await saveClientFn({ data: { ...newClient, type: "individual", status: "active", locale } });
+      const created: ClientRow = { id: row.id, name: row.name, national_id: row.national_id, address: row.address, phone: row.phone };
+      setClients((prev) => [created, ...prev]);
+      setForm((f) => ({
+        ...f,
+        client_id: created.id,
+        principal_name: created.name ?? f.principal_name,
+        principal_id_number: created.national_id || f.principal_id_number,
+        principal_address: created.address || f.principal_address,
+      }));
+      setNewClient({ name: "", phone: "", email: "", national_id: "", address: "" });
+      setNewClientOpen(false);
+      toast.success(ar ? "تم إضافة الموكّل" : "Client added");
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setSavingClient(false); }
+  }
 
   const filtered = useMemo(() => {
     const n = q.trim().toLowerCase();
@@ -90,6 +142,7 @@ function PoaPage() {
     return rows.filter((r) =>
       [r.principal_name, r.agent_name, r.reference, r.clients?.name].filter(Boolean).join(" ").toLowerCase().includes(n));
   }, [rows, q]);
+
 
   function edit(r: Poa) {
     setForm({
