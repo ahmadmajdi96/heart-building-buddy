@@ -619,7 +619,6 @@ function Platform() {
                 <div className="absolute inset-0" style={{ background: NAVY_GRADIENT }} />
                 <div className="absolute inset-0 arabesque opacity-40" />
               </div>
-            >
               <div className="relative">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] uppercase tracking-[0.32em] text-foreground/40 group-hover:text-gold">
