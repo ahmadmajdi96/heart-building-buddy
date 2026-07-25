@@ -21,6 +21,7 @@ import { Route as AppTimeRouteImport } from './routes/app.time'
 import { Route as AppTeamRouteImport } from './routes/app.team'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppResearchRouteImport } from './routes/app.research'
+import { Route as AppPoaRouteImport } from './routes/app.poa'
 import { Route as AppOnboardingRouteImport } from './routes/app.onboarding'
 import { Route as AppMessagesRouteImport } from './routes/app.messages'
 import { Route as AppFinancialsRouteImport } from './routes/app.financials'
@@ -112,6 +113,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppResearchRoute = AppResearchRouteImport.update({
   id: '/research',
   path: '/research',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPoaRoute = AppPoaRouteImport.update({
+  id: '/poa',
+  path: '/poa',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOnboardingRoute = AppOnboardingRouteImport.update({
@@ -300,6 +306,7 @@ export interface FileRoutesByFullPath {
   '/app/financials': typeof AppFinancialsRoute
   '/app/messages': typeof AppMessagesRoute
   '/app/onboarding': typeof AppOnboardingRoute
+  '/app/poa': typeof AppPoaRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/team': typeof AppTeamRoute
@@ -345,6 +352,7 @@ export interface FileRoutesByTo {
   '/app/financials': typeof AppFinancialsRoute
   '/app/messages': typeof AppMessagesRoute
   '/app/onboarding': typeof AppOnboardingRoute
+  '/app/poa': typeof AppPoaRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/team': typeof AppTeamRoute
@@ -392,6 +400,7 @@ export interface FileRoutesById {
   '/app/financials': typeof AppFinancialsRoute
   '/app/messages': typeof AppMessagesRoute
   '/app/onboarding': typeof AppOnboardingRoute
+  '/app/poa': typeof AppPoaRoute
   '/app/research': typeof AppResearchRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/team': typeof AppTeamRoute
@@ -440,6 +449,7 @@ export interface FileRouteTypes {
     | '/app/financials'
     | '/app/messages'
     | '/app/onboarding'
+    | '/app/poa'
     | '/app/research'
     | '/app/settings'
     | '/app/team'
@@ -485,6 +495,7 @@ export interface FileRouteTypes {
     | '/app/financials'
     | '/app/messages'
     | '/app/onboarding'
+    | '/app/poa'
     | '/app/research'
     | '/app/settings'
     | '/app/team'
@@ -531,6 +542,7 @@ export interface FileRouteTypes {
     | '/app/financials'
     | '/app/messages'
     | '/app/onboarding'
+    | '/app/poa'
     | '/app/research'
     | '/app/settings'
     | '/app/team'
@@ -659,6 +671,13 @@ declare module '@tanstack/react-router' {
       path: '/research'
       fullPath: '/app/research'
       preLoaderRoute: typeof AppResearchRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/poa': {
+      id: '/app/poa'
+      path: '/poa'
+      fullPath: '/app/poa'
+      preLoaderRoute: typeof AppPoaRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/onboarding': {
@@ -901,6 +920,7 @@ interface AppRouteChildren {
   AppFinancialsRoute: typeof AppFinancialsRoute
   AppMessagesRoute: typeof AppMessagesRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
+  AppPoaRoute: typeof AppPoaRoute
   AppResearchRoute: typeof AppResearchRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTeamRoute: typeof AppTeamRoute
@@ -935,6 +955,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFinancialsRoute: AppFinancialsRoute,
   AppMessagesRoute: AppMessagesRoute,
   AppOnboardingRoute: AppOnboardingRoute,
+  AppPoaRoute: AppPoaRoute,
   AppResearchRoute: AppResearchRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTeamRoute: AppTeamRoute,
