@@ -30,7 +30,7 @@ export const getFinancialAnalytics = createServerFn({ method: "POST" })
       s.from("tax_invoices").select("id, client_id, client_name, issue_date, due_date, status, total, amount_paid, tax_amount, subtotal").gte("issue_date", fromISO),
       s.from("payments").select("id, client_id, client_name, amount, method, paid_at, invoice_id").gte("paid_at", fromISO),
       s.from("expenses").select("id, kind, amount, incurred_on, billable, status").gte("incurred_on", fromISO),
-      s.from("time_entries").select("duration_seconds, billable, rate, started_at").gte("started_at", from.toISOString()),
+      s.from("time_entries").select("duration_seconds, billable, hourly_rate, started_at").gte("started_at", from.toISOString()),
     ]);
 
     const invoices: Row[] = invRes.data ?? [];
@@ -93,7 +93,7 @@ export const getFinancialAnalytics = createServerFn({ method: "POST" })
     const avgDaysToPay = payDays.length ? Math.round(payDays.reduce((a, b) => a + b, 0) / payDays.length) : null;
 
     /* ── Time realisation ── */
-    const billableValue = times.filter((t) => t.billable).reduce((a, t) => a + (num(t.duration_seconds) / 3600) * num(t.rate), 0);
+    const billableValue = times.filter((t) => t.billable).reduce((a, t) => a + (num(t.duration_seconds) / 3600) * num(t.hourly_rate), 0);
     const billableHours = Math.round(times.filter((t) => t.billable).reduce((a, t) => a + num(t.duration_seconds), 0) / 360) / 10;
     const nonBillableHours = Math.round(times.filter((t) => !t.billable).reduce((a, t) => a + num(t.duration_seconds), 0) / 360) / 10;
     const utilisation = billableHours + nonBillableHours > 0
