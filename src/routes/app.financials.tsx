@@ -32,9 +32,10 @@ import { toCsv, downloadCsv, inRange } from "@/lib/csv-export";
 
 import { ArrowUpDown, ArrowUp, ArrowDown, ExternalLink, Layers } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { FinancialAnalyticsTab } from "@/components/financials/financial-analytics-tab";
 
 const financialsSearchSchema = z.object({
-  tab: fallback(z.enum(["payments", "schedules", "quotes", "drafts", "invoices", "collections"]), "payments").default("payments"),
+  tab: fallback(z.enum(["analytics", "payments", "schedules", "quotes", "drafts", "invoices", "collections"]), "payments").default("payments"),
   q: fallback(z.string(), "").default(""),
   status: fallback(z.string(), "all").default("all"),
   dueFrom: fallback(z.string(), "").default(""),
@@ -107,6 +108,7 @@ function FinancialsPage() {
       />
       <Tabs value={search.tab} onValueChange={(v) => navigate({ to: "/app/financials", search: { ...search, tab: v as any } })} className="space-y-6">
         <TabsList className="bg-secondary/60">
+          <TabsTrigger value="analytics">{locale === "ar" ? "التحليلات" : "Analytics"}</TabsTrigger>
           <TabsTrigger value="payments">{locale === "ar" ? "المدفوعات" : "Payments"}</TabsTrigger>
           <TabsTrigger value="schedules">{locale === "ar" ? "الجدولة" : "Schedules"}</TabsTrigger>
           <TabsTrigger value="quotes">{locale === "ar" ? "عروض الأسعار" : "Quotes"}</TabsTrigger>
@@ -114,12 +116,14 @@ function FinancialsPage() {
           <TabsTrigger value="invoices">{locale === "ar" ? "سجلات الفوترة" : "Billing records"}</TabsTrigger>
           <TabsTrigger value="collections">{locale === "ar" ? "التحصيل" : "Collections"}</TabsTrigger>
         </TabsList>
+        <TabsContent value="analytics"><FinancialAnalyticsTab /></TabsContent>
         <TabsContent value="payments"><CaseFeesStrip /><PaymentsTab /></TabsContent>
         <TabsContent value="schedules"><SchedulesTab /></TabsContent>
         <TabsContent value="quotes"><QuotesTab /></TabsContent>
         <TabsContent value="drafts"><DraftInvoicesTab /></TabsContent>
         <TabsContent value="invoices"><InvoicesTab /></TabsContent>
         <TabsContent value="collections"><CollectionsTab /></TabsContent>
+
       </Tabs>
     </div>
   );

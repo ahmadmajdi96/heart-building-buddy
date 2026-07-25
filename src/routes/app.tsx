@@ -10,12 +10,14 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { OrgProvider, useOrg, type Permission } from "@/lib/org-context";
-import { NotificationBell } from "@/components/app/notification-bell";
+import { NotificationCenter } from "@/components/app/notification-center";
+import { DensityProvider } from "@/hooks/use-density";
+
 import { CornerFlourish } from "@/components/app/primitives";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Briefcase, FileText, Search, Sparkles, CalendarDays,
-  Receipt, GraduationCap, BarChart3, Building2, Settings, Clock,
+  Receipt, GraduationCap, BarChart3, Building2, Settings, Clock, Stamp,
   Gavel, LogOut, Loader2, Mic, Video, Menu, ChevronDown, ChevronsLeft, ChevronsRight,
   AlertTriangle, History, Users, Network, Wallet, MessageSquare,
 } from "lucide-react";
@@ -53,6 +55,7 @@ const navGroups: NavGroup[] = [
   {
     key: "m_grp_firm",
     items: [
+      { to: "/app/poa", key: "m_poa", icon: Stamp, perm: "view_cases" },
       { to: "/app/time", key: "m_time", icon: Clock, perm: "view_cases" },
       { to: "/app/meetings", key: "m_meetings", icon: Video },
       { to: "/app/messages", key: "m_messages", icon: MessageSquare },
@@ -267,9 +270,11 @@ function AppLayout() {
   const CollapseIcon = collapsed ? (isRtl ? ChevronsLeft : ChevronsRight) : (isRtl ? ChevronsRight : ChevronsLeft);
 
   return (
+    <DensityProvider>
     <div className="relative min-h-screen bg-background text-foreground">
 
       <div className="relative flex min-h-screen">
+
 
         {/* ───── Desktop sidebar (fixed, teal, gold typography) ───── */}
         <aside
@@ -378,7 +383,7 @@ function AppLayout() {
 
               <div className="ms-auto flex items-center gap-1.5">
                 <LangToggle />
-                <NotificationBell />
+                <NotificationCenter />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-2 rounded-full p-1 pr-2 ring-1 ring-transparent transition hover:ring-border focus:outline-none focus-visible:ring-gold/40">
@@ -420,5 +425,7 @@ function AppLayout() {
         </div>
       </div>
     </div>
+    </DensityProvider>
   );
 }
+

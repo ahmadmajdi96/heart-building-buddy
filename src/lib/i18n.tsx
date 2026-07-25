@@ -60,6 +60,7 @@ const dict = {
   m_activity: { ar: "سجل النشاط", en: "Activity Log" },
   m_team: { ar: "الفريق", en: "Team" },
   m_workspace: { ar: "مساحة العمل", en: "Workspace" },
+  m_poa: { ar: "الوكالات", en: "Powers of Attorney" },
   m_debt_collection: { ar: "تحصيل الديون", en: "Debt Collection" },
   m_settings: { ar: "الإعدادات", en: "Settings" },
   m_grp_management: { ar: "الإدارة", en: "Management" },
