@@ -164,8 +164,9 @@ function SiteHeader() {
     { href: "#faq", label: ar(locale, "الأسئلة", "FAQ") },
   ];
   return (
-    <header className="sticky top-0 z-40 border-b border-gold/25 bg-onyx/95 text-pearl backdrop-blur-xl">
-      <div aria-hidden className="pointer-events-none absolute inset-0 arabesque opacity-40" />
+    <header className="sticky top-0 z-40 isolate border-b border-gold/25 text-pearl backdrop-blur-xl">
+      <NavyBackdrop />
+
       <div className="container relative mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-[72px] sm:gap-6 sm:px-6">
         <Link to="/" className="flex min-w-0 items-center">
           <BrandMark tone="dark" />
