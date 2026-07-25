@@ -2,8 +2,10 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Rows2, Rows3, Rows4 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { useDensity, type Density } from "@/hooks/use-density";
+
 
 export const PAGE_SIZES = [25, 50, 100, 200] as const;
 
@@ -44,7 +46,38 @@ export function TablePager({
   );
 }
 
-export function usePagination(reset: unknown[], initialSize: number = 25) {
-  // Compact helper — kept as plain functions to avoid a hook signature.
-  return { initialSize };
+/** Table density control — comfortable / cozy / compact, persisted per browser. */
+export function DensityToggle() {
+  const { locale } = useI18n(); const ar = locale === "ar";
+  const { density, setDensity } = useDensity();
+  const opts: { v: Density; label: string; icon: typeof Rows3 }[] = [
+    { v: "comfortable", label: ar ? "مريح" : "Comfortable", icon: Rows2 },
+    { v: "cozy", label: ar ? "متوسط" : "Cozy", icon: Rows3 },
+    { v: "compact", label: ar ? "مضغوط" : "Compact", icon: Rows4 },
+  ];
+  return (
+    <div className="space-y-1">
+      <Label className="text-[11px] text-muted-foreground">{ar ? "كثافة الجدول" : "Density"}</Label>
+      <div className="inline-flex h-9 items-center rounded-md border bg-card p-0.5">
+        {opts.map((o) => {
+          const Icon = o.icon;
+          const active = density === o.v;
+          return (
+            <button
+              key={o.v}
+              type="button"
+              title={o.label}
+              aria-label={o.label}
+              aria-pressed={active}
+              onClick={() => setDensity(o.v)}
+              className={`flex size-7 items-center justify-center rounded transition ${active ? "bg-gold/15 text-gold" : "text-muted-foreground hover:bg-secondary"}`}
+            >
+              <Icon className="size-3.5" />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
+

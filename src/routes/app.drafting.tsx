@@ -13,6 +13,9 @@ import { getRagJob, queryRag, deleteRagDoc } from "@/lib/rag.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg } from "@/lib/org-context";
 import { exportDraftPdf, exportDraftDocx } from "@/lib/draft-export";
+import { WorkflowPicker, WorkflowWizard, TemplateLibrary } from "@/components/app/drafting-wizard";
+import type { WorkflowKind } from "@/lib/drafting-workflows";
+
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -57,6 +60,12 @@ function DraftingPage() {
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
+
+  // Guided structured workflows (opinion / claim / reply / contract / PoA / library)
+  const [mode, setMode] = useState<"guided" | "custom">("guided");
+  const [wfKind, setWfKind] = useState<WorkflowKind | null>(null);
+  const [seed, setSeed] = useState<Record<string, string> | undefined>(undefined);
+
 
   // Private RAG uploads (per-user tenant)
   const [ragDocs, setRagDocs] = useState<RagDoc[]>([]);
@@ -268,11 +277,57 @@ function DraftingPage() {
       <PageHeader
         title={locale === "ar" ? "الصياغة الذكية" : "AI Drafting"}
         subtitle={locale === "ar"
-          ? "اختر حتى 3 قوالب من مكتبتك، حدّد المتغيرات، ثم حرّر المسودة وصدّرها."
-          : "Pick up to 3 templates from your library, set variables, then edit and export."}
+          ? "خمسة مسارات موجّهة وفق القانون الأردني — استشارة، لائحة دعوى، لائحة جوابية، عقد، وكالة — إضافة إلى مكتبة النماذج."
+          : "Five guided Jordanian workflows — opinion, statement of claim, defence, contract, power of attorney — plus the template library."}
       />
 
-      <div className="card-elev rounded-xl border bg-card p-5 space-y-5">
+      {/* ── Mode switch ── */}
+      <div className="inline-flex rounded-lg border bg-card p-1 text-xs">
+        {([
+          ["guided", locale === "ar" ? "مسارات موجّهة" : "Guided workflows"],
+          ["custom", locale === "ar" ? "صياغة حرة ومستنداتي" : "Free-form & my documents"],
+        ] as const).map(([v, label]) => (
+          <button
+            key={v}
+            onClick={() => setMode(v)}
+            className={`rounded-md px-3.5 py-1.5 transition ${mode === v ? "bg-gold/15 font-semibold text-gold" : "text-muted-foreground hover:bg-secondary"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {mode === "guided" && (
+        wfKind === null ? (
+          <WorkflowPicker onPick={(k) => { setWfKind(k); setSeed(undefined); }} />
+        ) : wfKind === "library" ? (
+          <div className="card-elev space-y-4 rounded-xl border bg-card p-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold">{locale === "ar" ? "مكتبة النماذج الأردنية" : "Jordanian template library"}</h2>
+              <Button variant="ghost" size="sm" onClick={() => setWfKind(null)}>
+                {locale === "ar" ? "رجوع" : "Back"}
+              </Button>
+            </div>
+            <TemplateLibrary onSeed={(k, values) => { setSeed(values); setWfKind(k); }} />
+          </div>
+        ) : (
+          <WorkflowWizard
+            key={`${wfKind}-${JSON.stringify(seed ?? {})}`}
+            kind={wfKind}
+            initialValues={seed}
+            onBack={() => { setWfKind(null); setSeed(undefined); }}
+            onDone={(md, suggested) => {
+              editor?.commands.setContent(mdToHtml(md));
+              setCurrentId(null);
+              if (!title) setTitle(suggested);
+              document.getElementById("draft-editor")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+          />
+        )
+      )}
+
+      <div className={mode === "custom" ? "card-elev rounded-xl border bg-card p-5 space-y-5" : "hidden"}>
+
         <div>
           <div className="mb-2 flex items-center justify-between">
             <div className="text-sm font-semibold">{locale === "ar" ? "قوالب المرجعية" : "Reference templates"}</div>
@@ -406,7 +461,7 @@ function DraftingPage() {
         </div>
       </div>
 
-      <div className="card-elev rounded-xl border bg-card">
+      <div id="draft-editor" className="card-elev rounded-xl border bg-card">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b p-3">
           <div className="flex flex-wrap items-center gap-1">
             <ToolbarBtn onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")}><Bold className="size-4" /></ToolbarBtn>
