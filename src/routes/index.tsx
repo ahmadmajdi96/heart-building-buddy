@@ -610,7 +610,15 @@ function Platform() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
               transition={{ delay: (i % 3) * 0.08, duration: 0.5 }}
-              className="group relative flex flex-col justify-between overflow-hidden bg-background p-6 transition-all duration-500 hover:bg-onyx hover:text-pearl sm:p-8"
+              className="group relative isolate flex flex-col justify-between overflow-hidden bg-background p-6 transition-all duration-500 hover:text-pearl sm:p-8"
+            >
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 -z-10 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+              >
+                <div className="absolute inset-0" style={{ background: NAVY_GRADIENT }} />
+                <div className="absolute inset-0 arabesque opacity-40" />
+              </div>
             >
               <div className="relative">
                 <div className="flex items-center justify-between">
