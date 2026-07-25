@@ -24,6 +24,20 @@ import {
   Sparkles,
 } from "lucide-react";
 
+/* ───────────────────────── Shared navy backdrop (same as hero) ───────────────────────── */
+
+const NAVY_GRADIENT =
+  "radial-gradient(ellipse 55% 45% at 82% 12%, color-mix(in oklch, var(--gold), transparent 55%), transparent 70%), radial-gradient(ellipse 60% 55% at 5% 95%, color-mix(in oklch, var(--primary), transparent 40%), transparent 65%), linear-gradient(180deg, oklch(0.20 0.07 258) 0%, oklch(0.14 0.05 258) 70%, oklch(0.11 0.04 258) 100%)";
+
+function NavyBackdrop({ rounded }: { rounded?: string }) {
+  return (
+    <div aria-hidden className={`pointer-events-none absolute inset-0 -z-10 overflow-hidden ${rounded ?? ""}`}>
+      <div className="absolute inset-0" style={{ background: NAVY_GRADIENT }} />
+      <div className="absolute inset-0 arabesque opacity-40" />
+    </div>
+  );
+}
+
 /* ───────────────────────── Route ───────────────────────── */
 
 export const Route = createFileRoute("/")({
