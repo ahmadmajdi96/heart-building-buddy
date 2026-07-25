@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useDensityClasses } from "@/hooks/use-density";
 import { bi, POA_SCOPES, POA_POWERS, powersForScope, type PoaScope } from "@/lib/jordan-legal";
 import { listPowersOfAttorney, savePowerOfAttorney, deletePowerOfAttorney, revokePowerOfAttorney } from "@/lib/poa.functions";
-import { listClients } from "@/lib/clients.functions";
+import { listClients, saveClient } from "@/lib/clients.functions";
 import { exportDraftPdf } from "@/lib/draft-export";
 
 export const Route = createFileRoute("/app/poa")({
