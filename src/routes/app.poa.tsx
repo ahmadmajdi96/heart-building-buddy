@@ -333,15 +333,38 @@ ${r.notes ? `<p>${r.notes}</p>` : ""}
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs">{ar ? "الموكّل من العملاء" : "Link to client"}</Label>
-              <Select value={form.client_id || "none"} onValueChange={(v) => setForm({ ...form, client_id: v === "none" ? "" : v })}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">{ar ? "الموكّل من العملاء" : "Link to client"}</Label>
+                <button type="button" onClick={() => setNewClientOpen(true)}
+                  className="text-[11px] font-medium text-gold underline-offset-2 hover:underline">
+                  + {ar ? "موكّل جديد" : "New client"}
+                </button>
+              </div>
+              <Select value={form.client_id || "none"} onValueChange={(v) => pickClient(v === "none" ? "" : v)}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder={ar ? "اختر موكّلاً" : "Select a client"}>
+                    {form.client_id
+                      ? (clients.find((c) => c.id === form.client_id)?.name ?? (ar ? "موكّل" : "Client"))
+                      : (ar ? "بدون" : "None")}
+                  </SelectValue>
+                </SelectTrigger>
                 <SelectContent>
+                  <div className="p-1.5">
+                    <Input autoFocus className="h-8" value={clientQuery} onChange={(e) => setClientQuery(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      placeholder={ar ? "ابحث بالاسم أو الهاتف…" : "Search name or phone…"} />
+                  </div>
                   <SelectItem value="none">{ar ? "بدون" : "None"}</SelectItem>
-                  {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  {clientOptions.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  {clientOptions.length === 0 && (
+                    <div className="px-2 py-3 text-center text-xs text-muted-foreground">
+                      {ar ? "لا نتائج" : "No matches"}
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-1">
               <Label className="text-xs">{ar ? "المرجع" : "Reference"}</Label>
               <Input className="h-9" value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
