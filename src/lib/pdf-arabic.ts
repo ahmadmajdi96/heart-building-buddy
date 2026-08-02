@@ -90,9 +90,36 @@ type TextOpts = {
 };
 
 /**
+ * Word-wraps a logical (unshaped) string to `maxWidth`, measuring each candidate
+ * line in its *shaped* form. jsPDF's own splitTextToSize measures unjoined
+ * Arabic letterforms, which are wider than the joined forms actually rendered —
+ * that produced short, ragged lines in long Arabic paragraphs. Measuring the
+ * shaped string gives accurate wrapping.
+ */
+export function wrapArabicText(pdf: jsPDF, text: string, maxWidth: number): string[] {
+  const out: string[] = [];
+  for (const para of String(text).split(/\r?\n/)) {
+    if (!para.trim()) { out.push(""); continue; }
+    const words = para.trim().split(/\s+/);
+    let line = "";
+    for (const word of words) {
+      const candidate = line ? `${line} ${word}` : word;
+      if (pdf.getTextWidth(shapeArabicLine(candidate)) <= maxWidth || !line) {
+        line = candidate;
+      } else {
+        out.push(line);
+        line = word;
+      }
+    }
+    if (line) out.push(line);
+  }
+  return out;
+}
+
+/**
  * Draws a (possibly multi-line, possibly Arabic) string at (x, y).
  * - For Arabic text: switches to the embedded Amiri font, right-aligns at `x`
- *   (or the caller-provided alignment), and shapes each wrapped line.
+ *   (or the caller-provided alignment), wraps on shaped widths, and shapes each line.
  * - For non-Arabic text: behaves like a normal pdf.text call with Helvetica.
  * Returns the number of lines rendered.
  */
@@ -106,14 +133,17 @@ export function drawBilingualText(pdf: jsPDF, text: string | null | undefined, x
   if (arabic) {
     pdf.setFont("Amiri", opts.bold ? "bold" : "normal");
   }
-  const lines = opts.maxWidth ? (pdf.splitTextToSize(s, opts.maxWidth) as string[]) : [s];
+  const lines = opts.maxWidth
+    ? (arabic ? wrapArabicText(pdf, s, opts.maxWidth) : (pdf.splitTextToSize(s, opts.maxWidth) as string[]))
+    : s.split(/\r?\n/);
   const align = arabic ? (opts.align ?? "right") : (opts.align ?? "left");
   lines.forEach((line, i) => {
     const out = arabic ? shapeArabicLine(line) : line;
-    pdf.text(out, x, y + i * lineHeight, { align });
+    if (out) pdf.text(out, x, y + i * lineHeight, { align });
   });
   if (arabic) {
     pdf.setFont("helvetica", opts.bold ? "bold" : "normal");
   }
   return lines.length;
 }
+

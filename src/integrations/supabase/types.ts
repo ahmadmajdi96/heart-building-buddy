@@ -641,6 +641,7 @@ export type Database = {
           adjourned_to: string | null
           assigned_to: string | null
           case_id: string | null
+          client_id: string | null
           completed_at: string | null
           completed_by: string | null
           court: string | null
@@ -664,6 +665,7 @@ export type Database = {
           adjourned_to?: string | null
           assigned_to?: string | null
           case_id?: string | null
+          client_id?: string | null
           completed_at?: string | null
           completed_by?: string | null
           court?: string | null
@@ -687,6 +689,7 @@ export type Database = {
           adjourned_to?: string | null
           assigned_to?: string | null
           case_id?: string | null
+          client_id?: string | null
           completed_at?: string | null
           completed_by?: string | null
           court?: string | null
@@ -712,6 +715,13 @@ export type Database = {
             columns: ["case_id"]
             isOneToOne: false
             referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deadlines_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
           {
