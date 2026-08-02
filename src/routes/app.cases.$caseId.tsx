@@ -5,6 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { PageHeader, StatusBadge } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -173,6 +174,13 @@ function OverviewTab({ data, onChange }: { data: NonNullable<Awaited<ReturnType<
   });
   const [savingPricing, setSavingPricing] = useState(false);
   async function submitPricing() {
+    const vals = [pricing.agreed_fee, pricing.retainer_amount, pricing.hourly_rate];
+    for (const v of vals) {
+      if (v !== "" && (!Number.isFinite(Number(v)) || Number(v) < 0)) {
+        toast.error(ar ? "القيم يجب أن تكون أرقاماً موجبة." : "Values must be valid non-negative numbers.");
+        return;
+      }
+    }
     setSavingPricing(true);
     try {
       await save({ data: {
@@ -240,9 +248,9 @@ function OverviewTab({ data, onChange }: { data: NonNullable<Awaited<ReturnType<
         <DialogContent>
           <DialogHeader><DialogTitle>{ar ? "تعديل التسعير" : "Edit pricing"}</DialogTitle></DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div><Label>{ar ? "السعر المتفق" : "Agreed fee"}</Label><Input type="number" step="0.01" value={pricing.agreed_fee} onChange={(e) => setPricing({ ...pricing, agreed_fee: e.target.value })} /></div>
-            <div><Label>{ar ? "الدفعة المقدمة" : "Retainer"}</Label><Input type="number" step="0.01" value={pricing.retainer_amount} onChange={(e) => setPricing({ ...pricing, retainer_amount: e.target.value })} /></div>
-            <div><Label>{ar ? "الأجر بالساعة" : "Hourly rate"}</Label><Input type="number" step="0.01" value={pricing.hourly_rate} onChange={(e) => setPricing({ ...pricing, hourly_rate: e.target.value })} /></div>
+            <div><Label>{ar ? "السعر المتفق" : "Agreed fee"}</Label><NumberInput step={1} precision={2} value={pricing.agreed_fee} onValueChange={(v) => setPricing({ ...pricing, agreed_fee: String(v) })} /></div>
+            <div><Label>{ar ? "الدفعة المقدمة" : "Retainer"}</Label><NumberInput step={1} precision={2} value={pricing.retainer_amount} onValueChange={(v) => setPricing({ ...pricing, retainer_amount: String(v) })} /></div>
+            <div><Label>{ar ? "الأجر بالساعة" : "Hourly rate"}</Label><NumberInput step={1} precision={2} value={pricing.hourly_rate} onValueChange={(v) => setPricing({ ...pricing, hourly_rate: String(v) })} /></div>
             <div><Label>{ar ? "العملة" : "Currency"}</Label><Input value={pricing.fee_currency} onChange={(e) => setPricing({ ...pricing, fee_currency: e.target.value.toUpperCase() })} /></div>
           </div>
           <DialogFooter>
@@ -366,7 +374,7 @@ function InvoicesTab({ data, onChange }: { data: NonNullable<Awaited<ReturnType<
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{ar ? "الاستحقاق" : "Due date"}</Label><Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></div>
-              <div><Label>{ar ? "الضريبة %" : "Tax %"}</Label><Input type="number" step="0.01" value={form.tax_rate} onChange={(e) => setForm({ ...form, tax_rate: e.target.value })} /></div>
+              <div><Label>{ar ? "الضريبة %" : "Tax %"}</Label><NumberInput step={1} min={0} max={100} precision={2} value={form.tax_rate} onValueChange={(v) => setForm({ ...form, tax_rate: String(v) })} /></div>
             </div>
             <div>
               <div className="mb-2 flex items-center justify-between">
@@ -379,8 +387,8 @@ function InvoicesTab({ data, onChange }: { data: NonNullable<Awaited<ReturnType<
                 {form.items.map((it, i) => (
                   <div key={i} className="grid grid-cols-[1fr_90px_110px_36px] gap-2">
                     <Input placeholder={ar ? "الوصف" : "Description"} value={it.description} onChange={(e) => update(i, { description: e.target.value })} />
-                    <Input type="number" step="0.01" placeholder={ar ? "الكمية" : "Qty"} value={it.quantity} onChange={(e) => update(i, { quantity: Number(e.target.value) })} />
-                    <Input type="number" step="0.01" placeholder={ar ? "السعر" : "Unit price"} value={it.unit_price} onChange={(e) => update(i, { unit_price: Number(e.target.value) })} />
+                    <NumberInput step={1} precision={2} placeholder={ar ? "الكمية" : "Qty"} value={it.quantity} onValueChange={(v) => update(i, { quantity: v })} />
+                    <NumberInput step={1} precision={2} placeholder={ar ? "السعر" : "Unit price"} value={it.unit_price} onValueChange={(v) => update(i, { unit_price: v })} />
                     <Button size="icon" variant="ghost" onClick={() => setForm({ ...form, items: form.items.filter((_, idx) => idx !== i) })} disabled={form.items.length === 1}>
                       <Trash2 className="size-4" />
                     </Button>

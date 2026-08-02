@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/app/primitives";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
@@ -99,7 +100,7 @@ function OrgTab({ editable }: { editable: boolean }) {
         <div className="grid gap-4 md:grid-cols-3">
           <div><Label>{locale === "ar" ? "الرقم الضريبي" : "Tax ID"}</Label><Input className="mt-1.5" value={form.tax_id ?? ""} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} disabled={!editable}/></div>
           <div><Label>{locale === "ar" ? "العملة" : "Currency"}</Label><Input className="mt-1.5" value={form.currency ?? ""} onChange={(e) => setForm({ ...form, currency: e.target.value })} disabled={!editable}/></div>
-          <div><Label>{locale === "ar" ? "ضريبة افتراضية %" : "Default tax %"}</Label><Input type="number" step="0.01" className="mt-1.5" value={form.default_tax_rate ?? 0} onChange={(e) => setForm({ ...form, default_tax_rate: e.target.value })} disabled={!editable}/></div>
+          <div><Label>{locale === "ar" ? "ضريبة افتراضية %" : "Default tax %"}</Label><NumberInput className="mt-1.5" step={1} min={0} max={100} precision={2} value={form.default_tax_rate ?? 0} onValueChange={(v) => setForm({ ...form, default_tax_rate: v })} disabled={!editable}/></div>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div><Label>{locale === "ar" ? "بادئة الفاتورة" : "Invoice prefix"}</Label><Input className="mt-1.5" value={form.invoice_prefix ?? "INV"} onChange={(e) => setForm({ ...form, invoice_prefix: e.target.value })} disabled={!editable}/></div>
@@ -212,8 +213,8 @@ function SmsTab({ editable }: { editable: boolean }) {
             <Input type="time" className="mt-1.5" value={(form.sms_quiet_hours_end ?? "09:00").slice(0,5)}
               onChange={(e) => setForm({ ...form, sms_quiet_hours_end: e.target.value })} disabled={!editable}/></div>
           <div><Label>{locale === "ar" ? "الحد اليومي لكل مستلم" : "Daily cap per recipient"}</Label>
-            <Input type="number" min={0} className="mt-1.5" value={form.sms_daily_cap_per_recipient ?? 1}
-              onChange={(e) => setForm({ ...form, sms_daily_cap_per_recipient: e.target.value })} disabled={!editable}/></div>
+            <NumberInput className="mt-1.5" step={1} min={0} precision={0} value={form.sms_daily_cap_per_recipient ?? 1}
+              onValueChange={(v) => setForm({ ...form, sms_daily_cap_per_recipient: Math.round(v) })} disabled={!editable}/></div>
           <div className="flex items-center gap-2 pt-6">
             <input id="footer" type="checkbox" checked={form.sms_bilingual_footer !== false}
               onChange={(e) => setForm({ ...form, sms_bilingual_footer: e.target.checked })} disabled={!editable}/>

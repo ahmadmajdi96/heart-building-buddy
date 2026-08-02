@@ -5,6 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { PageHeader, StatusBadge } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -474,9 +475,9 @@ function OwedTab({ data, clientId, onChange }: { data: any; clientId: string; on
         <DialogContent>
           <DialogHeader><DialogTitle>{ar ? "خطة أقساط جديدة" : "New installment plan"}</DialogTitle></DialogHeader>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div><Label>{ar ? "المبلغ" : "Amount"}</Label><Input type="number" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })} /></div>
+            <div><Label>{ar ? "المبلغ" : "Amount"}</Label><NumberInput step={1} precision={2} value={form.amount} onValueChange={(v) => setForm({ ...form, amount: v })} /></div>
             <div><Label>{ar ? "العملة" : "Currency"}</Label><Input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })} /></div>
-            <div><Label>{ar ? "عدد الأقساط" : "Number of installments"}</Label><Input type="number" min={1} max={60} value={form.count} onChange={(e) => setForm({ ...form, count: Number(e.target.value) })} /></div>
+            <div><Label>{ar ? "عدد الأقساط" : "Number of installments"}</Label><NumberInput step={1} min={1} max={60} precision={0} value={form.count} onValueChange={(v) => setForm({ ...form, count: Math.round(v) })} /></div>
             <div><Label>{ar ? "التكرار" : "Frequency"}</Label>
               <Select value={form.frequency} onValueChange={(v: any) => setForm({ ...form, frequency: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
