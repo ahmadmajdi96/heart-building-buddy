@@ -37,10 +37,19 @@ export const saveAppointment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => ApptInput.parse(d))
   .handler(async ({ data, context }) => {
+    let clientId = data.client_id || null;
+    const caseId = data.case_id || null;
+    // Ensure the appointment can never be saved half-linked: if a case is
+    // set, always derive/confirm the client from that case server-side.
+    if (caseId) {
+      const { data: caseRow } = await context.supabase
+        .from("cases").select("client_id").eq("id", caseId).maybeSingle();
+      if (caseRow?.client_id) clientId = caseRow.client_id;
+    }
     const payload = {
       ...data,
-      case_id: data.case_id || null,
-      client_id: data.client_id || null,
+      case_id: caseId,
+      client_id: clientId,
       owner_id: context.userId,
     };
     if (data.id) {

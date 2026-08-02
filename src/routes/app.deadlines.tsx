@@ -274,25 +274,42 @@ function DeadlinesPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>{ar ? "العميل" : "Client"}</Label>
-                  <Select value={editing.client_id || (editing.case_id ? (cases.find((c) => c.id === editing.case_id)?.client_id ?? "none") : "none")} onValueChange={(v) => setEditing({ ...editing, client_id: v === "none" ? "" : v, case_id: "" })}>
+                  <Select
+                    value={editing.client_id || (editing.case_id ? (cases.find((c) => c.id === editing.case_id)?.client_id ?? "none") : "none")}
+                    disabled={!!editing.case_id}
+                    onValueChange={(v) => setEditing({ ...editing, client_id: v === "none" ? "" : v, case_id: "" })}
+                  >
                     <SelectTrigger><SelectValue placeholder={ar ? "كل العملاء" : "All clients"} /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">{ar ? "بدون / الكل" : "None / all"}</SelectItem>
                       {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                  {editing.case_id && (
+                    <p className="text-xs text-muted-foreground">{ar ? "مقفل حسب القضية المختارة." : "Locked to the selected case."}</p>
+                  )}
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label>{ar ? "القضية" : "Matter"}</Label>
-                  <Select value={editing.case_id || "none"} onValueChange={(v) => setEditing({ ...editing, case_id: v === "none" ? "" : v })}>
+                  <Select
+                    value={editing.case_id || "none"}
+                    onValueChange={(v) => {
+                      if (v === "none") { setEditing({ ...editing, case_id: "" }); return; }
+                      const c = cases.find((x) => x.id === v);
+                      setEditing({ ...editing, case_id: v, client_id: c?.client_id || editing.client_id || "" });
+                    }}
+                  >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">{ar ? "بدون" : "None"}</SelectItem>
                       {casesForDialog.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                  {editing.client_id && casesForDialog.length === 0 && (
+                    <p className="text-xs text-muted-foreground">{ar ? "لا توجد قضايا لهذا العميل." : "This client has no cases."}</p>
+                  )}
                 </div>
               </div>
               <div className="space-y-1.5"><Label>{ar ? "العنوان *" : "Title *"}</Label><Input value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} /></div>

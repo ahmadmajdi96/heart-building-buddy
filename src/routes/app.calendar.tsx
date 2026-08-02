@@ -44,7 +44,7 @@ function CalendarPage() {
   const [view, setView] = useState<View>("month");
   const [cursor, setCursor] = useState(new Date());
   const [appts, setAppts] = useState<Appt[]>([]);
-  const [cases, setCases] = useState<{ id: string; title: string }[]>([]);
+  const [cases, setCases] = useState<{ id: string; title: string; client_id: string | null }[]>([]);
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Partial<Appt> | null>(null);
@@ -65,7 +65,7 @@ function CalendarPage() {
         listC(), listCl(),
       ]);
       setAppts(a as Appt[]);
-      setCases((c as any[]).map((x) => ({ id: x.id, title: x.title })));
+      setCases((c as any[]).map((x) => ({ id: x.id, title: x.title, client_id: x.client_id ?? null })));
       setClients((cl as any[]).map((x) => ({ id: x.id, name: x.name })));
     } catch (e) { toast.error((e as Error).message); }
     finally { setLoading(false); }
@@ -109,6 +109,11 @@ function CalendarPage() {
   const heading = view === "month" ? format(cursor, "MMMM yyyy") : view === "week" ? `${format(startOfWeek(cursor), "MMM d")} – ${format(endOfWeek(cursor), "MMM d, yyyy")}` : format(cursor, "EEEE, MMMM d, yyyy");
 
   const filteredAppts = appts;
+
+  const casesForDialog = useMemo(
+    () => (editing?.client_id ? cases.filter((c) => c.client_id === editing.client_id) : cases),
+    [cases, editing?.client_id],
+  );
 
   return (
     <div className="space-y-6">
@@ -161,17 +166,41 @@ function CalendarPage() {
               <div><Label>Location</Label><Input value={editing?.location ?? ""} onChange={(e) => setEditing({ ...editing!, location: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Case</Label>
-                <Select value={editing?.case_id ?? "none"} onValueChange={(v) => setEditing({ ...editing!, case_id: v === "none" ? null : v })}>
+              <div><Label>Case / القضية</Label>
+                <Select value={editing?.case_id ?? "none"} onValueChange={(v) => {
+                  if (v === "none") { setEditing({ ...editing!, case_id: null }); return; }
+                  const c = cases.find((x) => x.id === v);
+                  setEditing({ ...editing!, case_id: v, client_id: c?.client_id ?? editing?.client_id ?? null });
+                }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="none">None</SelectItem>{cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent>
+                  <SelectContent><SelectItem value="none">None</SelectItem>{casesForDialog.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent>
                 </Select>
+                {editing?.client_id && casesForDialog.length === 0 && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {locale === "ar" ? "لا توجد قضايا لهذا العميل." : "This client has no cases."}
+                  </p>
+                )}
               </div>
-              <div><Label>Client</Label>
-                <Select value={editing?.client_id ?? "none"} onValueChange={(v) => setEditing({ ...editing!, client_id: v === "none" ? null : v })}>
+              <div><Label>Client / العميل</Label>
+                <Select
+                  value={editing?.client_id ?? "none"}
+                  disabled={!!editing?.case_id}
+                  onValueChange={(v) => {
+                    const clientId = v === "none" ? null : v;
+                    const caseStillValid = editing?.case_id
+                      ? cases.find((c) => c.id === editing.case_id)?.client_id === clientId
+                      : true;
+                    setEditing({ ...editing!, client_id: clientId, case_id: caseStillValid ? editing?.case_id ?? null : null });
+                  }}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="none">None</SelectItem>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                 </Select>
+                {editing?.case_id && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {locale === "ar" ? "مقفل حسب القضية المختارة." : "Locked to the selected case."}
+                  </p>
+                )}
               </div>
             </div>
             <div><Label>Notes</Label><Textarea rows={2} value={editing?.description ?? ""} onChange={(e) => setEditing({ ...editing!, description: e.target.value })} /></div>
