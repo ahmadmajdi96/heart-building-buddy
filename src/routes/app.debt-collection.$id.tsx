@@ -272,7 +272,13 @@ function PayerDialog({ caseId, clients, onSubmit, pending, ar }: any) {
         <div><Label>{ar ? "ملاحظات" : "Notes"}</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
       </div>
       <DialogFooter>
-        <Button variant="gold" disabled={pending || !form.name} onClick={() => onSubmit(form)}>{pending ? <Loader2 className="size-4 animate-spin" /> : ar ? "إضافة" : "Add"}</Button>
+        <Button variant="gold" disabled={pending || !form.name} onClick={() => {
+          if (!Number.isFinite(form.amount_due) || form.amount_due < 0) {
+            toast.error(ar ? "المبلغ المستحق يجب أن يكون رقماً موجباً." : "Amount due must be a valid non-negative number.");
+            return;
+          }
+          onSubmit(form);
+        }}>{pending ? <Loader2 className="size-4 animate-spin" /> : ar ? "إضافة" : "Add"}</Button>
       </DialogFooter>
     </DialogContent>
   );
@@ -533,7 +539,13 @@ function PaymentDialog({ caseId, caseData, payers, onSubmit, pending, ar }: any)
         <div><Label>{ar ? "ملاحظات" : "Notes"}</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
       </div>
       <DialogFooter>
-        <Button variant="gold" disabled={pending || !form.amount_received} onClick={() => onSubmit(form)}>{pending ? <Loader2 className="size-4 animate-spin" /> : ar ? "تسجيل" : "Record"}</Button>
+        <Button variant="gold" disabled={pending || !form.amount_received} onClick={() => {
+          if (!Number.isFinite(form.amount_received) || form.amount_received < 0 || !Number.isFinite(form.service_fee) || form.service_fee < 0 || !Number.isFinite(form.amount_forwarded) || form.amount_forwarded < 0) {
+            toast.error(ar ? "المبالغ يجب أن تكون أرقاماً موجبة." : "Amounts must be valid non-negative numbers.");
+            return;
+          }
+          onSubmit(form);
+        }}>{pending ? <Loader2 className="size-4 animate-spin" /> : ar ? "تسجيل" : "Record"}</Button>
       </DialogFooter>
     </DialogContent>
   );

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -97,7 +98,7 @@ export function ExpensesTab({ caseId, clientId, locale, onChange }: { caseId: st
               </div>
               <div><Label>{ar ? "التاريخ" : "Date"}</Label><Input type="date" value={form.incurred_on} onChange={(e) => setForm((f: any) => ({ ...f, incurred_on: e.target.value }))} /></div>
             </div>
-            <div><Label>{ar ? "المبلغ" : "Amount"}</Label><Input type="number" step="0.01" value={form.amount} onChange={(e) => setForm((f: any) => ({ ...f, amount: Number(e.target.value) }))} /></div>
+            <div><Label>{ar ? "المبلغ" : "Amount"}</Label><NumberInput step={1} precision={2} value={form.amount} onValueChange={(v) => setForm((f: any) => ({ ...f, amount: v }))} /></div>
             <div><Label>{ar ? "الوصف" : "Description"}</Label><Textarea rows={2} value={form.description} onChange={(e) => setForm((f: any) => ({ ...f, description: e.target.value }))} /></div>
           </div>
           <DialogFooter><Button variant="ghost" onClick={() => setOpen(false)}>{ar ? "إلغاء" : "Cancel"}</Button><Button variant="gold" onClick={submit}>{ar ? "حفظ" : "Save"}</Button></DialogFooter>
@@ -206,8 +207,8 @@ export function PrebillsTab({ caseId, locale }: { caseId: string; locale: string
                       <tr key={l.id} className={`border-t ${!l.included ? "opacity-40" : ""}`}>
                         <td className="p-2 text-xs uppercase text-muted-foreground">{l.kind}</td>
                         <td className="p-2"><Input className="h-7 text-sm" defaultValue={l.description || ""} onBlur={async (e) => { if (e.target.value !== l.description) { await updateLineFn({ data: { id: l.id, description: e.target.value } }); openDetail(detail.prebill.id); } }} /></td>
-                        <td className="p-2 text-end"><Input className="h-7 text-sm w-20 text-end tabular-nums" type="number" step="0.01" defaultValue={l.quantity} onBlur={async (e) => { const q = Number(e.target.value); if (q !== Number(l.quantity)) { await updateLineFn({ data: { id: l.id, quantity: q, unit_price: Number(l.unit_price) } }); openDetail(detail.prebill.id); } }} /></td>
-                        <td className="p-2 text-end"><Input className="h-7 text-sm w-24 text-end tabular-nums" type="number" step="0.01" defaultValue={l.unit_price} onBlur={async (e) => { const p = Number(e.target.value); if (p !== Number(l.unit_price)) { await updateLineFn({ data: { id: l.id, quantity: Number(l.quantity), unit_price: p } }); openDetail(detail.prebill.id); } }} /></td>
+                        <td className="p-2 text-end"><NumberInput className="h-7 w-20 text-sm" step={1} precision={2} value={l.quantity} onValueChange={async (q) => { if (q !== Number(l.quantity)) { await updateLineFn({ data: { id: l.id, quantity: q, unit_price: Number(l.unit_price) } }); openDetail(detail.prebill.id); } }} /></td>
+                        <td className="p-2 text-end"><NumberInput className="h-7 w-24 text-sm" step={1} precision={2} value={l.unit_price} onValueChange={async (p) => { if (p !== Number(l.unit_price)) { await updateLineFn({ data: { id: l.id, quantity: Number(l.quantity), unit_price: p } }); openDetail(detail.prebill.id); } }} /></td>
                         <td className="p-2 text-end tabular-nums">{Number(l.amount).toFixed(2)}</td>
                         <td className="p-2 text-center">
                           <input type="checkbox" checked={l.included} onChange={async () => { await updateLineFn({ data: { id: l.id, included: !l.included } }); openDetail(detail.prebill.id); }} />
@@ -224,7 +225,7 @@ export function PrebillsTab({ caseId, locale }: { caseId: string; locale: string
                 <div className="grid grid-cols-3 gap-2 text-sm">
                   <div><Label>{ar ? "الوقت" : "Time"}</Label><div className="tabular-nums">{Number(detail.prebill.subtotal_time).toFixed(2)}</div></div>
                   <div><Label>{ar ? "المصاريف" : "Expenses"}</Label><div className="tabular-nums">{Number(detail.prebill.subtotal_expenses).toFixed(2)}</div></div>
-                  <div><Label>{ar ? "الخصم" : "Discount"}</Label><Input className="h-7 text-sm" type="number" step="0.01" defaultValue={detail.prebill.discount} onBlur={async (e) => { const d = Number(e.target.value); if (d !== Number(detail.prebill.discount)) { await updateFn({ data: { id: detail.prebill.id, discount: d } }); openDetail(detail.prebill.id); } }} /></div>
+                  <div><Label>{ar ? "الخصم" : "Discount"}</Label><NumberInput className="h-7 text-sm" step={1} precision={2} value={detail.prebill.discount} onValueChange={async (d) => { if (d !== Number(detail.prebill.discount)) { await updateFn({ data: { id: detail.prebill.id, discount: d } }); openDetail(detail.prebill.id); } }} /></div>
                 </div>
                 <div className="text-end font-serif text-xl text-gold tabular-nums">{Number(detail.prebill.total).toFixed(2)} {detail.prebill.currency}</div>
               </div>

@@ -40,7 +40,7 @@ type Entry = {
   cases?: { id: string; title: string; case_number: string | null } | null;
   clients?: { id: string; name: string } | null;
 };
-type CaseRow = { id: string; title: string; case_number: string | null };
+type CaseRow = { id: string; title: string; case_number: string | null; client_id: string | null };
 type ClientRow = { id: string; name: string };
 
 function formatDuration(seconds: number): string {
@@ -113,12 +113,17 @@ function TimePage() {
   const [tClient, setTClient] = useState<string>("none");
   const [tRate, setTRate] = useState<string>("");
 
+  const casesForTimer = useMemo(
+    () => (tClient !== "none" ? cases.filter((c) => c.client_id === tClient) : cases),
+    [cases, tClient],
+  );
+
   async function refresh() {
     setLoading(true);
     try {
       const [es, cs, cls, run] = await Promise.all([list(), lCases(), lClients(), running()]);
       setEntries(es as Entry[]);
-      setCases((cs as any[]).map((c) => ({ id: c.id, title: c.title, case_number: c.case_number })));
+      setCases((cs as any[]).map((c) => ({ id: c.id, title: c.title, case_number: c.case_number, client_id: c.client_id ?? null })));
       setClients((cls as any[]).map((c) => ({ id: c.id, name: c.name })));
       setRunningEntry((run as Entry | null) ?? null);
     } catch (e) { toast.error((e as Error).message); }
@@ -318,23 +323,38 @@ function TimePage() {
             </div>
             <div className="space-y-1.5">
               <Label>{ar ? "القضية" : "Matter"}</Label>
-              <Select value={tCase} onValueChange={setTCase}>
+              <Select value={tCase} onValueChange={(v) => {
+                if (v === "none") { setTCase("none"); return; }
+                const c = cases.find((x) => x.id === v);
+                setTCase(v);
+                if (c?.client_id) setTClient(c.client_id);
+              }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{ar ? "بدون" : "None"}</SelectItem>
-                  {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+                  {casesForTimer.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
                 </SelectContent>
               </Select>
+              {tClient !== "none" && casesForTimer.length === 0 && (
+                <p className="text-xs text-muted-foreground">{ar ? "لا توجد قضايا لهذا العميل." : "This client has no cases."}</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>{ar ? "العميل" : "Client"}</Label>
-              <Select value={tClient} onValueChange={setTClient}>
+              <Select value={tClient} disabled={tCase !== "none"} onValueChange={(v) => {
+                setTClient(v);
+                const c = cases.find((x) => x.id === tCase);
+                if (v !== "none" && c && c.client_id !== v) setTCase("none");
+              }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{ar ? "بدون" : "None"}</SelectItem>
                   {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
+              {tCase !== "none" && (
+                <p className="text-xs text-muted-foreground">{ar ? "مقفل حسب القضية المختارة." : "Locked to the selected case."}</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>{ar ? "السعر/ساعة" : "Rate/hr"}</Label>
@@ -575,22 +595,42 @@ function TimePage() {
             <div className="space-y-1.5"><Label>{ar ? "الوصف" : "Description"}</Label><Textarea rows={2} value={editing?.description ?? ""} onChange={(e) => setEditing({ ...editing!, description: e.target.value })} /></div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5"><Label>{ar ? "القضية" : "Matter"}</Label>
-                <Select value={editing?.case_id ?? "none"} onValueChange={(v) => setEditing({ ...editing!, case_id: v === "none" ? null : v })}>
+                <Select value={editing?.case_id ?? "none"} onValueChange={(v) => {
+                  if (v === "none") { setEditing({ ...editing!, case_id: null }); return; }
+                  const c = cases.find((x) => x.id === v);
+                  setEditing({ ...editing!, case_id: v, client_id: c?.client_id ?? editing?.client_id ?? null });
+                }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">{ar ? "بدون" : "None"}</SelectItem>
-                    {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+                    {(editing?.client_id ? cases.filter((c) => c.client_id === editing.client_id) : cases).map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                {editing?.client_id && cases.filter((c) => c.client_id === editing.client_id).length === 0 && (
+                  <p className="text-xs text-muted-foreground">{ar ? "لا توجد قضايا لهذا العميل." : "This client has no cases."}</p>
+                )}
               </div>
               <div className="space-y-1.5"><Label>{ar ? "العميل" : "Client"}</Label>
-                <Select value={editing?.client_id ?? "none"} onValueChange={(v) => setEditing({ ...editing!, client_id: v === "none" ? null : v })}>
+                <Select
+                  value={editing?.client_id ?? "none"}
+                  disabled={!!editing?.case_id}
+                  onValueChange={(v) => {
+                    const clientId = v === "none" ? null : v;
+                    const caseStillValid = editing?.case_id
+                      ? cases.find((c) => c.id === editing.case_id)?.client_id === clientId
+                      : true;
+                    setEditing({ ...editing!, client_id: clientId, case_id: caseStillValid ? editing?.case_id ?? null : null });
+                  }}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">{ar ? "بدون" : "None"}</SelectItem>
                     {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                {editing?.case_id && (
+                  <p className="text-xs text-muted-foreground">{ar ? "مقفل حسب القضية المختارة." : "Locked to the selected case."}</p>
+                )}
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
