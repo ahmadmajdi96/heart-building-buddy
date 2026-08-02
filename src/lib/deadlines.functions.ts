@@ -22,6 +22,7 @@ export const listDeadlines = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z.object({
       case_id: z.string().uuid().optional(),
+      client_id: z.string().uuid().optional(),
       status: StatusEnum.optional(),
       from: z.string().optional(),
       to: z.string().optional(),
@@ -30,9 +31,10 @@ export const listDeadlines = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     let q = (context.supabase as any)
       .from("deadlines")
-      .select("id, case_id, kind, title, description, location, court, due_at, status, completed_at, reminder_days, assigned_to, owner_id, created_at, cases(id, title, case_number)")
+      .select("id, case_id, client_id, kind, title, description, location, court, due_at, status, completed_at, reminder_days, assigned_to, owner_id, created_at, cases(id, title, case_number), clients(id, name)")
       .order("due_at", { ascending: true });
     if (data.case_id) q = q.eq("case_id", data.case_id);
+    if (data.client_id) q = q.eq("client_id", data.client_id);
     if (data.status) q = q.eq("status", data.status);
     if (data.from) q = q.gte("due_at", data.from);
     if (data.to) q = q.lte("due_at", data.to);
@@ -47,6 +49,7 @@ export const saveDeadline = createServerFn({ method: "POST" })
     z.object({
       id: z.string().uuid().optional(),
       case_id: z.string().uuid().nullable().optional(),
+      client_id: z.string().uuid().nullable().optional(),
       kind: KindEnum.default("deadline"),
       title: z.string().min(1),
       description: z.string().nullable().optional(),
@@ -60,9 +63,17 @@ export const saveDeadline = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const orgId = await getCallerOrgId(context);
     if (!orgId) throw new Error("No organization for caller");
+    // A deadline can be linked directly to a client, or inherit the client from its case.
+    let clientId = data.client_id ?? null;
+    if (data.case_id) {
+      const { data: kase } = await (context.supabase as any)
+        .from("cases").select("client_id").eq("id", data.case_id).maybeSingle();
+      if (kase?.client_id) clientId = kase.client_id;
+    }
     const payload: any = {
       org_id: orgId,
       case_id: data.case_id ?? null,
+      client_id: clientId,
       kind: data.kind,
       title: data.title,
       description: data.description ?? null,

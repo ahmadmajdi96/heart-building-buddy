@@ -58,7 +58,7 @@ function DeadlinesPage() {
     setLoading(true);
     try {
       const [es, st, cs, cls] = await Promise.all([
-        list({ data: { status: filterStatus === "all" ? undefined : (filterStatus as any), case_id: filterCase === "all" ? undefined : filterCase } }),
+        list({ data: { status: filterStatus === "all" ? undefined : (filterStatus as any), case_id: filterCase === "all" ? undefined : filterCase, client_id: filterClient === "all" ? undefined : filterClient } }),
         stats(),
         lCases(),
         lClients(),
@@ -70,7 +70,7 @@ function DeadlinesPage() {
     } catch (e) { toast.error((e as Error).message); }
     finally { setLoading(false); }
   }
-  useEffect(() => { refresh(); }, [filterStatus, filterCase]);
+  useEffect(() => { refresh(); }, [filterStatus, filterCase, filterClient]);
 
   // Cases available in the toolbar case filter, filtered by selected client.
   const casesForFilter = useMemo(
@@ -86,7 +86,7 @@ function DeadlinesPage() {
   function openNew() {
     setEditing({
       kind: "deadline", title: "", due_at: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16),
-      case_id: "", description: "", location: "", court: "", reminder_days: [7, 3, 1],
+      case_id: "", client_id: "", description: "", location: "", court: "", reminder_days: [7, 3, 1],
     });
     setEditOpen(true);
   }
@@ -103,6 +103,7 @@ function DeadlinesPage() {
         kind: editing.kind,
         title: editing.title,
         case_id: editing.case_id || null,
+        client_id: editing.client_id || null,
         description: editing.description || null,
         location: editing.location || null,
         court: editing.court || null,
