@@ -27,7 +27,12 @@ const ARABIC_DIGITS = /[\u0660-\u0669\u06F0-\u06F9]/g;
 /** Converts Arabic-Indic digits to ASCII and strips separators. */
 export function normalizeDigits(input: string): string {
   return input
-    .replace(ARABIC_DIGITS, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d) >= 0 ? "٠١٢٣٤٥٦٧٨٩".indexOf(d) : "۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
+    .replace(ARABIC_DIGITS, (d) => {
+      const ar = "٠١٢٣٤٥٦٧٨٩".indexOf(d);
+      if (ar >= 0) return String(ar);
+      const fa = "۰۱۲۳۴۵۶۷۸۹".indexOf(d);
+      return fa >= 0 ? String(fa) : d;
+    })
     .replace(/[\s\-().]/g, "");
 }
 
