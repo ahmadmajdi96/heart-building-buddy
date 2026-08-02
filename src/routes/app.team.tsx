@@ -431,18 +431,55 @@ function InviteDialog({ onSaved, onClose }: { onSaved: () => void; onClose: () =
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<OrgRole>("associate");
   const [saving, setSaving] = useState(false);
+  // No email service is connected yet, so we hand the owner a ready-to-send
+  // message + link instead of silently claiming an email went out.
+  const [invited, setInvited] = useState<string | null>(null);
+
+  const signupUrl = typeof window !== "undefined" ? `${window.location.origin}/auth` : "/auth";
+  const inviteMessage = ar
+    ? `تمت دعوتك للانضمام إلى مساحة العمل في محكم لو بصفة ${roleLabel(role, locale)}.\nسجّل الدخول باستخدام بريدك ${email} من هنا: ${signupUrl}`
+    : `You've been invited to join our Mohkam Law workspace as ${roleLabel(role, locale)}.\nSign up with your email ${email} here: ${signupUrl}`;
 
   async function save() {
     setSaving(true);
     try {
       await inviteFn({ data: { email, role, redirectTo: window.location.origin + "/set-password" } });
-      toast.success(ar ? "تمت الدعوة — تم إرسال رابط البريد." : "Invited — sign-in link sent.");
+      setInvited(email);
+      toast.success(ar ? "تم إنشاء الدعوة" : "Invitation created");
       onSaved();
     } catch (e) { toast.error((e as Error).message); }
     finally { setSaving(false); }
   }
 
+  async function copyMessage() {
+    try {
+      await navigator.clipboard.writeText(inviteMessage);
+      toast.success(ar ? "تم نسخ نص الدعوة" : "Invite message copied");
+    } catch { toast.error(ar ? "تعذّر النسخ" : "Copy failed"); }
+  }
+
   const roles: OrgRole[] = ["partner","associate","paralegal","accountant","assistant"];
+
+  if (invited) {
+    return (
+      <DialogContent>
+        <DialogHeader><DialogTitle>{ar ? "شارك الدعوة" : "Share the invite"}</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            {ar
+              ? `تم حجز مقعد لـ ${invited} بصفة ${roleLabel(role, locale)}. لم يتم ربط خدمة بريد بعد، لذا أرسل الرسالة التالية إليه عبر البريد أو الرسائل حتى يتمكّن من التسجيل بنفس البريد.`
+              : `A seat is reserved for ${invited} as ${roleLabel(role, locale)}. No email service is connected yet, so send them this message so they can sign up with the same address.`}
+          </p>
+          <pre className="whitespace-pre-wrap rounded-md border bg-muted/40 p-3 text-xs">{inviteMessage}</pre>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={copyMessage}>{ar ? "نسخ الرسالة" : "Copy message"}</Button>
+          <Button variant="gold" onClick={onClose}>{ar ? "تم" : "Done"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    );
+  }
+
   return (
     <DialogContent>
       <DialogHeader><DialogTitle>{ar ? "دعوة عضو" : "Invite member"}</DialogTitle></DialogHeader>
@@ -454,14 +491,20 @@ function InviteDialog({ onSaved, onClose }: { onSaved: () => void; onClose: () =
             <SelectContent>{roles.map(r => <SelectItem key={r} value={r}>{roleLabel(r, locale)}</SelectItem>)}</SelectContent>
           </Select>
         </div>
+        <p className="text-xs text-muted-foreground">
+          {ar
+            ? "سيتم إنشاء الدعوة وستحصل على نص جاهز لإرساله للعضو (لم يتم ربط خدمة بريد بعد)."
+            : "We create the pending seat and give you a ready-to-send message (no email service is connected yet)."}
+        </p>
       </div>
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>{ar ? "إلغاء" : "Cancel"}</Button>
-        <Button variant="gold" onClick={save} disabled={saving || !email}>{saving && <Loader2 className="size-4 animate-spin" />}{ar ? "إرسال الدعوة" : "Send invite"}</Button>
+        <Button variant="gold" onClick={save} disabled={saving || !email}>{saving && <Loader2 className="size-4 animate-spin" />}{ar ? "إنشاء الدعوة" : "Create invite"}</Button>
       </DialogFooter>
     </DialogContent>
   );
 }
+
 
 /* =====================================================================
    WORKLOAD — richer per-member cards with progress bars
