@@ -51,22 +51,34 @@ export const Route = createFileRoute("/api/public/elevenlabs/transcribe")({
         const language = (inbound.get("language") as string | null) || "";
         const numSpeakers = (inbound.get("num_speakers") as string | null) || "";
 
-        const upstream = new FormData();
-        upstream.append("file", file, file.name || "meeting.webm");
-        upstream.append("model_id", "scribe_v2");
-        upstream.append("diarize", "true");
-        upstream.append("tag_audio_events", "true");
-        upstream.append("timestamps_granularity", "word");
-        if (language) upstream.append("language_code", language);
-        if (numSpeakers) upstream.append("num_speakers", numSpeakers);
+        const buildBody = (model: string) => {
+          const upstream = new FormData();
+          upstream.append("file", file, file.name || "meeting.webm");
+          upstream.append("model_id", model);
+          upstream.append("diarize", "true");
+          upstream.append("tag_audio_events", "true");
+          upstream.append("timestamps_granularity", "word");
+          if (language) upstream.append("language_code", language);
+          // Passing the known speaker count keeps overlapping voices from being merged.
+          if (numSpeakers) upstream.append("num_speakers", numSpeakers);
+          return upstream;
+        };
 
-        const res = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
-          method: "POST",
-          headers: { "xi-api-key": apiKey },
-          body: upstream,
-        });
+        const call = (model: string) =>
+          fetch("https://api.elevenlabs.io/v1/speech-to-text", {
+            method: "POST",
+            headers: { "xi-api-key": apiKey },
+            body: buildBody(model),
+          });
 
-        const text = await res.text();
+        let res = await call("scribe_v2");
+        let text = await res.text();
+        // Some accounts are not enabled for scribe_v2 — fall back to the stable model
+        // rather than failing the whole transcription.
+        if (!res.ok && res.status >= 400 && res.status < 500 && /model/i.test(text)) {
+          res = await call("scribe_v1");
+          text = await res.text();
+        }
         if (!res.ok) {
           return jsonResponse({ error: `ElevenLabs STT error ${res.status}: ${text}` }, { status: 502 });
         }
