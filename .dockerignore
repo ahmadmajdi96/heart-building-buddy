@@ -10,3 +10,8 @@ dist
 .DS_Store
 *.log
 .env.local
+Dockerfile
+Dockerfile.*
+docker-compose.yml
+docker-compose.*.yml
+.dockerignore
