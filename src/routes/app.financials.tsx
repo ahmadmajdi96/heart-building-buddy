@@ -283,6 +283,11 @@ function PaymentDialog({ onSaved, onClose }: { onSaved: () => void; onClose: () 
 
   async function save() {
     if (!org) return;
+    const amountNum = Number(form.amount);
+    if (!Number.isFinite(amountNum) || amountNum < 0) {
+      toast.error(locale === "ar" ? "المبلغ يجب أن يكون رقماً موجباً." : "Amount must be a valid non-negative number.");
+      return;
+    }
     setSaving(true);
     const { data: sess } = await supabase.auth.getSession();
     const uid = sess.session!.user.id;
@@ -318,7 +323,7 @@ function PaymentDialog({ onSaved, onClose }: { onSaved: () => void; onClose: () 
           <div><Label>{locale === "ar" ? "العميل" : "Client"}</Label><Input className="mt-1.5" value={form.client_name} onChange={(e) => setForm({ ...form, client_name: e.target.value })}/></div>
         )}
         <div className="grid grid-cols-2 gap-3">
-          <div><Label>{locale === "ar" ? "المبلغ" : "Amount"}</Label><Input type="number" step="0.01" className="mt-1.5" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })}/></div>
+          <div><Label>{locale === "ar" ? "المبلغ" : "Amount"}</Label><NumberInput className="mt-1.5" step={1} precision={2} value={form.amount} onValueChange={(v) => setForm({ ...form, amount: String(v) })}/></div>
           <div><Label>{locale === "ar" ? "التاريخ" : "Date"}</Label><Input type="date" className="mt-1.5" value={form.paid_at} onChange={(e) => setForm({ ...form, paid_at: e.target.value })}/></div>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -795,7 +800,7 @@ function PlanDetailsDialog({ planId, onClose, onChanged }: { planId: string; onC
                 </div>
                 <div>
                   <Label>{t("Gap (months)", "الفاصل بالشهور")}</Label>
-                  <Input type="number" min={1} max={6} className="mt-1.5" value={reschedGap} onChange={(e) => setReschedGap(Math.max(1, Math.min(6, Number(e.target.value) || 1)))}/>
+                  <NumberInput min={1} max={6} step={1} precision={0} className="mt-1.5" value={reschedGap} onValueChange={(v) => setReschedGap(Math.max(1, Math.min(6, Math.round(v) || 1)))}/>
                 </div>
                 <div className="flex items-end">
                   <Button size="sm" variant="gold" disabled={busy || !reschedDate} onClick={() =>
@@ -820,6 +825,11 @@ function ScheduleDialog({ onSaved, onClose }: { onSaved: () => void; onClose: ()
   const [saving, setSaving] = useState(false);
   async function save() {
     if (!org) return;
+    const amountNum = Number(form.amount);
+    if (!Number.isFinite(amountNum) || amountNum < 0) {
+      toast.error(locale === "ar" ? "المبلغ يجب أن يكون رقماً موجباً." : "Amount must be a valid non-negative number.");
+      return;
+    }
     setSaving(true);
     const { data: sess } = await supabase.auth.getSession();
     const { error } = await supabase.from("payment_schedules").insert({
@@ -838,7 +848,7 @@ function ScheduleDialog({ onSaved, onClose }: { onSaved: () => void; onClose: ()
         <div><Label>{locale === "ar" ? "الوصف" : "Description"}</Label><Input className="mt-1.5" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}/></div>
         <div className="grid grid-cols-2 gap-3">
           <div><Label>{locale === "ar" ? "الاستحقاق" : "Due date"}</Label><Input type="date" className="mt-1.5" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })}/></div>
-          <div><Label>{locale === "ar" ? "المبلغ" : "Amount"}</Label><Input type="number" step="0.01" className="mt-1.5" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })}/></div>
+          <div><Label>{locale === "ar" ? "المبلغ" : "Amount"}</Label><NumberInput className="mt-1.5" step={1} precision={2} value={form.amount} onValueChange={(v) => setForm({ ...form, amount: String(v) })}/></div>
         </div>
       </div>
       <DialogFooter>

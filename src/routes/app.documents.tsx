@@ -46,6 +46,7 @@ function DocsPage() {
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [stagedFile, setStagedFile] = useState<File | null>(null);
   const [q, setQ] = useState("");
   const [caseId, setCaseId] = useState<string>("none");
   const [clientId, setClientId] = useState<string>("none");
@@ -92,7 +93,9 @@ function DocsPage() {
     }
   }
 
-  async function upload(file: File) {
+  async function upload() {
+    const file = stagedFile;
+    if (!file) return;
     const v = validateDocFile(file);
     if (!v.ok) { toast.error(v.reason); return; }
     setUploading(true);
@@ -118,6 +121,7 @@ function DocsPage() {
       toast.success(isTemplate
         ? (locale === "ar" ? "تم رفع المستند كقالب بنجاح" : "Document uploaded as template")
         : (locale === "ar" ? "تم رفع المستند بنجاح" : "Document uploaded successfully"));
+      setStagedFile(null);
       refresh();
     } catch (e) {
       toast.error(locale === "ar"
@@ -246,17 +250,47 @@ function DocsPage() {
               {casesForClient.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
             </SelectContent>
           </Select>
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-2.5 text-sm text-muted-foreground hover:bg-secondary/40">
-            {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-            <span>{locale === "ar" ? "اختر ملفاً" : "Choose file"}</span>
-            <input
-              type="file"
-              accept={accept}
-              className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }}
-            />
-          </label>
+          {stagedFile ? (
+            <div className="flex items-center justify-between gap-2 rounded-md border p-2.5 text-sm">
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-medium">{stagedFile.name}</div>
+                <div className="text-xs text-muted-foreground">{formatBytes(stagedFile.size)}</div>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="shrink-0"
+                onClick={() => setStagedFile(null)}
+                disabled={uploading}
+                title={locale === "ar" ? "إزالة" : "Remove"}
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+          ) : (
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed p-2.5 text-sm text-muted-foreground hover:bg-secondary/40">
+              <Upload className="size-4" />
+              <span>{locale === "ar" ? "اختر ملفاً" : "Choose file"}</span>
+              <input
+                type="file"
+                accept={accept}
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) setStagedFile(f); e.target.value = ""; }}
+              />
+            </label>
+          )}
         </div>
+        <Button
+          type="button"
+          variant="gold"
+          className="gap-1.5"
+          onClick={upload}
+          disabled={!stagedFile || uploading}
+        >
+          {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+          {locale === "ar" ? "رفع" : "Upload"}
+        </Button>
       </div>
 
 
