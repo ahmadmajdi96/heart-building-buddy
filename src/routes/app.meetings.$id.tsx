@@ -68,6 +68,9 @@ function MeetingRoom() {
   const [enhancing, setEnhancing] = useState(false);
   const [captureTab, setCaptureTab] = useState(false);
   const [diarizationSource, setDiarizationSource] = useState<"mixed" | "mic" | "tab">("mixed");
+  // Telling the provider how many people are in the room dramatically improves
+  // diarization when speakers talk over each other ("auto" lets it guess).
+  const [speakerCount, setSpeakerCount] = useState<string>("auto");
   const [saving, setSaving] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const jitsiHolder = useRef<HTMLDivElement>(null);
@@ -334,6 +337,28 @@ function MeetingRoom() {
     } catch (e) { toast.error((e as Error).message); }
   }
 
+  // Diarizers flip speakers for a word or two when two people overlap. Fold those
+  // stray one/two-word fragments back into the surrounding speaker's turn.
+  function smoothTurns(list: Turn[]): Turn[] {
+    const out: Turn[] = [];
+    for (let i = 0; i < list.length; i++) {
+      const cur = list[i];
+      const prev = out[out.length - 1];
+      const next = list[i + 1];
+      const words = cur.text.trim().split(/\s+/).filter(Boolean).length;
+      if (prev && words <= 2 && next && next.speaker === prev.speaker) {
+        prev.text += (prev.text ? " " : "") + cur.text;
+        continue;
+      }
+      if (prev && prev.speaker === cur.speaker) {
+        prev.text += (prev.text ? " " : "") + cur.text;
+        continue;
+      }
+      out.push({ ...cur });
+    }
+    return out;
+  }
+
   async function enhanceWithBatch(blob: Blob): Promise<Turn[] | null> {
     setEnhancing(true);
     try {
@@ -342,6 +367,7 @@ function MeetingRoom() {
       fd.append("file", blob, `meeting.${ext}`);
       if (locale === "ar") fd.append("language", "ara");
       else if (locale === "en") fd.append("language", "eng");
+      if (speakerCount !== "auto") fd.append("num_speakers", speakerCount);
       const res = await fetch("/api/public/elevenlabs/transcribe", { method: "POST", body: fd });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -358,7 +384,7 @@ function MeetingRoom() {
         else grouped.push({ speaker: sp, text: w.text, t: Date.now() });
       }
       if (!grouped.length && data?.text) grouped.push({ speaker: "speaker_0", text: data.text, t: Date.now() });
-      return grouped;
+      return smoothTurns(grouped);
     } catch (e) {
       toast.error((e as Error).message);
       return null;
@@ -469,6 +495,17 @@ function MeetingRoom() {
               <option value="tab">{locale === "ar" ? "التبويب فقط" : "Tab only"}</option>
             </select>
           </label>
+          <label className="flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs text-muted-foreground">
+            <span>{locale === "ar" ? "عدد المتحدثين" : "Speakers"}</span>
+            <select
+              value={speakerCount}
+              onChange={(e) => setSpeakerCount(e.target.value)}
+              className="bg-transparent text-xs outline-none"
+            >
+              <option value="auto">{locale === "ar" ? "تلقائي" : "Auto"}</option>
+              {[2, 3, 4, 5, 6, 7, 8].map((n) => <option key={n} value={String(n)}>{n}</option>)}
+            </select>
+          </label>
           <Button variant="outline" size="sm" onClick={enhanceNow} disabled={enhancing}>
             {enhancing ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
             {locale === "ar" ? "تحسين الدقة" : "Enhance"}
@@ -484,8 +521,8 @@ function MeetingRoom() {
 
       <p className="text-xs text-muted-foreground">
         {locale === "ar"
-          ? "لأفضل دقة وتمييز للمتحدثين: فعّل «صوت التبويب» قبل بدء التفريغ، ثم اختر «هذا التبويب» مع تفعيل «مشاركة صوت التبويب». عند «إنهاء الاجتماع» يتم تشغيل تفريغ عالي الدقة تلقائيًا."
-          : "For best accuracy and speaker separation: enable “Tab audio” before you start, then pick “This tab” with “Share tab audio” checked. On “End meeting” we automatically run a high-accuracy diarized pass."}
+          ? "لأفضل دقة وتمييز للمتحدثين: فعّل «صوت التبويب» قبل بدء التفريغ، ثم اختر «هذا التبويب» مع تفعيل «مشاركة صوت التبويب». حدّد «عدد المتحدثين» إن كنت تعرفه لتحسين تمييز الأصوات المتداخلة. عند «إنهاء الاجتماع» يتم تشغيل تفريغ عالي الدقة تلقائيًا."
+          : "For best accuracy and speaker separation: enable “Tab audio” before you start, then pick “This tab” with “Share tab audio” checked. Set “Speakers” to the number of people if you know it — it keeps voices apart when they overlap. On “End meeting” we automatically run a high-accuracy diarized pass."}
       </p>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
