@@ -11,6 +11,7 @@ import {
   PageOrientation,
 } from "docx";
 import { resolveLogoUrl } from "./logo";
+import { ensureArabicFont, drawBilingualText, containsArabic, shapeArabicLine } from "./pdf-arabic";
 import type { Database } from "@/integrations/supabase/types";
 
 type Org = Database["public"]["Tables"]["organizations"]["Row"];
@@ -59,6 +60,7 @@ function htmlToPlainParagraphs(html: string): string[] {
 export async function exportDraftPdf(opts: { org: Org | null; title: string; html: string }) {
   const { org, title, html } = opts;
   const doc = new jsPDF({ unit: "pt", format: "a4" });
+  await ensureArabicFont(doc);
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 48;
   let y = margin;
@@ -79,7 +81,7 @@ export async function exportDraftPdf(opts: { org: Org | null; title: string; htm
     }
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
-    doc.text(org.display_name || org.legal_name, margin + 72, y + 18);
+    drawBilingualText(doc, org.display_name || org.legal_name, margin + 72, y + 18, { align: "left", bold: true });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     const lines = [
@@ -87,7 +89,7 @@ export async function exportDraftPdf(opts: { org: Org | null; title: string; htm
       [org.phone, org.email].filter(Boolean).join(" · "),
       org.tax_id ? `Tax ID: ${org.tax_id}` : "",
     ].filter(Boolean);
-    lines.forEach((ln, i) => doc.text(ln, margin + 72, y + 34 + i * 11));
+    lines.forEach((ln, i) => drawBilingualText(doc, ln, margin + 72, y + 34 + i * 11, { align: "left" }));
     y += 80;
     doc.setDrawColor(200);
     doc.line(margin, y, pageWidth - margin, y);
@@ -96,7 +98,8 @@ export async function exportDraftPdf(opts: { org: Org | null; title: string; htm
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text(title, margin, y);
+  const titleArabic = containsArabic(title);
+  drawBilingualText(doc, title, titleArabic ? pageWidth - margin : margin, y, { align: titleArabic ? "right" : "left", bold: true });
   y += 22;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
@@ -104,12 +107,16 @@ export async function exportDraftPdf(opts: { org: Org | null; title: string; htm
   const blocks = htmlToPlainParagraphs(html);
   const maxWidth = pageWidth - margin * 2;
   for (const para of blocks) {
+    const arabic = containsArabic(para);
     const wrapped = doc.splitTextToSize(para, maxWidth);
+    if (arabic) doc.setFont("Amiri", "normal");
     for (const ln of wrapped) {
       if (y > doc.internal.pageSize.getHeight() - margin) { doc.addPage(); y = margin; }
-      doc.text(ln, margin, y);
+      const out = arabic ? shapeArabicLine(ln) : ln;
+      doc.text(out, arabic ? pageWidth - margin : margin, y, { align: arabic ? "right" : "left" });
       y += 14;
     }
+    if (arabic) doc.setFont("helvetica", "normal");
     y += 6;
   }
 

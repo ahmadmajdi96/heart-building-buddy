@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import { resolveLogoUrl } from "./logo";
+import { ensureArabicFont, drawBilingualText, containsArabic } from "./pdf-arabic";
 
 type Org = { legal_name?: string; display_name?: string | null; email?: string | null; phone?: string | null; address?: string | null; tax_id?: string | null; logo_path?: string | null };
 
@@ -66,6 +67,7 @@ function drawHeaderLogo(pdf: jsPDF, logo: { dataUrl: string; ext: "PNG" | "JPEG"
 
 export async function downloadInvoicePdf(kind: "quote" | "invoice", doc: Doc, org?: Org | null) {
   const pdf = new jsPDF({ unit: "pt", format: "a4" });
+  await ensureArabicFont(pdf);
   const W = pdf.internal.pageSize.getWidth();
   const M = 48;
   let y = M;
@@ -74,11 +76,11 @@ export async function downloadInvoicePdf(kind: "quote" | "invoice", doc: Doc, or
   const logo = org ? await fetchLogoDataUrl(org.logo_path) : null;
   const textX = M + drawHeaderLogo(pdf, logo, M, y);
   pdf.setFont("helvetica", "bold").setFontSize(16);
-  pdf.text(org?.display_name || org?.legal_name || "", textX, y + 4);
+  drawBilingualText(pdf, org?.display_name || org?.legal_name || "", textX, y + 4, { align: "left", bold: true });
   pdf.setFont("helvetica", "normal").setFontSize(9);
   const rightLines = [org?.email, org?.phone, org?.address, org?.tax_id ? `VAT/TAX: ${org.tax_id}` : null].filter(Boolean) as string[];
   let ry = y;
-  rightLines.forEach((line) => { pdf.text(String(line), W - M, ry, { align: "right" }); ry += 12; });
+  rightLines.forEach((line) => { drawBilingualText(pdf, String(line), W - M, ry, { align: "right" }); ry += 12; });
   y = Math.max(y + (logo ? 52 : 20), ry + 4);
 
 
@@ -102,7 +104,7 @@ export async function downloadInvoicePdf(kind: "quote" | "invoice", doc: Doc, or
   pdf.setFont("helvetica", "bold").setFontSize(9).setTextColor(120);
   pdf.text("BILL TO", M, y);
   pdf.setFont("helvetica", "normal").setFontSize(11).setTextColor(0);
-  pdf.text(String(doc.client_name ?? ""), M, y + 14);
+  drawBilingualText(pdf, String(doc.client_name ?? ""), M, y + 14, { align: "left" });
   y += 36;
 
   // Table header
@@ -119,12 +121,13 @@ export async function downloadInvoicePdf(kind: "quote" | "invoice", doc: Doc, or
   for (const it of (doc.items ?? [])) {
     if (y > 740) { pdf.addPage(); y = M; }
     const desc = String(it.description ?? "");
+    const descX = containsArabic(desc) ? cols.qty - 20 : cols.desc;
     const wrapped = pdf.splitTextToSize(desc, cols.qty - M - 20);
-    pdf.text(wrapped, cols.desc, y);
+    const lineCount = drawBilingualText(pdf, desc, descX, y, { align: containsArabic(desc) ? "right" : "left", maxWidth: cols.qty - M - 20, lineHeight: 14 });
     pdf.text(String(it.quantity ?? 0), cols.qty, y, { align: "right" });
     pdf.text(money(it.unit_price), cols.price, y, { align: "right" });
     pdf.text(money(Number(it.quantity ?? 0) * Number(it.unit_price ?? 0)), cols.total, y, { align: "right" });
-    y += 14 * Math.max(1, wrapped.length);
+    y += 14 * Math.max(1, lineCount || wrapped.length);
   }
 
   y += 8; pdf.line(M, y, W - M, y); y += 18;
@@ -140,8 +143,8 @@ export async function downloadInvoicePdf(kind: "quote" | "invoice", doc: Doc, or
     pdf.setFont("helvetica", "bold").setFontSize(9).setTextColor(120);
     pdf.text("NOTES", M, y);
     pdf.setFont("helvetica", "normal").setFontSize(10).setTextColor(0);
-    const wrapped = pdf.splitTextToSize(doc.notes, W - 2 * M);
-    pdf.text(wrapped, M, y + 14);
+    const notesArabic = containsArabic(doc.notes);
+    drawBilingualText(pdf, doc.notes, notesArabic ? W - M : M, y + 14, { align: notesArabic ? "right" : "left", maxWidth: W - 2 * M, lineHeight: 14 });
   }
 
   const filename = `${kind}-${(doc.number || "document").replace(/[^\w-]+/g, "_")}.pdf`;
@@ -164,6 +167,7 @@ type Receipt = {
 
 export async function downloadReceiptPdf(receipt: Receipt, org?: Org | null) {
   const pdf = new jsPDF({ unit: "pt", format: "a4" });
+  await ensureArabicFont(pdf);
   const W = pdf.internal.pageSize.getWidth();
   const M = 48;
   let y = M;
@@ -171,11 +175,11 @@ export async function downloadReceiptPdf(receipt: Receipt, org?: Org | null) {
   const logo = org ? await fetchLogoDataUrl(org.logo_path) : null;
   const textX = M + drawHeaderLogo(pdf, logo, M, y);
   pdf.setFont("helvetica", "bold").setFontSize(16);
-  pdf.text(org?.display_name || org?.legal_name || "", textX, y + 4);
+  drawBilingualText(pdf, org?.display_name || org?.legal_name || "", textX, y + 4, { align: "left", bold: true });
   pdf.setFont("helvetica", "normal").setFontSize(9);
   const rightLines = [org?.email, org?.phone, org?.address, org?.tax_id ? `VAT/TAX: ${org.tax_id}` : null].filter(Boolean) as string[];
   let ry = y;
-  rightLines.forEach((line) => { pdf.text(String(line), W - M, ry, { align: "right" }); ry += 12; });
+  rightLines.forEach((line) => { drawBilingualText(pdf, String(line), W - M, ry, { align: "right" }); ry += 12; });
   y = Math.max(y + (logo ? 52 : 20), ry + 4);
 
 
@@ -192,7 +196,7 @@ export async function downloadReceiptPdf(receipt: Receipt, org?: Org | null) {
   pdf.setFont("helvetica", "bold").setFontSize(9).setTextColor(120);
   pdf.text("RECEIVED FROM", M, y);
   pdf.setFont("helvetica", "normal").setFontSize(11).setTextColor(0);
-  pdf.text(String(receipt.client_name ?? "—"), M, y + 14);
+  drawBilingualText(pdf, String(receipt.client_name ?? "—"), M, y + 14, { align: "left" });
   y += 40;
 
   const rows: [string, string][] = [
@@ -206,7 +210,7 @@ export async function downloadReceiptPdf(receipt: Receipt, org?: Org | null) {
   pdf.setFontSize(10);
   for (const [k, v] of rows) {
     pdf.setTextColor(120); pdf.text(k, M, y);
-    pdf.setTextColor(0); pdf.text(String(v), M + 160, y);
+    pdf.setTextColor(0); drawBilingualText(pdf, String(v), M + 160, y, { align: "left" });
     y += 18;
   }
   y += 12;
@@ -221,8 +225,8 @@ export async function downloadReceiptPdf(receipt: Receipt, org?: Org | null) {
     pdf.setFont("helvetica", "bold").setFontSize(9).setTextColor(120);
     pdf.text("NOTES", M, y);
     pdf.setFont("helvetica", "normal").setFontSize(10).setTextColor(0);
-    const wrapped = pdf.splitTextToSize(receipt.notes, W - 2 * M);
-    pdf.text(wrapped, M, y + 14);
+    const notesArabic = containsArabic(receipt.notes);
+    drawBilingualText(pdf, receipt.notes, notesArabic ? W - M : M, y + 14, { align: notesArabic ? "right" : "left", maxWidth: W - 2 * M, lineHeight: 14 });
   }
 
   const filename = `receipt-${receipt.receipt_no.replace(/[^\w-]+/g, "_")}.pdf`;
