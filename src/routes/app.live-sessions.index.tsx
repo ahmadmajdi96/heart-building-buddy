@@ -52,6 +52,32 @@ function LiveSessionsPage() {
   const [isStarting, setIsStarting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const startedAtRef = useRef<number | null>(null);
+  // Stable speakerId -> display label map (first-seen order), so the same
+  // speaker keeps the same label across chunks instead of getting relabeled.
+  const speakerLabelsRef = useRef<Map<string, string>>(new Map());
+  // Tracks committed segments (via start/end/text signature) that were already
+  // appended, so the timestamped handler and the fallback handler never both
+  // append the same segment (which caused echoed/duplicated text).
+  const committedSignaturesRef = useRef<Set<string>>(new Set());
+
+  const labelForSpeaker = useCallback((speakerId: string | undefined | null) => {
+    const key = speakerId ?? "unknown";
+    const map = speakerLabelsRef.current;
+    let label = map.get(key);
+    if (!label) {
+      const n = map.size + 1;
+      label = isAr ? `المتحدث ${n}` : `Speaker ${n}`;
+      map.set(key, label);
+    }
+    return label;
+  }, [isAr]);
+
+  const addCommittedTurn = useCallback((turn: Turn) => {
+    const signature = `${turn.start ?? ""}|${turn.end ?? ""}|${turn.text}`;
+    if (committedSignaturesRef.current.has(signature)) return;
+    committedSignaturesRef.current.add(signature);
+    setTurns((prev) => [...prev, turn]);
+  }, []);
 
   const scribe = useScribe({
     modelId: "scribe_v2_realtime",
@@ -61,25 +87,22 @@ function LiveSessionsPage() {
     onPartialTranscript: (data) => setPartial(data.text ?? ""),
     onCommittedTranscriptWithTimestamps: (data) => {
       const words = data.words ?? [];
-      const speaker = words[0]?.speaker_id ?? "Speaker 1";
-      setTurns((prev) => [
-        ...prev,
-        {
-          speaker,
-          text: data.text ?? "",
-          start: words[0]?.start,
-          end: words[words.length - 1]?.end,
-        },
-      ]);
+      const speaker = labelForSpeaker(words[0]?.speaker_id);
+      const text = data.text ?? "";
+      if (!text) return;
+      addCommittedTurn({
+        speaker,
+        text,
+        start: words[0]?.start,
+        end: words[words.length - 1]?.end,
+      });
       setPartial("");
     },
     onCommittedTranscript: (data) => {
-      // Fallback when timestamps aren't enabled
+      // Fallback when timestamps aren't enabled. Guarded against double-adding
+      // alongside onCommittedTranscriptWithTimestamps via the shared signature set.
       if (!data.text) return;
-      setTurns((prev) => {
-        if (prev.length && prev[prev.length - 1].text === data.text) return prev;
-        return [...prev, { speaker: "Speaker 1", text: data.text! }];
-      });
+      addCommittedTurn({ speaker: labelForSpeaker(undefined), text: data.text });
       setPartial("");
     },
   });
@@ -105,6 +128,8 @@ function LiveSessionsPage() {
       setSessionId(created.id);
       setTurns([]);
       setPartial("");
+      speakerLabelsRef.current = new Map();
+      committedSignaturesRef.current = new Set();
       startedAtRef.current = Date.now();
 
       const tokenRes = await fetch("/api/public/elevenlabs/scribe-token", { method: "POST" });

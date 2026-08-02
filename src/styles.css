@@ -326,3 +326,27 @@ html[dir="rtl"] .text-gilded {
   font-family: var(--font-arabic) !important;
   letter-spacing: 0 !important;
 }
+
+/* ---- Themed scrollbars (QA 002): native OS scrollbars clashed with the brand theme. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--gold), transparent 35%) transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: color-mix(in oklch, var(--muted), transparent 40%); border-radius: 9999px; }
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--gold), var(--foreground) 12%);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--gold); background-clip: padding-box; }
+*::-webkit-scrollbar-corner { background: transparent; }
+/* Kill the native scroll arrows/buttons that appear on Windows/Chromium. */
+*::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+/* ---- Numeric inputs (QA 009/010/012/013/014): hide unstyled native steppers.
+   Use <NumberInput /> for a themed +/- control with min/step bounds. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }

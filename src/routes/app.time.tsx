@@ -40,7 +40,7 @@ type Entry = {
   cases?: { id: string; title: string; case_number: string | null } | null;
   clients?: { id: string; name: string } | null;
 };
-type CaseRow = { id: string; title: string; case_number: string | null };
+type CaseRow = { id: string; title: string; case_number: string | null; client_id: string | null };
 type ClientRow = { id: string; name: string };
 
 function formatDuration(seconds: number): string {
@@ -51,6 +51,21 @@ function formatDuration(seconds: number): string {
 }
 
 function TimePage() {
+
+  // Robust cross-browser timestamp parse: Postgres may return
+  // "2026-07-06 12:34:56.789+00" which Firefox/older Edge on Windows reject
+  // as NaN, causing the on-screen timer to freeze at 00:00:00.
+  const parseTs = (v: string): number => {
+    if (!v) return NaN;
+    let s = v.trim().replace(" ", "T");
+    // expand short offset "+00" or "-05" to "+00:00"
+    s = s.replace(/([+-]\d{2})$/, "$1:00");
+    // strip trailing microseconds beyond 3 digits
+    s = s.replace(/(\.\d{3})\d+/, "$1");
+    const t = Date.parse(s);
+    return Number.isFinite(t) ? t : Date.parse(v);
+  };
+
   const { locale } = useI18n();
   const ar = locale === "ar";
   const search = Route.useSearch();
@@ -98,12 +113,17 @@ function TimePage() {
   const [tClient, setTClient] = useState<string>("none");
   const [tRate, setTRate] = useState<string>("");
 
+  const casesForTimer = useMemo(
+    () => (tClient !== "none" ? cases.filter((c) => c.client_id === tClient) : cases),
+    [cases, tClient],
+  );
+
   async function refresh() {
     setLoading(true);
     try {
       const [es, cs, cls, run] = await Promise.all([list(), lCases(), lClients(), running()]);
       setEntries(es as Entry[]);
-      setCases((cs as any[]).map((c) => ({ id: c.id, title: c.title, case_number: c.case_number })));
+      setCases((cs as any[]).map((c) => ({ id: c.id, title: c.title, case_number: c.case_number, client_id: c.client_id ?? null })));
       setClients((cls as any[]).map((c) => ({ id: c.id, name: c.name })));
       setRunningEntry((run as Entry | null) ?? null);
     } catch (e) { toast.error((e as Error).message); }
@@ -140,7 +160,7 @@ function TimePage() {
     try {
       const started = editing.started_at ?? new Date().toISOString();
       const ended = editing.ended_at ?? null;
-      const dur = editing.duration_seconds ?? (ended ? Math.max(0, Math.floor((new Date(ended).getTime() - new Date(started).getTime()) / 1000)) : 0);
+      const dur = editing.duration_seconds ?? (ended ? Math.max(0, Math.floor((new Date(ended).getTime() - parseTs(started)) / 1000)) : 0);
       await save({ data: {
         id: editing.id,
         description: editing.description ?? "",
@@ -190,7 +210,7 @@ function TimePage() {
       if (filterCase === "none" ? e.case_id : e.case_id !== filterCase) return false;
     }
     if (fromDate || toDate) {
-      const t = new Date(e.started_at).getTime();
+      const t = parseTs(e.started_at);
       if (fromDate && t < new Date(fromDate).getTime()) return false;
       if (toDate) { const to = new Date(toDate); to.setHours(23,59,59,999); if (t > to.getTime()) return false; }
     }
@@ -208,20 +228,6 @@ function TimePage() {
     const amount = entries.filter((e) => e.billable && e.hourly_rate).reduce((a, e) => a + ((e.duration_seconds / 3600) * (e.hourly_rate || 0)), 0);
     return { total, billable, amount };
   }, [entries]);
-
-  // Robust cross-browser timestamp parse: Postgres may return
-  // "2026-07-06 12:34:56.789+00" which Firefox/older Edge on Windows reject
-  // as NaN, causing the on-screen timer to freeze at 00:00:00.
-  const parseTs = (v: string): number => {
-    if (!v) return NaN;
-    let s = v.trim().replace(" ", "T");
-    // expand short offset "+00" or "-05" to "+00:00"
-    s = s.replace(/([+-]\d{2})$/, "$1:00");
-    // strip trailing microseconds beyond 3 digits
-    s = s.replace(/(\.\d{3})\d+/, "$1");
-    const t = Date.parse(s);
-    return Number.isFinite(t) ? t : Date.parse(v);
-  };
 
   const liveDuration = runningEntry
     ? Math.max(0, Math.floor((now - parseTs(runningEntry.started_at)) / 1000))
@@ -241,9 +247,9 @@ function TimePage() {
                   const hours = (e.duration_seconds || 0) / 3600;
                   const amount = e.hourly_rate ? (hours * e.hourly_rate).toFixed(2) : "";
                   return [
-                    new Date(e.started_at).toISOString(),
-                    new Date(e.started_at).toISOString(),
-                    e.ended_at ? new Date(e.ended_at).toISOString() : "",
+                    new Date(parseTs(e.started_at)).toISOString(),
+                    new Date(parseTs(e.started_at)).toISOString(),
+                    e.ended_at ? new Date(parseTs(e.ended_at)).toISOString() : "",
                     hours.toFixed(2),
                     e.description ?? "",
                     e.activity_type ?? "",
@@ -317,23 +323,38 @@ function TimePage() {
             </div>
             <div className="space-y-1.5">
               <Label>{ar ? "القضية" : "Matter"}</Label>
-              <Select value={tCase} onValueChange={setTCase}>
+              <Select value={tCase} onValueChange={(v) => {
+                if (v === "none") { setTCase("none"); return; }
+                const c = cases.find((x) => x.id === v);
+                setTCase(v);
+                if (c?.client_id) setTClient(c.client_id);
+              }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{ar ? "بدون" : "None"}</SelectItem>
-                  {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+                  {casesForTimer.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
                 </SelectContent>
               </Select>
+              {tClient !== "none" && casesForTimer.length === 0 && (
+                <p className="text-xs text-muted-foreground">{ar ? "لا توجد قضايا لهذا العميل." : "This client has no cases."}</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>{ar ? "العميل" : "Client"}</Label>
-              <Select value={tClient} onValueChange={setTClient}>
+              <Select value={tClient} disabled={tCase !== "none"} onValueChange={(v) => {
+                setTClient(v);
+                const c = cases.find((x) => x.id === tCase);
+                if (v !== "none" && c && c.client_id !== v) setTCase("none");
+              }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{ar ? "بدون" : "None"}</SelectItem>
                   {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
+              {tCase !== "none" && (
+                <p className="text-xs text-muted-foreground">{ar ? "مقفل حسب القضية المختارة." : "Locked to the selected case."}</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>{ar ? "السعر/ساعة" : "Rate/hr"}</Label>
@@ -468,8 +489,8 @@ function TimePage() {
                 const next = new Set(selected); if (v) next.add(e.id); else next.delete(e.id); setSelected(next);
               }} /></td>
               <td className="px-5 py-3 text-muted-foreground whitespace-nowrap tabular-nums text-xs">
-                {new Date(e.started_at).toLocaleDateString()}
-                <span className="ms-1 opacity-60">{new Date(e.started_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                {new Date(parseTs(e.started_at)).toLocaleDateString()}
+                <span className="ms-1 opacity-60">{new Date(parseTs(e.started_at)).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
               </td>
 
               <td className="px-5 py-3">
@@ -574,35 +595,55 @@ function TimePage() {
             <div className="space-y-1.5"><Label>{ar ? "الوصف" : "Description"}</Label><Textarea rows={2} value={editing?.description ?? ""} onChange={(e) => setEditing({ ...editing!, description: e.target.value })} /></div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5"><Label>{ar ? "القضية" : "Matter"}</Label>
-                <Select value={editing?.case_id ?? "none"} onValueChange={(v) => setEditing({ ...editing!, case_id: v === "none" ? null : v })}>
+                <Select value={editing?.case_id ?? "none"} onValueChange={(v) => {
+                  if (v === "none") { setEditing({ ...editing!, case_id: null }); return; }
+                  const c = cases.find((x) => x.id === v);
+                  setEditing({ ...editing!, case_id: v, client_id: c?.client_id ?? editing?.client_id ?? null });
+                }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">{ar ? "بدون" : "None"}</SelectItem>
-                    {cases.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+                    {(editing?.client_id ? cases.filter((c) => c.client_id === editing.client_id) : cases).map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                {editing?.client_id && cases.filter((c) => c.client_id === editing.client_id).length === 0 && (
+                  <p className="text-xs text-muted-foreground">{ar ? "لا توجد قضايا لهذا العميل." : "This client has no cases."}</p>
+                )}
               </div>
               <div className="space-y-1.5"><Label>{ar ? "العميل" : "Client"}</Label>
-                <Select value={editing?.client_id ?? "none"} onValueChange={(v) => setEditing({ ...editing!, client_id: v === "none" ? null : v })}>
+                <Select
+                  value={editing?.client_id ?? "none"}
+                  disabled={!!editing?.case_id}
+                  onValueChange={(v) => {
+                    const clientId = v === "none" ? null : v;
+                    const caseStillValid = editing?.case_id
+                      ? cases.find((c) => c.id === editing.case_id)?.client_id === clientId
+                      : true;
+                    setEditing({ ...editing!, client_id: clientId, case_id: caseStillValid ? editing?.case_id ?? null : null });
+                  }}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">{ar ? "بدون" : "None"}</SelectItem>
                     {clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                {editing?.case_id && (
+                  <p className="text-xs text-muted-foreground">{ar ? "مقفل حسب القضية المختارة." : "Locked to the selected case."}</p>
+                )}
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5"><Label>{ar ? "البداية" : "Start"}</Label>
-                <Input type="datetime-local" value={editing?.started_at ? new Date(editing.started_at).toISOString().slice(0, 16) : ""}
+                <Input type="datetime-local" value={editing?.started_at ? new Date(parseTs(editing.started_at)).toISOString().slice(0, 16) : ""}
                   onChange={(e) => setEditing({ ...editing!, started_at: e.target.value ? new Date(e.target.value).toISOString() : new Date().toISOString() })} />
               </div>
               <div className="space-y-1.5"><Label>{ar ? "النهاية" : "End"}</Label>
-                <Input type="datetime-local" value={editing?.ended_at ? new Date(editing.ended_at).toISOString().slice(0, 16) : ""}
+                <Input type="datetime-local" value={editing?.ended_at ? new Date(parseTs(editing.ended_at)).toISOString().slice(0, 16) : ""}
                   onChange={(e) => {
                     const ended = e.target.value ? new Date(e.target.value).toISOString() : null;
                     const started = editing?.started_at ?? new Date().toISOString();
-                    const dur = ended ? Math.max(0, Math.floor((new Date(ended).getTime() - new Date(started).getTime()) / 1000)) : 0;
+                    const dur = ended ? Math.max(0, Math.floor((new Date(ended).getTime() - parseTs(started)) / 1000)) : 0;
                     setEditing({ ...editing!, ended_at: ended, duration_seconds: dur });
                   }} />
               </div>

@@ -20,6 +20,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toCsv, downloadCsv } from "@/lib/csv-export";
 import { StatTile } from "@/components/app/primitives";
 import { PageSizeSelect, TablePager } from "@/components/data-table-pager";
+import {
+  COUNTRY_DIALS, toE164, validatePhone, splitE164,
+  StructuredAddress, EMPTY_ADDRESS, JORDAN_GOVERNORATES, formatAddress, parseAddress, validateAddress,
+} from "@/lib/contact-format";
 
 export const Route = createFileRoute("/app/clients/")({ component: ClientsPage });
 
@@ -47,6 +51,11 @@ function ClientsPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<Client> | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [phoneDial, setPhoneDial] = useState("+962");
+  const [phoneNational, setPhoneNational] = useState("");
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [addr, setAddr] = useState<StructuredAddress>(EMPTY_ADDRESS);
+  const [addressError, setAddressError] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [conflictOpen, setConflictOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Client | null>(null);
@@ -85,8 +94,21 @@ function ClientsPage() {
   const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   function clearFilters() { setQ(""); setStatusFilter("all"); setTypeFilter("all"); setFromDate(""); setToDate(""); }
 
-  function openNew() { setEmailError(null); setEditing({ type: "individual", status: "active" }); setEditOpen(true); }
-  function openEdit(c: Client) { setEmailError(null); setEditing(c); setEditOpen(true); }
+  function openNew() {
+    setEmailError(null); setPhoneError(null); setAddressError(null);
+    setPhoneDial("+962"); setPhoneNational("");
+    setAddr({ ...EMPTY_ADDRESS });
+    setEditing({ type: "individual", status: "active" });
+    setEditOpen(true);
+  }
+  function openEdit(c: Client) {
+    setEmailError(null); setPhoneError(null); setAddressError(null);
+    const { dial, national } = splitE164(c.phone);
+    setPhoneDial(dial); setPhoneNational(national);
+    setAddr(parseAddress(c.address));
+    setEditing(c);
+    setEditOpen(true);
+  }
 
   const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   function validateEmail(v: string): string | null {
@@ -104,12 +126,28 @@ function ClientsPage() {
       return;
     }
     setEmailError(null);
+    const phoneErr = validatePhone(phoneNational, phoneDial, locale, false);
+    if (phoneErr) {
+      setPhoneError(phoneErr);
+      toast.error(locale === "ar" ? "الرجاء تصحيح رقم الهاتف قبل الحفظ" : "Please fix the phone number before saving");
+      return;
+    }
+    setPhoneError(null);
+    const addressErr = validateAddress(addr, locale);
+    if (addressErr) {
+      setAddressError(addressErr);
+      toast.error(locale === "ar" ? "الرجاء تصحيح العنوان قبل الحفظ" : "Please fix the address before saving");
+      return;
+    }
+    setAddressError(null);
+    const phoneE164 = phoneNational.trim() ? (toE164(phoneNational, phoneDial) ?? "") : "";
+    const addressStr = formatAddress(addr, locale);
     const isNew = !editing.id;
     try {
       await save({ data: {
         id: editing.id, name: editing.name!, email: editing.email ?? "",
-        phone: editing.phone ?? "", company: editing.company ?? "",
-        national_id: editing.national_id ?? "", address: editing.address ?? "", notes: editing.notes ?? "",
+        phone: phoneE164, company: editing.company ?? "",
+        national_id: editing.national_id ?? "", address: addressStr, notes: editing.notes ?? "",
         type: (editing.type as any) ?? "individual",
         country: editing.country ?? "",
         tax_id: editing.tax_id ?? "",
@@ -356,12 +394,89 @@ function ClientsPage() {
                 />
                 {emailError && <p className="text-xs text-destructive mt-1">{emailError}</p>}
               </div>
-              <div><Label>{locale === "ar" ? "الهاتف" : "Phone"}</Label><Input value={editing?.phone ?? ""} onChange={(e) => setEditing({ ...editing!, phone: e.target.value })} /></div>
+              <div>
+                <Label>{locale === "ar" ? "الهاتف" : "Phone"}</Label>
+                <div className="mt-1.5 flex gap-2">
+                  <Select value={phoneDial} onValueChange={(v) => { setPhoneDial(v); if (phoneError) setPhoneError(null); }}>
+                    <SelectTrigger className="w-[110px] shrink-0"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {COUNTRY_DIALS.map((c) => (
+                        <SelectItem key={c.code} value={c.dial}>{c.dial} {locale === "ar" ? c.labelAr : c.labelEn}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    className={`flex-1 ${phoneError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    value={phoneNational}
+                    onChange={(e) => { setPhoneNational(e.target.value); if (phoneError) setPhoneError(null); }}
+                    onBlur={(e) => setPhoneError(validatePhone(e.target.value, phoneDial, locale, false))}
+                    aria-invalid={!!phoneError}
+                    placeholder="07XXXXXXXX"
+                  />
+                </div>
+                {phoneError && <p className="text-xs text-destructive mt-1">{phoneError}</p>}
+              </div>
             </div>
-            <div><Label>{locale === "ar" ? "العنوان" : "Address"}</Label><Input value={editing?.address ?? ""} onChange={(e) => setEditing({ ...editing!, address: e.target.value })} /></div>
+            <div>
+              <Label>{locale === "ar" ? "العنوان" : "Address"}</Label>
+              <div className="mt-1.5 grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "الدولة" : "Country"}</Label>
+                  <Select value={addr.country} onValueChange={(v) => { setAddr({ ...addr, country: v, governorate: v === "JO" ? addr.governorate : "" }); if (addressError) setAddressError(null); }}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {COUNTRY_DIALS.map((c) => (
+                        <SelectItem key={c.code} value={c.code}>{locale === "ar" ? c.labelAr : c.labelEn}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {addr.country === "JO" ? (
+                  <div>
+                    <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "المحافظة" : "Governorate"}</Label>
+                    <Select value={addr.governorate} onValueChange={(v) => { setAddr({ ...addr, governorate: v }); if (addressError) setAddressError(null); }}>
+                      <SelectTrigger className="mt-1"><SelectValue placeholder={locale === "ar" ? "اختر" : "Select"} /></SelectTrigger>
+                      <SelectContent>
+                        {JORDAN_GOVERNORATES.map((g) => (
+                          <SelectItem key={g.value} value={g.value}>{locale === "ar" ? g.ar : g.en}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div>
+                    <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "المدينة" : "City"}</Label>
+                    <Input className="mt-1" value={addr.city} onChange={(e) => { setAddr({ ...addr, city: e.target.value }); if (addressError) setAddressError(null); }} />
+                  </div>
+                )}
+                {addr.country === "JO" && (
+                  <div>
+                    <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "المدينة" : "City"}</Label>
+                    <Input className="mt-1" value={addr.city} onChange={(e) => { setAddr({ ...addr, city: e.target.value }); if (addressError) setAddressError(null); }} />
+                  </div>
+                )}
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "الحي" : "District"}</Label>
+                  <Input className="mt-1" value={addr.district} onChange={(e) => { setAddr({ ...addr, district: e.target.value }); if (addressError) setAddressError(null); }} />
+                </div>
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "الشارع" : "Street"}</Label>
+                  <Input className="mt-1" value={addr.street} onChange={(e) => { setAddr({ ...addr, street: e.target.value }); if (addressError) setAddressError(null); }} />
+                </div>
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "رقم المبنى" : "Building no."}</Label>
+                  <Input className="mt-1" value={addr.building} onChange={(e) => { setAddr({ ...addr, building: e.target.value }); if (addressError) setAddressError(null); }} />
+                </div>
+                <div>
+                  <Label className="text-[11px] text-muted-foreground">{locale === "ar" ? "الرمز البريدي" : "Postal code"}</Label>
+                  <Input className="mt-1" value={addr.postal_code} onChange={(e) => { setAddr({ ...addr, postal_code: e.target.value }); if (addressError) setAddressError(null); }} onBlur={() => setAddressError(validateAddress(addr, locale))} />
+                </div>
+              </div>
+              {addressError && <p className="text-xs text-destructive mt-1">{addressError}</p>}
+            </div>
             <div><Label>{locale === "ar" ? "ملاحظات" : "Notes"}</Label><Textarea rows={3} value={editing?.notes ?? ""} onChange={(e) => setEditing({ ...editing!, notes: e.target.value })} /></div>
           </div>
-          <DialogFooter><Button variant="ghost" onClick={() => setEditOpen(false)}>{locale === "ar" ? "إلغاء" : "Cancel"}</Button><Button variant="gold" onClick={submit}>{locale === "ar" ? "حفظ" : "Save"}</Button></DialogFooter>
+          <DialogFooter><Button variant="ghost" onClick={() => setEditOpen(false)}>{locale === "ar" ? "إلغاء" : "Cancel"}</Button><Button variant="gold" onClick={submit} disabled={!!phoneError || !!addressError || !!emailError}>{locale === "ar" ? "حفظ" : "Save"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -398,7 +513,10 @@ function ClientsPage() {
 function ConflictCheckDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { locale } = useI18n();
   const check = useServerFn(conflictCheck);
-  const [form, setForm] = useState({ name: "", national_id: "", tax_id: "", email: "", phone: "" });
+  const [form, setForm] = useState({ name: "", national_id: "", tax_id: "", email: "" });
+  const [phoneDial, setPhoneDial] = useState("+962");
+  const [phoneNational, setPhoneNational] = useState("");
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Awaited<ReturnType<typeof conflictCheck>> | null>(null);
 
@@ -407,9 +525,17 @@ function ConflictCheckDialog({ open, onClose }: { open: boolean; onClose: () => 
       toast.error(locale === "ar" ? "أدخل اسماً على الأقل (حرفين)" : "Enter a name (at least 2 characters)");
       return;
     }
+    const phoneErr = validatePhone(phoneNational, phoneDial, locale, false);
+    if (phoneErr) {
+      setPhoneError(phoneErr);
+      toast.error(locale === "ar" ? "الرجاء تصحيح رقم الهاتف" : "Please fix the phone number");
+      return;
+    }
+    setPhoneError(null);
+    const phone = phoneNational.trim() ? (toE164(phoneNational, phoneDial) ?? "") : "";
     setBusy(true);
     try {
-      const r = await check({ data: form });
+      const r = await check({ data: { ...form, phone } });
       setResult(r);
       const total = (r.clients?.length ?? 0) + (r.parties?.length ?? 0) + (r.identityMatches?.length ?? 0);
       if (total === 0) toast.success(locale === "ar" ? "لا توجد تعارضات" : "No conflicts found");
@@ -419,7 +545,7 @@ function ConflictCheckDialog({ open, onClose }: { open: boolean; onClose: () => 
     finally { setBusy(false); }
   }
 
-  function reset() { setForm({ name: "", national_id: "", tax_id: "", email: "", phone: "" }); setResult(null); }
+  function reset() { setForm({ name: "", national_id: "", tax_id: "", email: "" }); setPhoneDial("+962"); setPhoneNational(""); setPhoneError(null); setResult(null); }
 
   const hasMatches = result && (result.clients.length || result.parties.length || result.identityMatches.length);
 
@@ -436,9 +562,30 @@ function ConflictCheckDialog({ open, onClose }: { open: boolean; onClose: () => 
             <div><Label>{locale === "ar" ? "الرقم الوطني" : "National ID"}</Label><Input value={form.national_id} onChange={(e) => setForm({ ...form, national_id: e.target.value })} /></div>
             <div><Label>{locale === "ar" ? "الرقم الضريبي" : "Tax ID"}</Label><Input value={form.tax_id} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} /></div>
             <div><Label>{locale === "ar" ? "البريد" : "Email"}</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-            <div><Label>{locale === "ar" ? "الهاتف" : "Phone"}</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+962…" /></div>
+            <div>
+              <Label>{locale === "ar" ? "الهاتف" : "Phone"}</Label>
+              <div className="mt-1.5 flex gap-2">
+                <Select value={phoneDial} onValueChange={(v) => { setPhoneDial(v); if (phoneError) setPhoneError(null); }}>
+                  <SelectTrigger className="w-[110px] shrink-0"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {COUNTRY_DIALS.map((c) => (
+                      <SelectItem key={c.code} value={c.dial}>{c.dial} {locale === "ar" ? c.labelAr : c.labelEn}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  className={`flex-1 ${phoneError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  value={phoneNational}
+                  onChange={(e) => { setPhoneNational(e.target.value); if (phoneError) setPhoneError(null); }}
+                  onBlur={(e) => setPhoneError(validatePhone(e.target.value, phoneDial, locale, false))}
+                  aria-invalid={!!phoneError}
+                  placeholder="07XXXXXXXX"
+                />
+              </div>
+              {phoneError && <p className="text-xs text-destructive mt-1">{phoneError}</p>}
+            </div>
           </div>
-          <Button onClick={run} disabled={busy} variant="gold" className="w-full">
+          <Button onClick={run} disabled={busy || !!phoneError} variant="gold" className="w-full">
             {busy && <Loader2 className="size-4 animate-spin" />}{locale === "ar" ? "تشغيل الفحص" : "Run conflict check"}
           </Button>
           {result && (

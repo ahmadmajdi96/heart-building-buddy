@@ -8,6 +8,7 @@ import { PageHeader, StatusBadge, StatTile } from "@/components/app/primitives";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
@@ -206,7 +207,7 @@ function NewCaseDialog({ clients, onSubmit, pending, ar }: { clients: any[]; onS
         </div>
         <div>
           <Label>{ar ? "المبلغ الإجمالي" : "Total amount"}</Label>
-          <Input type="number" step="0.01" value={form.total_amount} onChange={(e) => setForm({ ...form, total_amount: Number(e.target.value) })} />
+          <NumberInput step={1} precision={2} value={form.total_amount} onValueChange={(v) => setForm({ ...form, total_amount: v })} />
         </div>
         <div>
           <Label>{ar ? "العملة" : "Currency"}</Label>
@@ -240,7 +241,7 @@ function NewCaseDialog({ clients, onSubmit, pending, ar }: { clients: any[]; onS
             </div>
             <div>
               <Label>{ar ? "الفاصل" : "Interval"}</Label>
-              <Input type="number" min={1} value={form.recurrence_interval} onChange={(e) => setForm({ ...form, recurrence_interval: Number(e.target.value) })} disabled={form.recurrence === "none"} />
+              <NumberInput step={1} min={1} precision={0} value={form.recurrence_interval} onValueChange={(v) => setForm({ ...form, recurrence_interval: Math.round(v) })} disabled={form.recurrence === "none"} />
             </div>
             <div>
               <Label>{ar ? "التكرار التالي" : "Next occurrence"}</Label>
@@ -261,7 +262,7 @@ function NewCaseDialog({ clients, onSubmit, pending, ar }: { clients: any[]; onS
         </div>
         <div>
           <Label>{ar ? "قيمة الرسوم" : "Fee value"}</Label>
-          <Input type="number" step="0.01" value={form.service_fee_value} onChange={(e) => setForm({ ...form, service_fee_value: Number(e.target.value) })} />
+          <NumberInput step={1} min={0} max={form.service_fee_type === "percent" ? 100 : undefined} precision={2} value={form.service_fee_value} onValueChange={(v) => setForm({ ...form, service_fee_value: v })} />
         </div>
         <div>
           <Label>{ar ? "المستلم النهائي (المُحوَّل إليه)" : "Forwarder (recipient)"}</Label>
@@ -277,7 +278,17 @@ function NewCaseDialog({ clients, onSubmit, pending, ar }: { clients: any[]; onS
         </div>
       </div>
       <DialogFooter>
-        <Button variant="gold" disabled={pending || !form.title} onClick={() => onSubmit(form)}>
+        <Button variant="gold" disabled={pending || !form.title} onClick={() => {
+          if (!Number.isFinite(form.total_amount) || form.total_amount < 0) {
+            toast.error(ar ? "المبلغ الإجمالي يجب أن يكون رقماً موجباً." : "Total amount must be a valid non-negative number.");
+            return;
+          }
+          if (!Number.isFinite(form.service_fee_value) || form.service_fee_value < 0) {
+            toast.error(ar ? "قيمة الرسوم يجب أن تكون رقماً موجباً." : "Fee value must be a valid non-negative number.");
+            return;
+          }
+          onSubmit(form);
+        }}>
           {pending ? <Loader2 className="size-4 animate-spin" /> : ar ? "إنشاء" : "Create"}
         </Button>
       </DialogFooter>

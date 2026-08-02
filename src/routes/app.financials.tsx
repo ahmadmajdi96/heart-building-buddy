@@ -9,6 +9,7 @@ import { PageHeader, StatusBadge } from "@/components/app/primitives";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
@@ -282,6 +283,11 @@ function PaymentDialog({ onSaved, onClose }: { onSaved: () => void; onClose: () 
 
   async function save() {
     if (!org) return;
+    const amountNum = Number(form.amount);
+    if (!Number.isFinite(amountNum) || amountNum < 0) {
+      toast.error(locale === "ar" ? "المبلغ يجب أن يكون رقماً موجباً." : "Amount must be a valid non-negative number.");
+      return;
+    }
     setSaving(true);
     const { data: sess } = await supabase.auth.getSession();
     const uid = sess.session!.user.id;
@@ -317,7 +323,7 @@ function PaymentDialog({ onSaved, onClose }: { onSaved: () => void; onClose: () 
           <div><Label>{locale === "ar" ? "العميل" : "Client"}</Label><Input className="mt-1.5" value={form.client_name} onChange={(e) => setForm({ ...form, client_name: e.target.value })}/></div>
         )}
         <div className="grid grid-cols-2 gap-3">
-          <div><Label>{locale === "ar" ? "المبلغ" : "Amount"}</Label><Input type="number" step="0.01" className="mt-1.5" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })}/></div>
+          <div><Label>{locale === "ar" ? "المبلغ" : "Amount"}</Label><NumberInput className="mt-1.5" step={1} precision={2} value={form.amount} onValueChange={(v) => setForm({ ...form, amount: String(v) })}/></div>
           <div><Label>{locale === "ar" ? "التاريخ" : "Date"}</Label><Input type="date" className="mt-1.5" value={form.paid_at} onChange={(e) => setForm({ ...form, paid_at: e.target.value })}/></div>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -794,7 +800,7 @@ function PlanDetailsDialog({ planId, onClose, onChanged }: { planId: string; onC
                 </div>
                 <div>
                   <Label>{t("Gap (months)", "الفاصل بالشهور")}</Label>
-                  <Input type="number" min={1} max={6} className="mt-1.5" value={reschedGap} onChange={(e) => setReschedGap(Math.max(1, Math.min(6, Number(e.target.value) || 1)))}/>
+                  <NumberInput min={1} max={6} step={1} precision={0} className="mt-1.5" value={reschedGap} onValueChange={(v) => setReschedGap(Math.max(1, Math.min(6, Math.round(v) || 1)))}/>
                 </div>
                 <div className="flex items-end">
                   <Button size="sm" variant="gold" disabled={busy || !reschedDate} onClick={() =>
@@ -819,6 +825,11 @@ function ScheduleDialog({ onSaved, onClose }: { onSaved: () => void; onClose: ()
   const [saving, setSaving] = useState(false);
   async function save() {
     if (!org) return;
+    const amountNum = Number(form.amount);
+    if (!Number.isFinite(amountNum) || amountNum < 0) {
+      toast.error(locale === "ar" ? "المبلغ يجب أن يكون رقماً موجباً." : "Amount must be a valid non-negative number.");
+      return;
+    }
     setSaving(true);
     const { data: sess } = await supabase.auth.getSession();
     const { error } = await supabase.from("payment_schedules").insert({
@@ -837,7 +848,7 @@ function ScheduleDialog({ onSaved, onClose }: { onSaved: () => void; onClose: ()
         <div><Label>{locale === "ar" ? "الوصف" : "Description"}</Label><Input className="mt-1.5" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}/></div>
         <div className="grid grid-cols-2 gap-3">
           <div><Label>{locale === "ar" ? "الاستحقاق" : "Due date"}</Label><Input type="date" className="mt-1.5" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })}/></div>
-          <div><Label>{locale === "ar" ? "المبلغ" : "Amount"}</Label><Input type="number" step="0.01" className="mt-1.5" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })}/></div>
+          <div><Label>{locale === "ar" ? "المبلغ" : "Amount"}</Label><NumberInput className="mt-1.5" step={1} precision={2} value={form.amount} onValueChange={(v) => setForm({ ...form, amount: String(v) })}/></div>
         </div>
       </div>
       <DialogFooter>
@@ -1291,24 +1302,76 @@ function InvoicesTab() {
 function DocFormDialog({ kind, onSaved, onClose }: { kind: "quote" | "invoice"; onSaved: () => void; onClose: () => void }) {
   const { locale } = useI18n();
   const { org } = useOrg();
+  const listClientsFn = useServerFn(listClients);
+  const saveClientFn = useServerFn(saveClient);
   const [items, setItems] = useState<Item[]>([{ description: "", quantity: 1, unit_price: 0 }]);
   const [form, setForm] = useState({
-    client_name: "", issue_date: new Date().toISOString().slice(0,10), valid_until: "", due_date: "",
+    client_id: "", client_name: "", issue_date: new Date().toISOString().slice(0,10), valid_until: "", due_date: "",
     tax_rate: String(org?.default_tax_rate ?? 0), notes: "",
   });
   const [saving, setSaving] = useState(false);
+  const [clients, setClients] = useState<any[]>([]);
+  const [clientQuery, setClientQuery] = useState("");
+  const [clientPickerOpen, setClientPickerOpen] = useState(false);
+  const [addingClient, setAddingClient] = useState(false);
+  const [newClient, setNewClient] = useState({ name: "", phone: "", email: "" });
   const totals = calcTotals(items, Number(form.tax_rate));
+
+  useEffect(() => { listClientsFn().then((c: any) => setClients(c ?? [])).catch(() => {}); }, []);
+
+  const clientOptions = useMemo(() => {
+    const n = clientQuery.trim().toLowerCase();
+    if (!n) return clients;
+    return clients.filter((c: any) => (c.name ?? "").toLowerCase().includes(n) || (c.phone ?? "").includes(n));
+  }, [clients, clientQuery]);
+
+  function pickClient(c: any) {
+    setForm((f) => ({ ...f, client_id: c.id, client_name: c.name }));
+    setClientPickerOpen(false);
+  }
+
+  async function createClient() {
+    if (!newClient.name.trim()) {
+      toast.error(locale === "ar" ? "اسم العميل مطلوب." : "Client name is required.");
+      return;
+    }
+    try {
+      const row: any = await saveClientFn({ data: { ...newClient, type: "individual", status: "active", locale } });
+      setClients((prev) => [row, ...prev]);
+      setForm((f) => ({ ...f, client_id: row.id, client_name: row.name }));
+      setNewClient({ name: "", phone: "", email: "" });
+      setAddingClient(false);
+      setClientPickerOpen(false);
+      toast.success(locale === "ar" ? "تمت إضافة العميل" : "Client added");
+    } catch (e) { toast.error((e as Error).message); }
+  }
 
   async function save() {
     if (!org) return;
+    if (!form.client_id) {
+      toast.error(locale === "ar" ? "الرجاء اختيار عميل من القائمة." : "Please select a client from the list.");
+      return;
+    }
+    const taxRate = Number(form.tax_rate);
+    if (!Number.isFinite(taxRate) || taxRate < 0 || taxRate > 100) {
+      toast.error(locale === "ar" ? "نسبة الضريبة يجب أن تكون بين 0 و100." : "Tax % must be between 0 and 100.");
+      return;
+    }
+    for (const it of items) {
+      const qty = Number(it.quantity), price = Number(it.unit_price);
+      if (!Number.isFinite(qty) || qty < 0 || !Number.isFinite(price) || price < 0) {
+        toast.error(locale === "ar" ? "الكمية والسعر يجب أن يكونا أرقاماً موجبة." : "Quantity and unit price must be valid non-negative numbers.");
+        return;
+      }
+    }
     setSaving(true);
     const { data: sess } = await supabase.auth.getSession();
     const { data: numRes, error: nErr } = await supabase.rpc("next_doc_number", { _org_id: org.id, _kind: kind });
     if (nErr) { toast.error(nErr.message); setSaving(false); return; }
     const base: any = {
       org_id: org.id, created_by: sess.session!.user.id, number: numRes as string,
-      client_name: form.client_name, issue_date: form.issue_date,
-      currency: org.currency, tax_rate: Number(form.tax_rate),
+      client_id: form.client_id, client_name: form.client_name, issue_date: form.issue_date,
+      currency: org.currency, tax_rate: taxRate,
       subtotal: totals.subtotal, tax_amount: totals.tax_amount, total: totals.total,
       items, notes: form.notes,
     };
@@ -1325,7 +1388,53 @@ function DocFormDialog({ kind, onSaved, onClose }: { kind: "quote" | "invoice"; 
     <DialogContent className="max-w-2xl">
       <DialogHeader><DialogTitle>{kind === "quote" ? (locale === "ar" ? "عرض سعر جديد" : "New quote") : (locale === "ar" ? "فاتورة جديدة" : "New invoice")}</DialogTitle></DialogHeader>
       <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-        <div><Label>{locale === "ar" ? "العميل" : "Client"}</Label><Input className="mt-1.5" value={form.client_name} onChange={(e) => setForm({ ...form, client_name: e.target.value })}/></div>
+        <div>
+          <Label>{locale === "ar" ? "العميل" : "Client"}</Label>
+          {addingClient ? (
+            <div className="mt-1.5 space-y-2 rounded-md border p-3">
+              <Input placeholder={locale === "ar" ? "الاسم" : "Name"} value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}/>
+              <div className="grid grid-cols-2 gap-2">
+                <Input placeholder={locale === "ar" ? "الهاتف" : "Phone"} value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}/>
+                <Input placeholder="Email" value={newClient.email} onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}/>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button size="sm" variant="ghost" onClick={() => setAddingClient(false)}>{locale === "ar" ? "إلغاء" : "Cancel"}</Button>
+                <Button size="sm" variant="gold" onClick={createClient} disabled={!newClient.name.trim()}>{locale === "ar" ? "إضافة العميل" : "Add client"}</Button>
+              </div>
+            </div>
+          ) : (
+            <div className="relative mt-1.5">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    className="ps-9"
+                    placeholder={locale === "ar" ? "ابحث عن عميل…" : "Search a client…"}
+                    value={clientPickerOpen ? clientQuery : form.client_name}
+                    onFocus={() => { setClientPickerOpen(true); setClientQuery(""); }}
+                    onChange={(e) => { setClientQuery(e.target.value); setClientPickerOpen(true); }}
+                  />
+                </div>
+                <Button variant="outline" size="sm" onClick={() => setAddingClient(true)}><Plus className="size-4"/>{locale === "ar" ? "جديد" : "New"}</Button>
+              </div>
+              {clientPickerOpen && (
+                <div className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md border bg-popover shadow-md">
+                  {clientOptions.length === 0 ? (
+                    <div className="p-3 text-center text-xs text-muted-foreground">{locale === "ar" ? "لا يوجد عملاء مطابقون." : "No matching clients."}</div>
+                  ) : clientOptions.map((c: any) => (
+                    <button type="button" key={c.id} onClick={() => pickClient(c)}
+                      className="block w-full px-3 py-2 text-start text-sm hover:bg-secondary/60">
+                      {c.name}{c.phone ? ` — ${c.phone}` : ""}
+                    </button>
+                  ))}
+                  <button type="button" onClick={() => setClientPickerOpen(false)} className="block w-full border-t px-3 py-1.5 text-center text-xs text-muted-foreground hover:bg-secondary/40">
+                    {locale === "ar" ? "إغلاق" : "Close"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
         <div className="grid grid-cols-3 gap-3">
           <div><Label>{locale === "ar" ? "الإصدار" : "Issue date"}</Label><Input type="date" className="mt-1.5" value={form.issue_date} onChange={(e) => setForm({ ...form, issue_date: e.target.value })}/></div>
           {kind === "quote" ? (
@@ -1333,7 +1442,7 @@ function DocFormDialog({ kind, onSaved, onClose }: { kind: "quote" | "invoice"; 
           ) : (
             <div><Label>{locale === "ar" ? "الاستحقاق" : "Due date"}</Label><Input type="date" className="mt-1.5" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })}/></div>
           )}
-          <div><Label>{locale === "ar" ? "الضريبة %" : "Tax %"}</Label><Input type="number" step="0.01" className="mt-1.5" value={form.tax_rate} onChange={(e) => setForm({ ...form, tax_rate: e.target.value })}/></div>
+          <div><Label>{locale === "ar" ? "الضريبة %" : "Tax %"}</Label><NumberInput className="mt-1.5" step={1} min={0} max={100} precision={2} value={form.tax_rate} onValueChange={(v) => setForm({ ...form, tax_rate: String(v) })}/></div>
         </div>
         <div>
           <div className="mb-2 flex items-center justify-between"><Label>{locale === "ar" ? "البنود" : "Line items"}</Label>
@@ -1343,8 +1452,8 @@ function DocFormDialog({ kind, onSaved, onClose }: { kind: "quote" | "invoice"; 
             {items.map((it, i) => (
               <div key={i} className="grid grid-cols-[1fr_80px_120px_auto] gap-2">
                 <Input placeholder={locale === "ar" ? "الوصف" : "Description"} value={it.description} onChange={(e) => updateItem(i, { description: e.target.value })}/>
-                <Input type="number" step="0.01" value={it.quantity} onChange={(e) => updateItem(i, { quantity: Number(e.target.value) })}/>
-                <Input type="number" step="0.01" placeholder={locale === "ar" ? "السعر" : "Unit price"} value={it.unit_price} onChange={(e) => updateItem(i, { unit_price: Number(e.target.value) })}/>
+                <NumberInput step={1} min={0} precision={2} value={it.quantity} onValueChange={(v) => updateItem(i, { quantity: v })}/>
+                <NumberInput step={1} min={0} precision={2} placeholder={locale === "ar" ? "السعر" : "Unit price"} value={it.unit_price} onValueChange={(v) => updateItem(i, { unit_price: v })}/>
                 <Button size="icon" variant="ghost" onClick={() => setItems(items.filter((_, idx) => idx !== i))} disabled={items.length === 1}><X className="size-4"/></Button>
               </div>
             ))}
@@ -1359,7 +1468,7 @@ function DocFormDialog({ kind, onSaved, onClose }: { kind: "quote" | "invoice"; 
       </div>
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>{locale === "ar" ? "إلغاء" : "Cancel"}</Button>
-        <Button variant="gold" onClick={save} disabled={saving || !form.client_name}>{saving && <Loader2 className="size-4 animate-spin"/>}{locale === "ar" ? "حفظ" : "Save"}</Button>
+        <Button variant="gold" onClick={save} disabled={saving || !form.client_id}>{saving && <Loader2 className="size-4 animate-spin"/>}{locale === "ar" ? "حفظ" : "Save"}</Button>
       </DialogFooter>
     </DialogContent>
   );

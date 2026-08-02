@@ -73,52 +73,63 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
     }).parse(d))
   .handler(async ({ data, context }) => {
     const mem = await getCallerOrg(context);
-    if (mem.role !== "owner" && mem.role !== "partner") throw new Error("Forbidden");
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const email = data.email.toLowerCase().trim();
-    const redirectTo = data.redirectTo;
-
-    // Try to invite — creates user + emails them. If user already exists, fall back to generateLink recovery.
-    let userId: string | null = null;
-    const { data: invited, error: inviteErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
-      email,
-      redirectTo ? { redirectTo } : undefined,
-    );
-    if (inviteErr) {
-      // User likely already exists — look them up
-      const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
-      const existing = list?.users?.find((u) => u.email?.toLowerCase() === email);
-      if (!existing) throw new Error(inviteErr.message);
-      userId = existing.id;
-      // Send a magic link so they can sign in & set/keep their password
-      if (redirectTo) {
-        await supabaseAdmin.auth.admin.generateLink({ type: "magiclink", email, options: { redirectTo } });
-      }
-    } else {
-      userId = invited.user?.id ?? null;
+    if (mem.role !== "owner" && mem.role !== "partner") {
+      throw new Error("Forbidden / ممنوع: لا تملك صلاحية دعوة أعضاء الفريق.");
     }
-    if (!userId) throw new Error("Failed to create user");
 
-    // Upsert membership
-    const { data: existingMem } = await supabaseAdmin
+    const email = data.email.toLowerCase().trim();
+
+    // Check for an existing (active or pending) membership tied to this email within the org.
+    const { data: existingMem, error: lookupErr } = await context.supabase
       .from("organization_members")
-      .select("id")
+      .select("id, status, user_id")
       .eq("org_id", mem.org_id)
-      .eq("user_id", userId)
+      .eq("invited_email", email)
       .maybeSingle();
+    if (lookupErr) {
+      throw new Error(
+        "Failed to check existing membership / تعذّر التحقق من العضوية الحالية.",
+      );
+    }
 
     if (existingMem) {
-      await supabaseAdmin.from("organization_members")
-        .update({ role: data.role, status: "active", invited_email: email })
+      if (existingMem.status === "active") {
+        throw new Error(
+          "This person is already an active team member / هذا الشخص عضو نشط بالفعل في الفريق.",
+        );
+      }
+      // Re-invite: refresh role and keep status pending.
+      const { error: updErr } = await context.supabase
+        .from("organization_members")
+        .update({ role: data.role, status: "invited" })
         .eq("id", existingMem.id);
-    } else {
-      const { error: insErr } = await supabaseAdmin.from("organization_members").insert({
-        org_id: mem.org_id, user_id: userId, invited_email: email, role: data.role, status: "active",
-      });
-      if (insErr) throw new Error(insErr.message);
+      if (updErr) {
+        throw new Error(
+          "Failed to update the invitation / تعذّر تحديث الدعوة.",
+        );
+      }
+      return { ok: true, id: existingMem.id, status: "invited" as const };
     }
-    return { ok: true, userId };
+
+    // Insert a pending invitation row scoped by the caller's RLS session (no service-role required).
+    const { data: inserted, error: insErr } = await context.supabase
+      .from("organization_members")
+      .insert({
+        org_id: mem.org_id,
+        user_id: null,
+        invited_email: email,
+        role: data.role,
+        status: "invited",
+      })
+      .select("id")
+      .single();
+    if (insErr) {
+      throw new Error(
+        "Failed to create the invitation. Please try again / تعذّر إنشاء الدعوة، حاول مرة أخرى.",
+      );
+    }
+
+    return { ok: true, id: inserted.id, status: "invited" as const };
   });
 
 export const updateTeamMemberRole = createServerFn({ method: "POST" })

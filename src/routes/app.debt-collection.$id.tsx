@@ -7,6 +7,7 @@ import { PageHeader, StatusBadge, StatTile } from "@/components/app/primitives";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -265,13 +266,19 @@ function PayerDialog({ caseId, clients, onSubmit, pending, ar }: any) {
           <div><Label>{ar ? "البريد" : "Email"}</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div><Label>{ar ? "المبلغ المستحق" : "Amount due"}</Label><Input type="number" step="0.01" value={form.amount_due} onChange={(e) => setForm({ ...form, amount_due: Number(e.target.value) })} /></div>
+          <div><Label>{ar ? "المبلغ المستحق" : "Amount due"}</Label><NumberInput step={1} precision={2} value={form.amount_due} onValueChange={(v) => setForm({ ...form, amount_due: v })} /></div>
           <div><Label>{ar ? "الاستحقاق" : "Due date"}</Label><Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></div>
         </div>
         <div><Label>{ar ? "ملاحظات" : "Notes"}</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
       </div>
       <DialogFooter>
-        <Button variant="gold" disabled={pending || !form.name} onClick={() => onSubmit(form)}>{pending ? <Loader2 className="size-4 animate-spin" /> : ar ? "إضافة" : "Add"}</Button>
+        <Button variant="gold" disabled={pending || !form.name} onClick={() => {
+          if (!Number.isFinite(form.amount_due) || form.amount_due < 0) {
+            toast.error(ar ? "المبلغ المستحق يجب أن يكون رقماً موجباً." : "Amount due must be a valid non-negative number.");
+            return;
+          }
+          onSubmit(form);
+        }}>{pending ? <Loader2 className="size-4 animate-spin" /> : ar ? "إضافة" : "Add"}</Button>
       </DialogFooter>
     </DialogContent>
   );
@@ -496,19 +503,18 @@ function PaymentDialog({ caseId, caseData, payers, onSubmit, pending, ar }: any)
         <div className="grid grid-cols-3 gap-3">
           <div>
             <Label>{ar ? "المبلغ المُستلم" : "Received"}</Label>
-            <Input type="number" step="0.01" value={form.amount_received} onChange={(e) => {
-              const v = Number(e.target.value);
+            <NumberInput step={1} precision={2} value={form.amount_received} onValueChange={(v) => {
               const { fee, forwarded } = autoCompute(v);
               setForm({ ...form, amount_received: v, service_fee: fee, amount_forwarded: forwarded });
             }} />
           </div>
           <div>
             <Label>{ar ? "الرسوم" : "Service fee"}</Label>
-            <Input type="number" step="0.01" value={form.service_fee} onChange={(e) => setForm({ ...form, service_fee: Number(e.target.value), amount_forwarded: Number((form.amount_received - Number(e.target.value)).toFixed(2)) })} />
+            <NumberInput step={1} precision={2} value={form.service_fee} onValueChange={(v) => setForm({ ...form, service_fee: v, amount_forwarded: Number((form.amount_received - v).toFixed(2)) })} />
           </div>
           <div>
             <Label>{ar ? "المُحوَّل" : "Forwarded"}</Label>
-            <Input type="number" step="0.01" value={form.amount_forwarded} onChange={(e) => setForm({ ...form, amount_forwarded: Number(e.target.value) })} />
+            <NumberInput step={1} precision={2} value={form.amount_forwarded} onValueChange={(v) => setForm({ ...form, amount_forwarded: v })} />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -533,7 +539,13 @@ function PaymentDialog({ caseId, caseData, payers, onSubmit, pending, ar }: any)
         <div><Label>{ar ? "ملاحظات" : "Notes"}</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
       </div>
       <DialogFooter>
-        <Button variant="gold" disabled={pending || !form.amount_received} onClick={() => onSubmit(form)}>{pending ? <Loader2 className="size-4 animate-spin" /> : ar ? "تسجيل" : "Record"}</Button>
+        <Button variant="gold" disabled={pending || !form.amount_received} onClick={() => {
+          if (!Number.isFinite(form.amount_received) || form.amount_received < 0 || !Number.isFinite(form.service_fee) || form.service_fee < 0 || !Number.isFinite(form.amount_forwarded) || form.amount_forwarded < 0) {
+            toast.error(ar ? "المبالغ يجب أن تكون أرقاماً موجبة." : "Amounts must be valid non-negative numbers.");
+            return;
+          }
+          onSubmit(form);
+        }}>{pending ? <Loader2 className="size-4 animate-spin" /> : ar ? "تسجيل" : "Record"}</Button>
       </DialogFooter>
     </DialogContent>
   );

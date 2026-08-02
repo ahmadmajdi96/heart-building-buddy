@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useI18n } from "@/lib/i18n";
 import { PageHeader, StatTile } from "@/components/app/primitives";
 import { cn } from "@/lib/utils";
 
-function Panel({ children, className }: { children: React.ReactNode; className?: string }) {
+function Panel({ children, className, ref }: { children: React.ReactNode; className?: string; ref?: React.Ref<HTMLDivElement> }) {
   return (
-    <div className={cn("relative rounded-2xl border border-border/60 bg-card p-6 md:p-8 shadow-[0_1px_2px_rgb(0_0_0/0.04)]", className)}>
+    <div ref={ref} className={cn("relative rounded-2xl border border-border/60 bg-card p-6 md:p-8 shadow-[0_1px_2px_rgb(0_0_0/0.04)]", className)}>
       {children}
     </div>
   );
@@ -33,6 +33,7 @@ function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [insights, setInsights] = useState("");
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const insightsRef = useRef<HTMLDivElement>(null);
 
   async function refresh() {
     setLoading(true);
@@ -43,7 +44,14 @@ function AnalyticsPage() {
   async function runInsights() {
     if (!stats) return;
     setInsightsLoading(true);
-    try { const res = await insightsFn({ data: { locale, summary: stats } }); setInsights(res.insights); }
+    // Bring the results panel into view immediately so the user sees the loading state (QA 001).
+    insightsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    try {
+      const res = await insightsFn({ data: { locale, summary: stats } });
+      setInsights(res.insights);
+      toast.success(locale === "ar" ? "تم توليد الرؤى — انتقلنا إليها بالأسفل" : "Insights ready — scrolled to the results");
+      requestAnimationFrame(() => insightsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
     catch (e) { toast.error((e as Error).message); }
     finally { setInsightsLoading(false); }
   }
@@ -105,9 +113,27 @@ function AnalyticsPage() {
             {statusData.length === 0 ? <div className="grid h-full place-items-center text-sm text-muted-foreground">{locale === "ar" ? "لا توجد قضايا بعد" : "No cases yet"}</div> :
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={statusData} dataKey="value" nameKey="name" outerRadius={90} label>
+                <Pie
+                  data={statusData}
+                  dataKey="value"
+                  nameKey="name"
+                  outerRadius={90}
+                  labelLine={false}
+                  label={({ cx, cy, midAngle, innerRadius, outerRadius, value }: any) => {
+                    const RAD = Math.PI / 180;
+                    const r = innerRadius + (outerRadius - innerRadius) * 0.62;
+                    const x = cx + r * Math.cos(-midAngle * RAD);
+                    const y = cy + r * Math.sin(-midAngle * RAD);
+                    return (
+                      <text x={x} y={y} fill="#0f172a" textAnchor="middle" dominantBaseline="central" fontSize={12} fontWeight={600}>
+                        {value}
+                      </text>
+                    );
+                  }}
+                >
                   {statusData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
+
                 <Tooltip />
                 <Legend />
               </PieChart>
@@ -131,7 +157,7 @@ function AnalyticsPage() {
         </Panel>
       </div>
 
-      <Panel>
+      <Panel className="scroll-mt-24" ref={insightsRef}>
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gold">
           <Sparkles className="size-4" /> {locale === "ar" ? "رؤى الذكاء الاصطناعي" : "AI insights"}
         </div>
