@@ -105,9 +105,27 @@ function AnalyticsPage() {
             {statusData.length === 0 ? <div className="grid h-full place-items-center text-sm text-muted-foreground">{locale === "ar" ? "لا توجد قضايا بعد" : "No cases yet"}</div> :
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={statusData} dataKey="value" nameKey="name" outerRadius={90} label>
+                <Pie
+                  data={statusData}
+                  dataKey="value"
+                  nameKey="name"
+                  outerRadius={90}
+                  labelLine={false}
+                  label={({ cx, cy, midAngle, innerRadius, outerRadius, value }: any) => {
+                    const RAD = Math.PI / 180;
+                    const r = innerRadius + (outerRadius - innerRadius) * 0.62;
+                    const x = cx + r * Math.cos(-midAngle * RAD);
+                    const y = cy + r * Math.sin(-midAngle * RAD);
+                    return (
+                      <text x={x} y={y} fill="#0f172a" textAnchor="middle" dominantBaseline="central" fontSize={12} fontWeight={600}>
+                        {value}
+                      </text>
+                    );
+                  }}
+                >
                   {statusData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
+
                 <Tooltip />
                 <Legend />
               </PieChart>
